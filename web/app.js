@@ -1,8 +1,72 @@
 // ==============================================================================
-// 100% DETERMINISTIC HOUSEHOLD BUDGET ENGINE & WORDPRESS-GRADE ADMIN CMS v4.0
+// 100% DETERMINISTIC HOUSEHOLD BUDGET ENGINE & WORDPRESS-GRADE ADMIN CMS v4.5
 // ==============================================================================
 
-const STORAGE_KEY = "household_budget_master_db_v4";
+const STORAGE_KEY = "household_budget_master_db_v4_5";
+
+const defaultUiLabels = {
+  // Navigation
+  "nav.dashboard": "Dashboard",
+  "nav.completed": "Completed Payments",
+  "nav.daily_spends": "Daily Spends",
+  "nav.bnpl": "BNPL & Koko",
+  "nav.fixed_bills": "Fixed Bills & Loans",
+  "nav.forecast": "Survival Forecast",
+  "nav.wishlist": "Needs Planner",
+  "nav.subscriptions": "Subscriptions",
+
+  // Dashboard Page
+  "page.dashboard.title": "Cycle Overview",
+  "page.dashboard.subtitle": "Aug 25 – Sep 25, 2026 • 26 Days Remaining",
+  "page.dashboard.balance_header": "REALTIME REMAINING SPENDABLE BALANCE",
+  "page.dashboard.card_income": "Total Cycle Income",
+  "page.dashboard.card_committed": "Committed Outgoings",
+  "page.dashboard.card_spent": "Daily Spent so far",
+  "page.dashboard.card_wishlist": "Planned Wishlist",
+  "page.dashboard.breakdown_title": "Cycle Outgoings Breakdown",
+  "page.dashboard.recent_spends_title": "Recent Daily Spends",
+
+  // BNPL Page
+  "page.bnpl.title": "BNPL & Koko Plans",
+  "page.bnpl.subtitle": "Active installments, remaining balances, and monthly commitments.",
+  "page.bnpl.active_heading": "Pending Installments (Current Cycle)",
+  "page.bnpl.completed_heading": "Settled BNPL Installments in this Cycle",
+  "page.bnpl.btn_add": "Add BNPL Plan",
+  "table.bnpl.col.status": "Status",
+  "table.bnpl.col.item": "Item Name",
+  "table.bnpl.col.platform": "Platform",
+  "table.bnpl.col.purchaser": "Purchaser",
+  "table.bnpl.col.monthly": "Monthly Due",
+  "table.bnpl.col.remaining": "Remaining / Total",
+  "table.bnpl.col.actions": "Actions",
+
+  // Fixed Bills Page
+  "page.fixed.title": "Fixed Bills & Bank Loans",
+  "page.fixed.subtitle": "Mandatory recurring payments due on or around salary day.",
+  "page.fixed.active_heading": "Pending Fixed Payments (Current Cycle)",
+  "page.fixed.completed_heading": "Settled Fixed Bills in this Cycle",
+  "page.fixed.btn_add": "Add Fixed Bill",
+
+  // Needs Planner / Wishlist Page
+  "page.wishlist.title": "Needs Planner & Wishlist",
+  "page.wishlist.subtitle": "Categorized buy-list and needs planning prioritized for purchase.",
+  "page.wishlist.active_heading": "Pending Needs & Items",
+  "page.wishlist.completed_heading": "Purchased & Settled Items",
+  "page.wishlist.btn_add": "Add Item to Plan",
+
+  // Subscriptions Page
+  "page.subs.title": "Subscriptions & Recurring Cards",
+  "page.subs.subtitle": "Digital services, mobile packages, broadband routers, and cards.",
+  "page.subs.btn_add": "Add Subscription",
+
+  // Completed Page
+  "page.completed.title": "Completed & Settled Payments",
+  "page.completed.subtitle": "Master record of all payments settled in this cycle, organized by originating category.",
+
+  // Buttons & Global
+  "btn.log_spend": "Log Daily Spend",
+  "btn.admin_cms": "Admin CMS"
+};
 
 const defaultState = {
   household: {
@@ -31,6 +95,7 @@ const defaultState = {
     showForecastBanner: true,
     showWishlistSection: true
   },
+  uiLabels: { ...defaultUiLabels },
   categories: [
     { id: "cat_1", name: "Groceries", color: "#10B981", monthlyBudget: 45000 },
     { id: "cat_2", name: "Transport / PickMe", color: "#F59E0B", monthlyBudget: 15000 },
@@ -57,18 +122,6 @@ const defaultState = {
     reservePercentage: 5.0,
     survivalBufferDays: 30,
     committedCategories: ["Housing", "Utilities", "Loan", "Insurance", "Telecom"]
-  },
-  uiLabels: {
-    nav_dashboard: "Dashboard",
-    nav_daily_spends: "Daily Spends",
-    nav_installments: "BNPL & Koko",
-    nav_fixed_bills: "Fixed Bills & Loans",
-    nav_forecast: "Survival Forecast",
-    nav_wishlist: "Wishlist",
-    nav_subscriptions: "Subscriptions",
-    nav_completed: "Completed Payments",
-    lbl_balance_header: "REALTIME REMAINING SPENDABLE BALANCE",
-    lbl_dashboard_title: "Cycle Overview"
   },
   members: [
     { id: "m1", name: "Sathsara", role: "husband", salary: 249585, color: "#10B981" },
@@ -145,6 +198,7 @@ function loadSavedState() {
         ...parsed, 
         household: { ...defaultState.household, ...parsed.household },
         uiComponents: { ...defaultState.uiComponents, ...parsed.uiComponents },
+        uiLabels: { ...defaultUiLabels, ...(parsed.uiLabels || {}) },
         forecastSettings: { ...defaultState.forecastSettings, ...parsed.forecastSettings }
       };
     }
@@ -160,6 +214,14 @@ function persistState() {
   } catch (e) {
     console.error("Failed to save state", e);
   }
+}
+
+// Label Lookup Helper
+function getLabel(key, fallback = "") {
+  if (state.uiLabels && state.uiLabels[key] !== undefined && state.uiLabels[key] !== "") {
+    return state.uiLabels[key];
+  }
+  return defaultUiLabels[key] || fallback;
 }
 
 // Formatter
@@ -218,7 +280,6 @@ function calculateMetrics() {
   const remainingBalance = totalIncome - (totalCommitted + totalDailySpent);
   const projectedSavings = remainingBalance - totalPlannedWishlist;
 
-  // Completed payments calculations
   const settledFixed = (state.fixedPayments || []).filter(f => f.isPaid).reduce((acc, f) => acc + (Number(f.amount) || 0), 0);
   const settledBnpl = (state.installments || []).filter(i => i.isPaid).reduce((acc, i) => acc + (Number(i.monthly) || 0), 0);
   const settledCards = (state.creditCards || []).filter(c => c.isPaid).reduce((acc, c) => acc + (Number(c.due) || 0), 0);
@@ -227,7 +288,6 @@ function calculateMetrics() {
   const totalSettledAmount = settledFixed + settledBnpl + settledCards + settledSubs + settledSpends;
   const totalPendingAmount = (totalCommitted + totalDailySpent) - totalSettledAmount;
 
-  // Forward Survival Calculation
   const nextEstimatedIncome = totalIncome;
   const nextEstimatedCommitted = totalFixed + totalSubscriptions + (totalCreditCards > 0 ? 10000 : 0) +
     (state.installments || []).filter(inst => (inst.remaining || 0) > (inst.monthly || 0)).reduce((acc, inst) => acc + (Number(inst.monthly) || 0), 0);
@@ -301,7 +361,7 @@ function customConfirm(message, onConfirm) {
   });
 }
 
-// --- PAYMENT TICKING / TOGGLE PAID ACTION ---
+// Payment Ticking Action
 function togglePaymentStatus(type, id) {
   let item = null;
   let label = "Payment";
@@ -336,7 +396,80 @@ function togglePaymentStatus(type, id) {
   }
 }
 
-// --- CONTEXTUAL HELP MODAL ---
+// --- LABELS & TEXT CMS MANAGEMENT ---
+function saveAllUiLabels() {
+  document.querySelectorAll(".cms-label-input").forEach(input => {
+    const key = input.dataset.labelKey;
+    if (key) {
+      state.uiLabels[key] = input.value.trim();
+    }
+  });
+  persistState();
+  renderApp();
+  showToast("All UI labels saved live with zero redeploy!", "success");
+}
+
+function resetAllUiLabels() {
+  customConfirm("Reset all labels and text back to system defaults?", () => {
+    state.uiLabels = { ...defaultUiLabels };
+    persistState();
+    renderApp();
+    renderLabelsCmsScreen();
+    showToast("UI labels reset to defaults", "info");
+  });
+}
+
+function filterLabelsCms(query) {
+  const q = (query || "").toLowerCase();
+  document.querySelectorAll(".label-edit-row").forEach(row => {
+    const key = (row.dataset.key || "").toLowerCase();
+    const val = (row.querySelector("input")?.value || "").toLowerCase();
+    row.style.display = (key.includes(q) || val.includes(q)) ? "" : "none";
+  });
+}
+
+function renderLabelsCmsScreen() {
+  const container = document.getElementById("cms-labels-container");
+  if (!container) return;
+
+  const entries = Object.keys(defaultUiLabels);
+  container.innerHTML = `
+    <div style="margin-bottom: 1.25rem; display: flex; gap: 0.75rem; align-items: center;">
+      <input type="text" id="cms-labels-search" class="form-control" placeholder="🔍 Search label key or text (e.g. bnpl, title, column)..." oninput="filterLabelsCms(this.value)">
+      <button class="btn btn-primary" onclick="saveAllUiLabels()">💾 Save All Labels</button>
+      <button class="btn btn-secondary" onclick="resetAllUiLabels()">🔄 Reset Defaults</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="cms-table">
+        <thead>
+          <tr>
+            <th style="width: 35%;">Label Key (Stable ID)</th>
+            <th style="width: 25%;">Default Value</th>
+            <th style="width: 40%;">Current Live Text (Editable)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${entries.map(key => {
+            const defVal = defaultUiLabels[key];
+            const currVal = getLabel(key, defVal);
+            return `
+              <tr class="label-edit-row" data-key="${key}">
+                <td><code style="color: #A5B4FC; font-size: 0.8rem;">${key}</code></td>
+                <td><small style="color: var(--text-muted);">${defVal}</small></td>
+                <td>
+                  <input type="text" class="form-control cms-label-input" data-label-key="${key}" value="${currVal}">
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Help Guide
 const HELP_TOPICS = {
   cycle: {
     title: "📅 The 25th-to-25th Salary Cycle",
@@ -348,23 +481,19 @@ const HELP_TOPICS = {
   },
   forecast: {
     title: "📐 Forward Survival Forecasting & Safety Reserve",
-    content: `<p>Predicts next month's financial health before next month starts and tells you the exact safety buffer to keep.</p>`
+    content: `<p>Predicts next month's financial health before next month starts and calculates the exact safety buffer to keep.</p>`
   },
   bnpl: {
-    title: "🛍️ Buy Now Pay Later (BNPL) & Koko Tracking",
+    title: "🛍️ BNPL & Installment Tracking",
     content: `<p>When an installment plan reaches 3/3 paid installments, it automatically terminates and frees up cashflow.</p>`
   },
   completed: {
     title: "✅ Completed Payments & Tracking",
     content: `<p>Whenever you make a payment, click the <strong>Mark as Paid</strong> button. The item animates with a crossed line and moves into the <strong>Completed Payments</strong> register organized by category!</p>`
   },
-  ai: {
-    title: "🤖 AI Advisor & Privacy",
-    content: `<p>Deterministic calculations are 100% computed by rule engine. AI provides tailored guidance.</p>`
-  },
   cms: {
     title: "👑 WordPress-Grade Admin CMS Control",
-    content: `<p>Control every card, category, and theme on the live site with zero code redeployment.</p>`
+    content: `<p>Rename any page title, table header, button label, or theme with zero code redeploy.</p>`
   }
 };
 
@@ -381,7 +510,6 @@ function openHelpGuide(topicKey = "cycle") {
           <button class="chip ${topicKey === 'balance' ? 'active' : ''}" onclick="openHelpGuide('balance')">💰 Spendable Balance</button>
           <button class="chip ${topicKey === 'forecast' ? 'active' : ''}" onclick="openHelpGuide('forecast')">📐 Forecast Math</button>
           <button class="chip ${topicKey === 'bnpl' ? 'active' : ''}" onclick="openHelpGuide('bnpl')">🛍️ BNPL Tracking</button>
-          <button class="chip ${topicKey === 'ai' ? 'active' : ''}" onclick="openHelpGuide('ai')">🤖 AI Advisor</button>
           <button class="chip ${topicKey === 'cms' ? 'active' : ''}" onclick="openHelpGuide('cms')">👑 Admin CMS</button>
         </div>
       </div>
@@ -390,9 +518,9 @@ function openHelpGuide(topicKey = "cycle") {
   openModal(topic.title, html, null);
 }
 
-// --- FULL CRUD OPERATIONS ON CUSTOMER / ADMIN UI ---
+// --- CRUD OPERATIONS ---
 
-// 1. Members CRUD
+// 1. Members
 function openMemberModal(member = null) {
   const isEdit = member !== null;
   const html = `
@@ -452,7 +580,7 @@ function deleteMember(id) {
   });
 }
 
-// 2. Fixed Bills CRUD
+// 2. Fixed Bills
 function openBillModal(bill = null) {
   const isEdit = bill !== null;
   const html = `
@@ -513,7 +641,7 @@ function deleteBill(id) {
   });
 }
 
-// 3. BNPL CRUD
+// 3. BNPL
 function openBnplModal(inst = null) {
   const isEdit = inst !== null;
   const html = `
@@ -580,7 +708,7 @@ function deleteBnpl(id) {
   });
 }
 
-// 4. Subscriptions CRUD
+// 4. Subscriptions
 function openSubModal(sub = null) {
   const isEdit = sub !== null;
   const html = `
@@ -625,7 +753,7 @@ function deleteSub(id) {
   });
 }
 
-// 5. Credit Cards CRUD
+// 5. Credit Cards
 function openCardModal(card = null) {
   const isEdit = card !== null;
   const html = `
@@ -670,7 +798,7 @@ function deleteCard(id) {
   });
 }
 
-// 6. Wishlist CRUD
+// 6. Wishlist
 function openWishlistModal(item = null) {
   const isEdit = item !== null;
   const html = `
@@ -731,7 +859,7 @@ function deleteWishlist(id) {
   });
 }
 
-// 7. Daily Spends CRUD
+// 7. Daily Spends
 function openSpendModal() {
   const categoryOptions = (state.categories || defaultState.categories).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   const paymentOptions = (state.paymentMethods || defaultState.paymentMethods).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
@@ -787,7 +915,7 @@ function deleteSpend(id) {
   });
 }
 
-// Category CRUD
+// 8. Categories
 function openCategoryModal(cat = null) {
   const isEdit = cat !== null;
   const html = `
@@ -840,6 +968,9 @@ function switchTab(tabId) {
   document.querySelectorAll(".tab-pane").forEach(pane => {
     pane.classList.toggle("active", pane.id === `tab-${tabId}`);
   });
+  if (tabId === "cms-labels") {
+    renderLabelsCmsScreen();
+  }
 }
 
 // Custom CSS & Settings
@@ -1040,6 +1171,14 @@ function renderApp() {
     document.body.className = state.household.themePreset;
   }
   applyCustomCss();
+
+  // Dynamic UI Labels Injection into all matching [data-label-key] elements
+  document.querySelectorAll("[data-label-key]").forEach(el => {
+    const key = el.dataset.labelKey;
+    if (key) {
+      el.textContent = getLabel(key, el.textContent);
+    }
+  });
 
   // Branding
   document.querySelectorAll("#app-logo-icon, .app-logo-icon").forEach(el => el.textContent = state.household?.logo || "💰");
@@ -1264,7 +1403,7 @@ function renderAllTables(metrics) {
     subsCompletedBody.innerHTML = completed.length ? completed.map(renderSubRow).join("") : `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">No subscriptions marked paid yet.</td></tr>`;
   }
 
-  // 6. Credit Cards Tables
+  // 6. Credit Cards
   const renderCardRow = (c) => `
     <tr class="${c.isPaid ? 'paid-row' : ''}">
       <td>
@@ -1287,7 +1426,7 @@ function renderAllTables(metrics) {
     cardsBody.innerHTML = (state.creditCards || []).map(renderCardRow).join("");
   }
 
-  // 7. Wishlist Table with Full CRUD
+  // 7. Wishlist / Needs Planner Table
   const renderWishlistRow = (w) => `
     <tr class="${w.isPaid ? 'paid-row' : ''}">
       <td>
@@ -1319,15 +1458,15 @@ function renderAllTables(metrics) {
   const wishlistActiveBody = document.getElementById("wishlist-active-table-body");
   if (wishlistActiveBody) {
     const active = (state.wishlist || []).filter(w => !w.isPaid);
-    wishlistActiveBody.innerHTML = active.length ? active.map(renderWishlistRow).join("") : `<tr><td colspan="7" style="text-align: center; color: var(--primary-light); padding: 1rem;">No pending wishlist items.</td></tr>`;
+    wishlistActiveBody.innerHTML = active.length ? active.map(renderWishlistRow).join("") : `<tr><td colspan="7" style="text-align: center; color: var(--primary-light); padding: 1rem;">No pending needs items.</td></tr>`;
   }
   const wishlistCompletedBody = document.getElementById("wishlist-completed-table-body");
   if (wishlistCompletedBody) {
     const completed = (state.wishlist || []).filter(w => w.isPaid);
-    wishlistCompletedBody.innerHTML = completed.length ? completed.map(renderWishlistRow).join("") : `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No wishlist items purchased yet.</td></tr>`;
+    wishlistCompletedBody.innerHTML = completed.length ? completed.map(renderWishlistRow).join("") : `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No needs items purchased yet.</td></tr>`;
   }
 
-  // 8. Recent Daily Spends Lists
+  // 8. Spends
   const recentSpends = document.getElementById("dashboard-recent-spends");
   if (recentSpends) {
     recentSpends.innerHTML = (state.dailySpends || []).slice(0, 5).map(s => `
@@ -1360,7 +1499,7 @@ function renderAllTables(metrics) {
     `).join("");
   }
 
-  // 9. DEDICATED COMPLETED PAYMENTS PAGE RENDERER
+  // 9. Completed Payments Page
   renderCompletedPaymentsPage(metrics);
 
   // 10. Raw JSON Sync
@@ -1381,10 +1520,9 @@ function renderCompletedPaymentsPage(metrics) {
   const paidSpends = (state.dailySpends || []);
   const paidWishlist = (state.wishlist || []).filter(w => w.isPaid);
 
-  const totalItemsCount = paidFixed.length + paidBnpl + paidSubs.length + paidCards.length + paidSpends.length + paidWishlist.length;
+  const totalItemsCount = paidFixed.length + paidBnpl.length + paidSubs.length + paidCards.length + paidSpends.length + paidWishlist.length;
 
   container.innerHTML = `
-    <!-- Top Summary Banner -->
     <div class="balance-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(99, 102, 241, 0.15)); border-color: var(--primary);">
       <div class="balance-card-header">
         <span>SETTLED PAYMENTS IN CURRENT CYCLE</span>
@@ -1397,10 +1535,8 @@ function renderCompletedPaymentsPage(metrics) {
       </div>
     </div>
 
-    <!-- Categorized Panels Grid -->
     <div class="completed-cat-grid">
-
-      <!-- 1. Fixed Bills & Loans -->
+      <!-- 1. Fixed Bills -->
       <div class="completed-cat-card">
         <div class="card-head">
           <h3>🏠 Fixed Bills & Loans</h3>
@@ -1422,7 +1558,7 @@ function renderCompletedPaymentsPage(metrics) {
         </div>
       </div>
 
-      <!-- 2. BNPL & Koko Plans -->
+      <!-- 2. BNPL -->
       <div class="completed-cat-card">
         <div class="card-head">
           <h3>🛍️ BNPL & Installments</h3>
@@ -1444,7 +1580,7 @@ function renderCompletedPaymentsPage(metrics) {
         </div>
       </div>
 
-      <!-- 3. Subscriptions & Services -->
+      <!-- 3. Subscriptions -->
       <div class="completed-cat-card">
         <div class="card-head">
           <h3>📱 Subscriptions & Auto-Pay</h3>
@@ -1488,7 +1624,7 @@ function renderCompletedPaymentsPage(metrics) {
         </div>
       </div>
 
-      <!-- 5. Wishlist Items Purchased -->
+      <!-- 5. Wishlist Items -->
       <div class="completed-cat-card">
         <div class="card-head">
           <h3>✨ Wishlist Purchases</h3>
@@ -1510,7 +1646,7 @@ function renderCompletedPaymentsPage(metrics) {
         </div>
       </div>
 
-      <!-- 6. Daily Itemized Spends -->
+      <!-- 6. Daily Spends -->
       <div class="completed-cat-card">
         <div class="card-head">
           <h3>🛒 Daily Itemized Expenses</h3>
@@ -1531,7 +1667,6 @@ function renderCompletedPaymentsPage(metrics) {
           `).join("") : `<p class="text-muted" style="font-size: 0.85rem;">No daily spends logged.</p>`}
         </div>
       </div>
-
     </div>
   `;
 }

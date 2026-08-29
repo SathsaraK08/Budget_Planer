@@ -274,31 +274,31 @@
         <div class="top-header">
           <div>
             <div class="header-title-flex">
-              <h1>BNPL & Koko Plans</h1>
+              <h1 data-label-key="page.bnpl.title">BNPL & Koko Plans</h1>
               <button class="btn-help-pill" onclick="openHelpGuide('bnpl')">❓ Help</button>
             </div>
-            <p class="cycle-subtitle">Active installments, remaining balances, and monthly commitments.</p>
+            <p class="cycle-subtitle" data-label-key="page.bnpl.subtitle">Active installments, remaining balances, and monthly commitments.</p>
           </div>
-          <button class="btn btn-primary" onclick="openBnplModal()">➕ Add BNPL Plan</button>
+          <button class="btn btn-primary" onclick="openBnplModal()" data-label-key="page.bnpl.btn_add">➕ Add BNPL Plan</button>
         </div>
 
         <!-- Pending BNPL Table -->
         <div class="section-card">
           <div class="card-header-flex">
-            <h3>⏳ Pending Installments (Current Cycle)</h3>
+            <h3 data-label-key="page.bnpl.active_heading">⏳ Pending Installments (Current Cycle)</h3>
             <p class="text-muted">Click "Mark Paid" when an installment is settled</p>
           </div>
           <div class="table-responsive">
             <table class="cms-table">
               <thead>
                 <tr>
-                  <th>Status</th>
-                  <th>Item</th>
-                  <th>Platform</th>
-                  <th>Purchaser</th>
-                  <th>Monthly Due</th>
-                  <th>Remaining</th>
-                  <th>Actions</th>
+                  <th data-label-key="table.bnpl.col.status">Status</th>
+                  <th data-label-key="table.bnpl.col.item">Item</th>
+                  <th data-label-key="table.bnpl.col.platform">Platform</th>
+                  <th data-label-key="table.bnpl.col.purchaser">Purchaser</th>
+                  <th data-label-key="table.bnpl.col.monthly">Monthly Due</th>
+                  <th data-label-key="table.bnpl.col.remaining">Remaining</th>
+                  <th data-label-key="table.bnpl.col.actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="bnpl-active-table-body"></tbody>
@@ -309,7 +309,7 @@
         <!-- Completed BNPL on same page -->
         <div class="completed-sub-section">
           <div class="completed-sub-header">
-            <h4><span>✅</span> Settled BNPL Installments in this Cycle</h4>
+            <h4><span>✅</span> <span data-label-key="page.bnpl.completed_heading">Settled BNPL Installments in this Cycle</span></h4>
           </div>
           <div class="table-responsive">
             <table class="cms-table">

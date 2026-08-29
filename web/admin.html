@@ -83,8 +83,8 @@
         <button class="nav-item" data-tab="cms-ai">
           <span class="icon">🤖</span> <span>AI Advisor Studio</span>
         </button>
-        <button class="nav-item" data-tab="cms-guide">
-          <span class="icon">📖</span> <span>Handbook & Guide Hub</span>
+        <button class="nav-item" data-tab="cms-labels">
+          <span class="icon">🔤</span> <span>Labels & Text</span>
         </button>
         <button class="nav-item" data-tab="cms-database">
           <span class="icon">💾</span> <span>Database Tools & JSON</span>
@@ -687,6 +687,22 @@
               Navigate to <strong>Appearance / Themes</strong> in the CMS sidebar. Click any theme palette or write custom CSS in the live editor and click <strong>Save & Publish</strong>. All changes apply immediately across all client browsers without reloading code.
             </p>
           </div>
+      <!-- TAB 9: LABELS & TEXT MANAGER -->
+      <section id="tab-cms-labels" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <h1>🔤 Master Labels & UI Text Manager</h1>
+            <p class="cycle-subtitle">Rename any page title, table header, button label, or subtitle live with zero redeploy.</p>
+          </div>
+          <button class="btn btn-primary" onclick="saveAllUiLabels()">💾 Save All Labels</button>
+        </div>
+
+        <div class="section-card">
+          <div class="card-header-flex">
+            <h3>Custom UI Dictionary</h3>
+            <p class="text-muted">Changes instantly update the customer app and admin panel without touching code.</p>
+          </div>
+          <div id="cms-labels-container"></div>
         </div>
       </section>
 
