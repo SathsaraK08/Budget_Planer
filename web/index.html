@@ -95,6 +95,11 @@
       </nav>
 
       <div class="sidebar-footer">
+        <!-- Supabase cloud sync indicator -->
+        <div style="padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.5rem;">
+          <span id="supabase-sync-indicator" style="font-size: 0.72rem; color: #9CA3AF;">☁️ Supabase connecting...</span>
+          <button class="btn-help-pill" title="Cloud Snapshots & History" onclick="openSnapshotsModal()" style="font-size: 0.7rem;">📸 History</button>
+        </div>
         <div class="member-chip">
           <span class="avatar">S</span>
           <div class="user-info-text">
@@ -608,6 +613,8 @@
 
   <!-- Chart.js CDN for Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- Supabase cloud sync (anon key only) -->
+  <script src="supabase_sync.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

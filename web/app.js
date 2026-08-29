@@ -242,6 +242,10 @@ function loadSavedState() {
 function persistState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    // Also push to Supabase cloud (debounced — won't flood the API)
+    if (typeof debouncedSaveToSupabase === "function") {
+      debouncedSaveToSupabase();
+    }
   } catch (e) {
     console.error("Failed to save state", e);
   }
@@ -2169,9 +2173,34 @@ function renderAnalyticsDashboard() {
   }
 }
 
-// Global DOM Bootstrap
-document.addEventListener("DOMContentLoaded", () => {
+// Global DOM Bootstrap — loads from Supabase cloud on startup
+document.addEventListener("DOMContentLoaded", async () => {
+  // First render with local data for instant startup
   renderApp();
+
+  // Then try to load from Supabase cloud (non-blocking)
+  if (typeof loadFromSupabase === "function") {
+    const cloudState = await loadFromSupabase();
+    if (cloudState && Object.keys(cloudState).length > 0) {
+      // Cloud has newer data — merge and re-render
+      console.info("[App] Applying cloud state");
+      state = {
+        ...defaultState,
+        ...cloudState,
+        household: { ...defaultState.household, ...cloudState.household },
+        uiComponents: { ...defaultState.uiComponents, ...cloudState.uiComponents },
+        uiLabels: { ...defaultUiLabels, ...(cloudState.uiLabels || {}) },
+        forecastSettings: { ...defaultState.forecastSettings, ...cloudState.forecastSettings },
+        bnplPlatforms: (cloudState.bnplPlatforms && cloudState.bnplPlatforms.length) ? cloudState.bnplPlatforms : defaultState.bnplPlatforms,
+        fixedBillCategories: (cloudState.fixedBillCategories && cloudState.fixedBillCategories.length) ? cloudState.fixedBillCategories : defaultState.fixedBillCategories,
+        wishlistCategories: (cloudState.wishlistCategories && cloudState.wishlistCategories.length) ? cloudState.wishlistCategories : defaultState.wishlistCategories,
+        cycleHistory: (cloudState.cycleHistory && cloudState.cycleHistory.length) ? cloudState.cycleHistory : defaultState.cycleHistory
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderApp(); // Re-render with cloud data
+      showToast("☁️ Synced from cloud", "info");
+    }
+  }
 
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {

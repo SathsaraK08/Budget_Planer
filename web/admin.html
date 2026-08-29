@@ -89,6 +89,9 @@
         <button class="nav-item" data-tab="cms-database">
           <span class="icon">💾</span> <span>Database Tools & JSON</span>
         </button>
+        <button class="nav-item" data-tab="cms-supabase">
+          <span class="icon">☁️</span> <span>Supabase Cloud</span>
+        </button>
 
         <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0;"></div>
 
@@ -752,6 +755,102 @@
         </div>
       </section>
 
+      <!-- TAB: SUPABASE CLOUD -->
+      <section id="tab-cms-supabase" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <h1>☁️ Supabase Cloud Sync</h1>
+            <p class="cycle-subtitle">Live cloud database connection status, sync controls, and snapshot history.</p>
+          </div>
+          <button class="btn btn-primary" onclick="testSupabaseConnection()">🔌 Test Connection</button>
+        </div>
+
+        <!-- Connection Status Card -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <h3>🔌 Connection Status</h3>
+            <span id="supabase-sync-indicator" style="font-size: 0.8rem;">☁️ Supabase idle</span>
+          </div>
+          <div id="supabase-test-output" class="explainer-box" style="min-height: 60px; margin: 0.75rem 0;">
+            Click "Test Connection" to verify Supabase is reachable.
+          </div>
+          <div class="explainer-box" style="margin-top: 0.75rem;">
+            <strong>📡 Project Details:</strong><br>
+            <code>Project ID:</code> bwavzxjyrrbfhuhtwjpt<br>
+            <code>Region:</code> ap-southeast-1 (Singapore)<br>
+            <code>API URL:</code> https://bwavzxjyrrbfhuhtwjpt.supabase.co/rest/v1/<br>
+            <code>Key type:</code> anon public (browser-safe) ✅<br>
+            <code>Auth:</code> None yet (open RLS policy — single household mode)
+          </div>
+        </div>
+
+        <!-- Sync Strategy Explainer -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex"><h3>⚙️ How Sync Works</h3></div>
+          <div class="math-formula-box">
+            <strong>Hybrid Strategy (fast + durable):</strong><br><br>
+            1. <strong>App start:</strong> Load from localStorage instantly (zero delay). Then fetch cloud state in background.<br>
+            2. <strong>Conflict resolution:</strong> Whichever has a newer timestamp wins. If cloud is newer → apply + re-render with toast "☁️ Synced from cloud".<br>
+            3. <strong>Every save:</strong> persistState() writes to localStorage immediately, then <em>debounces</em> a cloud push 800ms later (so rapid typing/editing doesn't flood the API).<br>
+            4. <strong>Offline:</strong> If Supabase is unreachable, the sync indicator shows 📴 Offline. All your data is safely in localStorage and will sync next time you're online.<br><br>
+            <strong>Data table:</strong> <code>household_state</code> — 1 row per household, full state stored as JSONB.
+          </div>
+        </div>
+
+        <!-- Snapshot History -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex">
+            <div>
+              <h3>📸 Cloud Snapshots & State History</h3>
+              <p class="text-muted">Manually save named snapshots at any time and restore them — like WordPress Revisions.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openSnapshotsModal()">📸 Open Snapshot Manager</button>
+          </div>
+          <div class="math-formula-box">
+            Every snapshot stores the <strong>entire app state</strong> (all members, incomes, bills, BNPL, spends, settings, labels).<br>
+            Restoring a snapshot replaces the current state and syncs to cloud immediately.<br>
+            Snapshots are stored in the <code>household_state_history</code> table (unlimited retention on Supabase free tier).
+          </div>
+        </div>
+
+        <!-- Manual Sync Actions -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex"><h3>🔧 Manual Sync Actions</h3></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem;">
+            <button class="btn btn-primary" onclick="saveToSupabase(); showToast('Pushed to cloud!', 'success');">
+              ⬆️ Force Push to Cloud
+            </button>
+            <button class="btn btn-secondary" onclick="loadFromSupabase().then(s => { if(s){ state = Object.assign({}, defaultState, s); persistState(); renderApp(); showToast('Pulled from cloud!', 'success'); } else { showToast('Cloud matches local — no changes', 'info'); } });">
+              ⬇️ Force Pull from Cloud
+            </button>
+            <button class="btn btn-secondary" onclick="saveStateSnapshot('Admin manual snapshot — ' + new Date().toLocaleString());">
+              📸 Save Snapshot Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Schema Reference -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex"><h3>🗃️ SQL Schema Reference</h3></div>
+          <div class="math-formula-box" style="font-family: 'Fira Code', monospace; font-size: 0.8rem; white-space: pre-wrap;">CREATE TABLE household_state (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id text NOT NULL DEFAULT 'default',
+  state_json   jsonb NOT NULL,
+  app_version  text NOT NULL DEFAULT '5',
+  updated_at   timestamptz DEFAULT now(),
+  UNIQUE(household_id)
+);
+
+CREATE TABLE household_state_history (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id text NOT NULL DEFAULT 'default',
+  state_json   jsonb NOT NULL,
+  saved_at     timestamptz DEFAULT now(),
+  note         text
+);</div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -770,6 +869,8 @@
     </div>
   </div>
 
+  <script src="supabase_sync.js"></script>
   <script src="app.js"></script>
+
 </body>
 </html>
