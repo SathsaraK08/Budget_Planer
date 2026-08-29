@@ -1,0 +1,34 @@
+name: household_budget_planner
+description: "Household Budget Planner & Forecasting App for 25th-to-25th salary cycles (Web, iOS, Android)."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management & DI
+  provider: ^6.1.2
+  
+  # Backend & Supabase
+  supabase_flutter: ^2.5.6
+  
+  # UI & Charts
+  fl_chart: ^0.68.0
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  intl: ^0.19.0
+  uuid: ^4.4.0
+  http: ^1.2.1
+  shared_preferences: ^2.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

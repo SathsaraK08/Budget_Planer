@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="html-head-title">HomeBudget | 25th Cycle Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-emerald">
+  <div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" id="app-logo-icon">💰</div>
+        <div>
+          <h2 id="sidebar-app-name">HomeBudget</h2>
+          <span class="cycle-tag" id="sidebar-cycle-tag">25th-to-25th Cycle</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="icon">📊</span> <span class="nav-label" data-label-key="nav_dashboard">Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="daily-spends">
+          <span class="icon">⚡</span> <span class="nav-label" data-label-key="nav_daily_spends">Daily Spends</span>
+        </button>
+        <button class="nav-item" data-tab="installments">
+          <span class="icon">🛍️</span> <span class="nav-label" data-label-key="nav_installments">BNPL & Koko</span>
+        </button>
+        <button class="nav-item" data-tab="fixed-bills">
+          <span class="icon">🏠</span> <span class="nav-label" data-label-key="nav_fixed_bills">Fixed Bills & Loans</span>
+        </button>
+        <button class="nav-item" data-tab="forecast">
+          <span class="icon">🔮</span> <span class="nav-label" data-label-key="nav_forecast">Survival Forecast</span>
+        </button>
+        <button class="nav-item" data-tab="wishlist">
+          <span class="icon">✨</span> <span class="nav-label" data-label-key="nav_wishlist">Wishlist</span>
+        </button>
+        <button class="nav-item" data-tab="subscriptions">
+          <span class="icon">📱</span> <span class="nav-label" data-label-key="nav_subscriptions">Subscriptions</span>
+        </button>
+        
+        <div class="nav-divider"></div>
+        
+        <!-- ADMIN CMS PORTAL LINK -->
+        <button class="nav-item nav-item-admin" data-tab="admin-cms" id="nav-btn-admin-cms">
+          <span class="icon">👑</span> <strong>Admin CMS Portal</strong>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="member-chip" id="user-profile-widget">
+          <span class="avatar" id="user-avatar-badge">S</span>
+          <div class="user-info-text">
+            <div class="member-name" id="user-display-name">Sathsara (Admin)</div>
+            <div class="member-role" id="user-display-email">admin@homebudget.lk</div>
+          </div>
+          <button class="btn-icon" id="btn-auth-action" title="Switch User / Admin Login">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content View -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div>
+          <div class="header-title-flex">
+            <h1 id="page-title">Cycle Overview</h1>
+            <span class="badge badge-admin" id="admin-badge-indicator">Admin Access</span>
+          </div>
+          <p class="cycle-subtitle" id="cycle-range-text">Aug 25 – Sep 25, 2026 • <strong>26 Days Remaining</strong></p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-admin" id="btn-open-cms">
+            <span>👑</span> Admin CMS
+          </button>
+          <button class="btn btn-secondary" id="btn-forecast-modal">
+            <span>🛡️</span> Survival Check
+          </button>
+          <button class="btn btn-primary" id="btn-quick-spend">
+            <span>➕</span> Log Daily Spend
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <!-- Remaining Balance Banner -->
+        <div class="balance-card">
+          <div class="balance-card-header">
+            <span id="lbl-balance-header">REALTIME REMAINING SPENDABLE BALANCE</span>
+            <span class="badge badge-success" id="forecast-badge">✅ Next Month Surplus</span>
+          </div>
+          <div class="balance-amount" id="remaining-balance-display">Rs. 166,426</div>
+          <div class="balance-footer">
+            <span>Projected Savings at Cycle End: <strong id="projected-savings-display">Rs. 165,626</strong></span>
+            <span>Total Income: <strong id="total-income-display">Rs. 399,585</strong></span>
+          </div>
+        </div>
+
+        <!-- AI Guidance Card (With Safe Fallback) -->
+        <div class="ai-card" id="ai-guidance-card">
+          <div class="ai-header">
+            <span class="ai-icon">✨</span>
+            <strong>Deterministic Financial Advisor</strong>
+            <button class="btn-icon" id="btn-refresh-ai" title="Refresh Advice">🔄</button>
+          </div>
+          <p id="ai-advice-text">
+            Analyzing your committed bills and Koko installment obligations...
+          </p>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Total Cycle Income</span>
+              <span class="metric-icon income">💵</span>
+            </div>
+            <div class="metric-value" id="metric-income">Rs. 399,585</div>
+            <div class="metric-sub">Sathsara (249.5k) + Dhiyan (150k)</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Committed Outgoings</span>
+              <span class="metric-icon committed">📑</span>
+            </div>
+            <div class="metric-value" id="metric-committed">Rs. 221,651</div>
+            <div class="metric-sub">Rent, Loan, Koko, CC, Subs</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Daily Spent so far</span>
+              <span class="metric-icon spent">🛒</span>
+            </div>
+            <div class="metric-value" id="metric-spent">Rs. 11,508</div>
+            <div class="metric-sub" id="metric-spent-sub">Cash: Rs. 606 • Card: Rs. 10,902</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Planned Wishlist</span>
+              <span class="metric-icon wishlist">🎁</span>
+            </div>
+            <div class="metric-value" id="metric-wishlist">Rs. 800</div>
+            <div class="metric-sub">Potato Smasher (Rs. 800)</div>
+          </div>
+        </div>
+
+        <!-- Outgoings Breakdown Table -->
+        <div class="section-card">
+          <h3>Cycle Outgoings Breakdown</h3>
+          <div class="breakdown-list">
+            <div class="breakdown-item">
+              <span class="dot red"></span>
+              <span class="name">Fixed Bills (Apartment Rent, ECB+Water, Personal Loan, Gold Loan)</span>
+              <strong id="bk-fixed">Rs. 146,044</strong>
+            </div>
+            <div class="breakdown-item">
+              <span class="dot amber"></span>
+              <span class="name">BNPL Installments (Koko, Mintpay, PayZy)</span>
+              <strong id="bk-installments">Rs. 15,573</strong>
+            </div>
+            <div class="breakdown-item">
+              <span class="dot blue"></span>
+              <span class="name">Credit Card Statements (Combank, Sampath)</span>
+              <strong id="bk-cc">Rs. 45,000</strong>
+            </div>
+            <div class="breakdown-item">
+              <span class="dot purple"></span>
+              <span class="name">Subscriptions (Dialog Router & Mobile, Netflix, Apple iCloud/Music)</span>
+              <strong id="bk-subs">Rs. 15,034</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Daily Spends -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <h3>Recent Daily Spends</h3>
+            <button class="btn btn-sm btn-secondary" onclick="switchTab('daily-spends')">View & Manage All</button>
+          </div>
+          <div id="dashboard-recent-spends" class="spends-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: DAILY SPENDS (FULL USER CRUD) -->
+      <section id="tab-daily-spends" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>Daily Expense Tracker</h3>
+              <p class="text-muted">Itemized cash and card logs with full Edit & Delete controls</p>
+            </div>
+            <button class="btn btn-primary" id="btn-add-spend-page">➕ Log Daily Spend</button>
+          </div>
+          <div id="daily-spends-container"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: INSTALLMENTS (FULL USER CRUD) -->
+      <section id="tab-installments" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>BNPL & Installments Tracker</h3>
+              <p class="text-muted">Koko, Mintpay, Payzy & Bank installment schedules with in-place Edit & Delete</p>
+            </div>
+            <button class="btn btn-primary" onclick="openBnplModal()">➕ Add Plan</button>
+          </div>
+          <div id="installments-container" class="installments-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: FIXED BILLS (FULL USER CRUD) -->
+      <section id="tab-fixed-bills" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>Fixed Payments & Loans</h3>
+              <p class="text-muted">Rent, ECB, Personal Loan, Gold Loan interest with in-place Edit & Delete</p>
+            </div>
+            <button class="btn btn-primary" onclick="openBillModal()">➕ Add Fixed Bill</button>
+          </div>
+          <div id="fixed-bills-container" class="bills-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 5: FORECAST -->
+      <section id="tab-forecast" class="tab-pane">
+        <div class="forecast-hero" id="forecast-hero-box">
+          <div class="forecast-badge-lg" id="forecast-verdict-badge">SURVIVABILITY CHECK</div>
+          <h2 id="forecast-verdict-title">Next Cycle Surplus: Rs. 223,130</h2>
+          <p id="forecast-verdict-desc">
+            Your regular salaries comfortably cover recurring bills and continuing BNPL installments.
+          </p>
+        </div>
+
+        <div class="metrics-grid" style="margin-top: 1.5rem;">
+          <div class="metric-card">
+            <div class="metric-header"><span>Estimated Next Income</span></div>
+            <div class="metric-value" id="fc-income">Rs. 399,585</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span>Next Committed Costs</span></div>
+            <div class="metric-value" id="fc-committed">Rs. 176,455</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span>Ending Installments</span></div>
+            <div class="metric-value text-success" id="fc-ending">2 Plans Ending 🎉</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span>Required Survival Buffer</span></div>
+            <div class="metric-value" id="fc-buffer">Rs. 0 (Safe)</div>
+            <div class="metric-sub" id="fc-buffer-sub">Based on 5% safety margin</div>
+          </div>
+        </div>
+
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <h3>Next Cycle Cost Projection Formula</h3>
+          <div class="breakdown-list" id="forecast-details-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 6: WISHLIST (FULL USER CRUD) -->
+      <section id="tab-wishlist" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>Wishlist & "Things Need to Buy"</h3>
+              <p class="text-muted">Categorized items with in-place Edit & Delete. Check to plan for active cycle.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openWishlistModal()">➕ Add Wishlist Item</button>
+          </div>
+          <div id="wishlist-container"></div>
+        </div>
+      </section>
+
+      <!-- TAB 7: SUBSCRIPTIONS & CARDS (FULL USER CRUD) -->
+      <section id="tab-subscriptions" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>Subscriptions & Auto-Pay Bills</h3>
+              <p class="text-muted">Dialog router/mobile, Netflix, Apple services with in-place Edit & Delete</p>
+            </div>
+            <button class="btn btn-primary" onclick="openSubModal()">➕ Add Subscription</button>
+          </div>
+          <div id="subscriptions-container" class="bills-list"></div>
+        </div>
+
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex">
+            <div>
+              <h3>Credit Cards</h3>
+              <p class="text-muted">Statement dues with in-place Edit & Delete</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCardModal()">➕ Add Card</button>
+          </div>
+          <div id="credit-cards-container" class="bills-list"></div>
+        </div>
+      </section>
+
+      <!-- ==============================================================================
+           TAB 8: SCOPED ADMIN CMS CONTROL PANEL
+           ============================================================================== -->
+      <section id="tab-admin-cms" class="tab-pane">
+        <div class="cms-header-card">
+          <div class="cms-badge">👑 SCOPED ADMIN CMS CONTROL PANEL</div>
+          <h2>Household Configuration & Customization</h2>
+          <p class="text-muted">
+            Customize theme presets, editable UI labels, forecast parameters, member salaries, and data backup with zero redeploy.
+          </p>
+        </div>
+
+        <!-- CMS Sub-Navigation Tabs -->
+        <div class="cms-nav-bar">
+          <button class="cms-nav-btn active" data-cms-view="cms-theme">🎨 Theme Presets</button>
+          <button class="cms-nav-btn" data-cms-view="cms-labels">🏷️ Editable Labels</button>
+          <button class="cms-nav-btn" data-cms-view="cms-forecast-params">📐 Forecast Parameters</button>
+          <button class="cms-nav-btn" data-cms-view="cms-members">👥 Members & Salaries</button>
+          <button class="cms-nav-btn" data-cms-view="cms-system">⚙️ App & Supabase Keys</button>
+          <button class="cms-nav-btn" data-cms-view="cms-backup">💾 Backup & JSON DB</button>
+        </div>
+
+        <!-- CMS VIEW 1: THEME PRESETS -->
+        <div id="cms-theme" class="cms-view-pane active">
+          <div class="section-card">
+            <h3>Preset Color Themes</h3>
+            <p class="text-muted">Select a curated palette. Changes apply instantly across the entire application without any code redeploy.</p>
+            
+            <div class="theme-presets-grid" id="theme-presets-selector">
+              <div class="theme-card active" data-theme="theme-emerald" onclick="selectThemePreset('theme-emerald')">
+                <div class="theme-swatch emerald"></div>
+                <div class="theme-info">
+                  <strong>Emerald Forest</strong>
+                  <small>Default Vibrant Green</small>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme="theme-sapphire" onclick="selectThemePreset('theme-sapphire')">
+                <div class="theme-swatch sapphire"></div>
+                <div class="theme-info">
+                  <strong>Sapphire Ocean</strong>
+                  <small>Deep Royal Blue</small>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme="theme-amethyst" onclick="selectThemePreset('theme-amethyst')">
+                <div class="theme-swatch amethyst"></div>
+                <div class="theme-info">
+                  <strong>Royal Amethyst</strong>
+                  <small>Purple & Indigo</small>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme="theme-amber" onclick="selectThemePreset('theme-amber')">
+                <div class="theme-swatch amber"></div>
+                <div class="theme-info">
+                  <strong>Amber Sunset</strong>
+                  <small>Warm Golden Glow</small>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme="theme-crimson" onclick="selectThemePreset('theme-crimson')">
+                <div class="theme-swatch crimson"></div>
+                <div class="theme-info">
+                  <strong>Crimson Ruby</strong>
+                  <small>Bold Scarlet Red</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 1.5rem;">
+              <div class="form-group">
+                <label>App Name</label>
+                <input type="text" id="cms-app-name-input" class="form-control" value="HomeBudget">
+              </div>
+              <div class="form-group">
+                <label>Logo Icon (Emoji)</label>
+                <input type="text" id="cms-app-logo-input" class="form-control" value="💰">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveThemeSettings()">💾 Apply Theme & App Branding</button>
+          </div>
+        </div>
+
+        <!-- CMS VIEW 2: EDITABLE UI LABELS -->
+        <div id="cms-labels" class="cms-view-pane">
+          <div class="section-card">
+            <h3>Editable Section Titles & UI Labels</h3>
+            <p class="text-muted">Customize section titles, buttons, and display terminology directly.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Dashboard Title</label>
+                <input type="text" id="lbl-input-dashboard" class="form-control" value="Cycle Overview">
+              </div>
+              <div class="form-group">
+                <label>Remaining Balance Header</label>
+                <input type="text" id="lbl-input-balance" class="form-control" value="REALTIME REMAINING SPENDABLE BALANCE">
+              </div>
+              <div class="form-group">
+                <label>Survival Forecast Title</label>
+                <input type="text" id="lbl-input-forecast" class="form-control" value="Forward Survival Forecast">
+              </div>
+              <div class="form-group">
+                <label>Currency Symbol</label>
+                <input type="text" id="lbl-input-currency" class="form-control" value="Rs.">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveUiLabels()">💾 Save UI Labels</button>
+          </div>
+        </div>
+
+        <!-- CMS VIEW 3: TUNABLE FORECAST PARAMETERS -->
+        <div id="cms-forecast-params" class="cms-view-pane">
+          <div class="section-card">
+            <h3>Tunable Survival Forecast Parameters</h3>
+            <p class="text-muted">
+              Adjust mathematical thresholds used by the deterministic forecast engine without editing calculation code.
+            </p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Safety Contingency Reserve (%)</label>
+                <input type="number" id="fc-reserve-pct-input" class="form-control" value="5" step="0.5">
+                <small class="text-muted">Percentage of estimated income to mandate as buffer in case of shortfall.</small>
+              </div>
+              <div class="form-group">
+                <label>Required Runway Days</label>
+                <input type="number" id="fc-buffer-days-input" class="form-control" value="30">
+                <small class="text-muted">Target survival window in days.</small>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveForecastSettings()">💾 Save Forecast Parameters</button>
+          </div>
+        </div>
+
+        <!-- CMS VIEW 4: MEMBERS & SALARIES -->
+        <div id="cms-members" class="cms-view-pane">
+          <div class="section-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Household Members & Salaries</h3>
+                <p class="text-muted">Manage member accounts, roles, and regular base salaries.</p>
+              </div>
+              <button class="btn btn-primary" onclick="openMemberModal()">➕ Add Member</button>
+            </div>
+            <div class="table-responsive">
+              <table class="cms-table">
+                <thead>
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Role</th>
+                    <th>Regular Monthly Salary</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cms-members-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- CMS VIEW 5: APP & KEYS -->
+        <div id="cms-system" class="cms-view-pane">
+          <div class="section-card">
+            <h3>Core System & Cloud Keys</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Cycle Start Day of Month (Default: 25)</label>
+                <input type="number" id="cms-cycle-day" class="form-control" value="25">
+              </div>
+              <div class="form-group">
+                <label>Gemini AI Advisor Key (Free Tier)</label>
+                <input type="password" id="cms-gemini-key" class="form-control" placeholder="AIzaSy...">
+              </div>
+              <div class="form-group">
+                <label>Supabase Project URL</label>
+                <input type="text" id="cms-supabase-url" class="form-control" placeholder="https://xyz.supabase.co">
+              </div>
+              <div class="form-group">
+                <label>Supabase Anon Key</label>
+                <input type="password" id="cms-supabase-key" class="form-control" placeholder="eyJhbGciOi...">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveCmsSystemSettings()">💾 Save System Settings</button>
+          </div>
+        </div>
+
+        <!-- CMS VIEW 6: BACKUP & RESTORE -->
+        <div id="cms-backup" class="cms-view-pane">
+          <div class="section-card">
+            <h3>💾 Database Backup & Export</h3>
+            <p class="text-muted">Export your entire household budget database as a JSON file, or restore from a backup.</p>
+            <div class="header-actions" style="margin-top: 1rem;">
+              <button class="btn btn-primary" onclick="exportDatabaseJson()">📥 Download Full JSON Backup</button>
+              <button class="btn btn-secondary" onclick="document.getElementById('import-file-input').click()">📤 Restore from JSON File</button>
+              <input type="file" id="import-file-input" style="display: none;" accept=".json" onchange="importDatabaseJson(event)">
+              <button class="btn btn-secondary" style="color: var(--danger);" onclick="resetToSampleData()">🔄 Reset to Notebook Sample Data</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- AUTH MODAL: FIRST-RUN SETUP / LOGIN -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="auth-modal-title">🔐 Household Access</h3>
+        <button class="btn-close" id="auth-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="auth-first-run-banner" style="display: none;" class="demo-auth-box">
+          👑 <strong>First-Run Admin Setup:</strong> Register the primary admin account for this household.
+        </div>
+
+        <div class="form-group" id="auth-name-group" style="display: none;">
+          <label>Your Name</label>
+          <input type="text" id="auth-name-input" class="form-control" placeholder="e.g. Sathsara">
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="auth-email-input" class="form-control" value="admin@homebudget.lk">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="auth-password-input" class="form-control" value="admin123">
+        </div>
+
+        <div class="demo-auth-box" id="auth-quick-login-box">
+          <span>⚡ Instant Access:</span>
+          <button class="btn btn-sm btn-secondary" onclick="quickLoginDemo()">Log in as Admin</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="auth-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="auth-submit-btn" onclick="handleAuthSubmit()">Log In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Spend Modal Dialog -->
+  <div class="modal-overlay" id="spend-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚡ Quick Log Daily Spend</h3>
+        <button class="btn-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="spend-amount-input" class="form-control form-control-lg" placeholder="0.00" autofocus>
+        </div>
+        <div class="form-group">
+          <label>Description / Item</label>
+          <input type="text" id="spend-title-input" class="form-control" placeholder="e.g. Food City, PickMe Tuk, Saloon">
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div class="chip-group" id="payment-method-chips">
+            <button class="chip active" data-method="Cash">Cash</button>
+            <button class="chip" data-method="Commercial Debit Card">Commercial Card</button>
+            <button class="chip" data-method="Sampath Card">Sampath Card</button>
+            <button class="chip" data-method="Fund Transfer">Fund Transfer</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <div class="chip-group" id="category-chips">
+            <button class="chip active" data-cat="Groceries">Groceries</button>
+            <button class="chip" data-cat="Transport / PickMe">Transport / PickMe</button>
+            <button class="chip" data-cat="Food & Dining">Food & Dining</button>
+            <button class="chip" data-cat="Personal Care & Saloon">Saloon & Care</button>
+            <button class="chip" data-cat="Health & Gym">Gym</button>
+            <button class="chip" data-cat="Other / Cash Reserve">Reserve / Transfer</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-spend-btn">Save Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERIC ITEM EDIT / ADD MODAL -->
+  <div class="modal-overlay" id="cms-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="cms-modal-title">Item Editor</h3>
+        <button class="btn-close" onclick="closeCmsModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="cms-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCmsModal()">Cancel</button>
+        <button class="btn btn-primary" id="cms-modal-save-btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
