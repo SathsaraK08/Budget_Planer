@@ -24,6 +24,15 @@
       <button class="wp-bar-item wp-bar-btn-primary" onclick="openSpendModal()">
         <span>➕</span> Log Spend
       </button>
+      <button class="wp-bar-item" onclick="openBillModal()">
+        <span>➕</span> Fixed Bill
+      </button>
+      <button class="wp-bar-item" onclick="openBnplModal()">
+        <span>➕</span> BNPL Plan
+      </button>
+      <button class="wp-bar-item" onclick="openWishlistModal()">
+        <span>➕</span> Wishlist
+      </button>
     </div>
     <div class="wp-bar-right">
       <button class="btn-help-pill" onclick="openHelpGuide('cycle')">
@@ -50,6 +59,10 @@
       <nav class="nav-links">
         <button class="nav-item active" data-tab="dashboard">
           <span class="icon">📊</span> <span class="nav-label" data-label-key="nav_dashboard">Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="completed-payments">
+          <span class="icon">✅</span> <span class="nav-label" data-label-key="nav_completed">Completed Payments</span>
+          <span class="nav-badge badge-completed-count">0</span>
         </button>
         <button class="nav-item" data-tab="daily-spends">
           <span class="icon">⚡</span> <span class="nav-label" data-label-key="nav_daily_spends">Daily Spends</span>
@@ -223,7 +236,22 @@
         </div>
       </section>
 
-      <!-- TAB 2: DAILY SPENDS -->
+      <!-- TAB 2: DEDICATED COMPLETED PAYMENTS PAGE (CATEGORIZED) -->
+      <section id="tab-completed-payments" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>✅ Completed & Settled Payments</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('completed')">❓ Help</button>
+            </div>
+            <p class="cycle-subtitle">Master record of all payments settled in this cycle, organized by originating category.</p>
+          </div>
+        </div>
+
+        <div id="completed-payments-container"></div>
+      </section>
+
+      <!-- TAB 3: DAILY SPENDS -->
       <section id="tab-daily-spends" class="tab-pane">
         <div class="top-header">
           <div>
@@ -241,7 +269,7 @@
         </div>
       </section>
 
-      <!-- TAB 3: INSTALLMENTS -->
+      <!-- TAB 4: BNPL & KOKO PLANS (WITH MARK PAID & COMPLETED LIST) -->
       <section id="tab-installments" class="tab-pane">
         <div class="top-header">
           <div>
@@ -251,46 +279,81 @@
             </div>
             <p class="cycle-subtitle">Active installments, remaining balances, and monthly commitments.</p>
           </div>
-          <button class="btn btn-primary" onclick="openBnplModal()">➕ Add Plan</button>
+          <button class="btn btn-primary" onclick="openBnplModal()">➕ Add BNPL Plan</button>
         </div>
 
+        <!-- Pending BNPL Table -->
         <div class="section-card">
+          <div class="card-header-flex">
+            <h3>⏳ Pending Installments (Current Cycle)</h3>
+            <p class="text-muted">Click "Mark Paid" when an installment is settled</p>
+          </div>
           <div class="table-responsive">
             <table class="cms-table">
               <thead>
                 <tr>
+                  <th>Status</th>
                   <th>Item</th>
                   <th>Platform</th>
                   <th>Purchaser</th>
-                  <th>Monthly Installment</th>
+                  <th>Monthly Due</th>
                   <th>Remaining</th>
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="cms-bnpl-table-body"></tbody>
+              <tbody id="bnpl-active-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Completed BNPL on same page -->
+        <div class="completed-sub-section">
+          <div class="completed-sub-header">
+            <h4><span>✅</span> Settled BNPL Installments in this Cycle</h4>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Item</th>
+                  <th>Platform</th>
+                  <th>Purchaser</th>
+                  <th>Monthly Paid</th>
+                  <th>Remaining</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bnpl-completed-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- TAB 4: FIXED BILLS -->
+      <!-- TAB 5: FIXED BILLS & LOANS (WITH MARK PAID & COMPLETED LIST) -->
       <section id="tab-fixed-bills" class="tab-pane">
         <div class="top-header">
           <div>
             <div class="header-title-flex">
-              <h1>Fixed Bills & Loans</h1>
+              <h1>Fixed Bills & Bank Loans</h1>
               <button class="btn-help-pill" onclick="openHelpGuide('cycle')">❓ Help</button>
             </div>
             <p class="cycle-subtitle">Mandatory recurring payments due on or around salary day.</p>
           </div>
-          <button class="btn btn-primary" onclick="openBillModal()">➕ Add Bill</button>
+          <button class="btn btn-primary" onclick="openBillModal()">➕ Add Fixed Bill</button>
         </div>
 
+        <!-- Pending Bills Table -->
         <div class="section-card">
+          <div class="card-header-flex">
+            <h3>⏳ Pending Fixed Payments (Current Cycle)</h3>
+            <p class="text-muted">Click "Mark Paid" to record deduction and strike-through</p>
+          </div>
           <div class="table-responsive">
             <table class="cms-table">
               <thead>
                 <tr>
+                  <th>Status</th>
                   <th>Bill Name</th>
                   <th>Category</th>
                   <th>Due Day</th>
@@ -298,13 +361,35 @@
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="cms-bills-table-body"></tbody>
+              <tbody id="bills-active-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Completed Bills on same page -->
+        <div class="completed-sub-section">
+          <div class="completed-sub-header">
+            <h4><span>✅</span> Settled Fixed Bills in this Cycle</h4>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Bill Name</th>
+                  <th>Category</th>
+                  <th>Due Day</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bills-completed-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- TAB 5: SURVIVAL FORECAST -->
+      <!-- TAB 6: SURVIVAL FORECAST -->
       <section id="tab-forecast" class="tab-pane">
         <div class="top-header">
           <div>
@@ -340,7 +425,7 @@
         </div>
       </section>
 
-      <!-- TAB 6: WISHLIST -->
+      <!-- TAB 7: WISHLIST (FULL CRUD + MARK BOUGHT) -->
       <section id="tab-wishlist" class="tab-pane">
         <div class="top-header">
           <div>
@@ -348,39 +433,60 @@
               <h1>Wishlist & Planned Purchases</h1>
               <button class="btn-help-pill" onclick="openHelpGuide('cycle')">❓ Help</button>
             </div>
-            <p class="cycle-subtitle">Items prioritized for purchase when surplus allows.</p>
+            <p class="cycle-subtitle">Items prioritized for purchase when surplus allows with full CRUD controls.</p>
           </div>
           <button class="btn btn-primary" onclick="openWishlistModal()">➕ Add Wishlist Item</button>
         </div>
 
+        <!-- Active Wishlist Table -->
         <div class="section-card">
-          <div class="breakdown-list">
-            <div class="breakdown-item">
-              <div>
-                <strong>Potato Smasher (Rs. 800)</strong>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Kitchen • Priority: HIGH</div>
-              </div>
-              <span class="badge badge-success">✅ Planned This Cycle</span>
-            </div>
-            <div class="breakdown-item">
-              <div>
-                <strong>Litro Gas Cylinder Refill (Rs. 4,200)</strong>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Kitchen • Priority: HIGH</div>
-              </div>
-              <span class="badge badge-success">✅ Planned This Cycle</span>
-            </div>
-            <div class="breakdown-item">
-              <div>
-                <strong>Air Fryer / Convection Oven (Rs. 38,000)</strong>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Kitchen • Priority: MEDIUM</div>
-              </div>
-              <span class="badge">Deferred to Next Cycle</span>
-            </div>
+          <div class="card-header-flex">
+            <h3>⏳ Pending Wishlist Items</h3>
+            <p class="text-muted">Plan items for current cycle or mark as bought</p>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Estimated Cost</th>
+                  <th>Planning</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="wishlist-active-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Completed / Bought Wishlist -->
+        <div class="completed-sub-section">
+          <div class="completed-sub-header">
+            <h4><span>✅</span> Purchased Wishlist Items</h4>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Cost Paid</th>
+                  <th>Planning</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="wishlist-completed-table-body"></tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      <!-- TAB 7: SUBSCRIPTIONS -->
+      <!-- TAB 8: SUBSCRIPTIONS & CREDIT CARDS (FULL CRUD + MARK PAID) -->
       <section id="tab-subscriptions" class="tab-pane">
         <div class="top-header">
           <div>
@@ -388,37 +494,74 @@
               <h1>Subscriptions & Recurring Cards</h1>
               <button class="btn-help-pill" onclick="openHelpGuide('cycle')">❓ Help</button>
             </div>
-            <p class="cycle-subtitle">Digital services, mobile packages, broadband routers.</p>
+            <p class="cycle-subtitle">Digital services, mobile packages, broadband routers, and cards.</p>
           </div>
-          <button class="btn btn-primary" onclick="openSubModal()">➕ Add Subscription</button>
+          <div class="header-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openCardModal()">➕ Add Credit Card</button>
+            <button class="btn btn-primary btn-sm" onclick="openSubModal()">➕ Add Subscription</button>
+          </div>
         </div>
 
+        <!-- Active Subscriptions Table -->
         <div class="section-card">
-          <div class="breakdown-list">
-            <div class="breakdown-item">
-              <span class="name">Dialog Broadband Router (Billing Day: 24th)</span>
-              <strong>Rs. 5,000</strong>
-            </div>
-            <div class="breakdown-item">
-              <span class="name">Office Phone Loan (Billing Day: 24th)</span>
-              <strong>Rs. 4,500</strong>
-            </div>
-            <div class="breakdown-item">
-              <span class="name">Netflix Basic ($3.99)</span>
-              <strong>Rs. 1,400</strong>
-            </div>
-            <div class="breakdown-item">
-              <span class="name">Dialog Mobile (Billing Day: 24th)</span>
-              <strong>Rs. 2,054</strong>
-            </div>
-            <div class="breakdown-item">
-              <span class="name">Apple Music ($3.29) & iCloud ($2.99)</span>
-              <strong>Rs. 2,080</strong>
-            </div>
-            <div class="breakdown-item">
-              <span class="name">YouTube Premium (Billing Day: 28th)</span>
-              <strong>Rs. 1,200</strong>
-            </div>
+          <div class="card-header-flex">
+            <h3>📱 Active Subscriptions (Current Cycle)</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Subscription Name</th>
+                  <th>Billing Day</th>
+                  <th>Monthly Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subs-active-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Completed Subscriptions -->
+        <div class="completed-sub-section">
+          <div class="completed-sub-header">
+            <h4><span>✅</span> Settled Subscriptions in this Cycle</h4>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Subscription Name</th>
+                  <th>Billing Day</th>
+                  <th>Amount Paid</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subs-completed-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Credit Cards Table -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex">
+            <h3>💳 Credit Card Statements</h3>
+            <button class="btn btn-secondary btn-sm" onclick="openCardModal()">➕ Add Card</button>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Bank & Card</th>
+                  <th>Statement Due Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cards-table-body"></tbody>
+            </table>
           </div>
         </div>
       </section>
