@@ -2,7 +2,7 @@
 // 100% DETERMINISTIC HOUSEHOLD BUDGET ENGINE & WORDPRESS-GRADE ADMIN CMS v4.5
 // ==============================================================================
 
-const STORAGE_KEY = "household_budget_master_db_v4_5";
+const STORAGE_KEY = "household_budget_master_db_v5";
 
 const defaultUiLabels = {
   // Navigation
@@ -96,6 +96,33 @@ const defaultState = {
     showWishlistSection: true
   },
   uiLabels: { ...defaultUiLabels },
+  // Dynamic lookup tables (Items 2 & 3 — all dropdowns read from these)
+  bnplPlatforms: [
+    { id: "bp_1", name: "Koko", color: "#F59E0B" },
+    { id: "bp_2", name: "Mintpay", color: "#6366F1" },
+    { id: "bp_3", name: "PayZy", color: "#EC4899" }
+  ],
+  fixedBillCategories: [
+    { id: "fc_1", name: "Housing" },
+    { id: "fc_2", name: "Utilities" },
+    { id: "fc_3", name: "Loan" },
+    { id: "fc_4", name: "Insurance" },
+    { id: "fc_5", name: "Telecom" },
+    { id: "fc_6", name: "Other Fixed" }
+  ],
+  wishlistCategories: [
+    { id: "wc_1", name: "Home Needs", sortOrder: 1 },
+    { id: "wc_2", name: "My Needs (Sathsara)", sortOrder: 2 },
+    { id: "wc_3", name: "Partner Needs (Dhiyan)", sortOrder: 3 },
+    { id: "wc_4", name: "Kitchen", sortOrder: 4 },
+    { id: "wc_5", name: "Bathroom", sortOrder: 5 },
+    { id: "wc_6", name: "Tech & Gadgets", sortOrder: 6 }
+  ],
+  cycleHistory: [
+    { cycle: "Jun 25–Jul 25, 2026", income: 399585, committed: 248000, spent: 38200, saved: 113385 },
+    { cycle: "Jul 25–Aug 25, 2026", income: 399585, committed: 251745, spent: 42100, saved: 105740 },
+    { cycle: "Aug 25–Sep 25, 2026", income: 399585, committed: 251745, spent: 30205, saved: 117635 }
+  ],
   categories: [
     { id: "cat_1", name: "Groceries", color: "#10B981", monthlyBudget: 45000 },
     { id: "cat_2", name: "Transport / PickMe", color: "#F59E0B", monthlyBudget: 15000 },
@@ -199,7 +226,11 @@ function loadSavedState() {
         household: { ...defaultState.household, ...parsed.household },
         uiComponents: { ...defaultState.uiComponents, ...parsed.uiComponents },
         uiLabels: { ...defaultUiLabels, ...(parsed.uiLabels || {}) },
-        forecastSettings: { ...defaultState.forecastSettings, ...parsed.forecastSettings }
+        forecastSettings: { ...defaultState.forecastSettings, ...parsed.forecastSettings },
+        bnplPlatforms: parsed.bnplPlatforms && parsed.bnplPlatforms.length ? parsed.bnplPlatforms : defaultState.bnplPlatforms,
+        fixedBillCategories: parsed.fixedBillCategories && parsed.fixedBillCategories.length ? parsed.fixedBillCategories : defaultState.fixedBillCategories,
+        wishlistCategories: parsed.wishlistCategories && parsed.wishlistCategories.length ? parsed.wishlistCategories : defaultState.wishlistCategories,
+        cycleHistory: parsed.cycleHistory && parsed.cycleHistory.length ? parsed.cycleHistory : defaultState.cycleHistory
       };
     }
   } catch (e) {
@@ -595,11 +626,7 @@ function openBillModal(bill = null) {
     <div class="form-group">
       <label>Category</label>
       <select id="b-cat" class="form-control">
-        <option value="Housing" ${isEdit && bill.category === 'Housing' ? 'selected' : ''}>Housing & Rent</option>
-        <option value="Utilities" ${isEdit && bill.category === 'Utilities' ? 'selected' : ''}>Utilities (ECB/Water)</option>
-        <option value="Loan" ${isEdit && bill.category === 'Loan' ? 'selected' : ''}>Bank Loan / Gold Loan</option>
-        <option value="Insurance" ${isEdit && bill.category === 'Insurance' ? 'selected' : ''}>Insurance</option>
-        <option value="Other" ${isEdit && bill.category === 'Other' ? 'selected' : ''}>Other Fixed</option>
+        ${(state.fixedBillCategories || defaultState.fixedBillCategories).map(c => `<option value="${c.name}" ${isEdit && bill.category === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
@@ -652,10 +679,7 @@ function openBnplModal(inst = null) {
     <div class="form-group">
       <label>Platform</label>
       <select id="i-plat" class="form-control">
-        <option value="Koko" ${isEdit && inst.platform === 'Koko' ? 'selected' : ''}>Koko</option>
-        <option value="Mintpay" ${isEdit && inst.platform === 'Mintpay' ? 'selected' : ''}>Mintpay</option>
-        <option value="PayZy" ${isEdit && inst.platform === 'PayZy' ? 'selected' : ''}>PayZy</option>
-        <option value="Other" ${isEdit && inst.platform === 'Other' ? 'selected' : ''}>Other BNPL</option>
+        ${(state.bnplPlatforms || defaultState.bnplPlatforms).map(p => `<option value="${p.name}" ${isEdit && inst.platform === p.name ? 'selected' : ''}>${p.name}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
@@ -807,8 +831,12 @@ function openWishlistModal(item = null) {
       <input type="text" id="w-name" class="form-control" value="${isEdit ? item.item : ''}" placeholder="e.g. Air Fryer, Litro Gas Refill">
     </div>
     <div class="form-group">
-      <label>Category</label>
-      <input type="text" id="w-cat" class="form-control" value="${isEdit ? item.category : 'Kitchen'}">
+      <label>Category
+        <button type="button" class="btn-help-pill" style="margin-left: 0.5rem; font-size: 0.7rem;" onclick="openWishlistCategoryManager()">➕ Manage Categories</button>
+      </label>
+      <select id="w-cat" class="form-control">
+        ${(state.wishlistCategories || defaultState.wishlistCategories).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0)).map(c => `<option value="${c.name}" ${isEdit && item.category === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+      </select>
     </div>
     <div class="form-group">
       <label>Estimated Cost (${state.household.currency})</label>
@@ -829,9 +857,9 @@ function openWishlistModal(item = null) {
       </label>
     </div>
   `;
-  openModal(isEdit ? "Edit Wishlist Item" : "Add Wishlist Item", html, () => {
+  openModal(isEdit ? "Edit Needs Item" : "Add Needs Item", html, () => {
     const itemName = document.getElementById("w-name").value.trim();
-    const category = document.getElementById("w-cat").value.trim();
+    const category = document.getElementById("w-cat").value;
     const cost = parseFloat(document.getElementById("w-cost").value) || 0;
     const priority = document.getElementById("w-pri").value;
     const isPlanned = document.getElementById("w-plan").checked;
@@ -970,6 +998,25 @@ function switchTab(tabId) {
   });
   if (tabId === "cms-labels") {
     renderLabelsCmsScreen();
+  }
+  if (tabId === "analytics") {
+    // Auto-render charts when navigating to Analytics tab
+    setTimeout(() => renderAnalyticsDashboard(), 50);
+  }
+  if (tabId === "cms-categories") {
+    // Render platform and wishlist category preview chips in Admin
+    const platPreview = document.getElementById("bnpl-platform-preview");
+    if (platPreview) {
+      platPreview.innerHTML = (state.bnplPlatforms || []).map(p =>
+        `<span style="background: ${p.color}22; color: ${p.color}; border: 1px solid ${p.color}44; border-radius: 999px; padding: 0.2rem 0.75rem; font-size: 0.8rem; font-weight: 600;">${p.name}</span>`
+      ).join('');
+    }
+    const wcatPreview = document.getElementById("wishlist-cat-preview");
+    if (wcatPreview) {
+      wcatPreview.innerHTML = (state.wishlistCategories || []).sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0)).map(c =>
+        `<span style="background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); border-radius: 999px; padding: 0.2rem 0.75rem; font-size: 0.8rem;">${c.name}</span>`
+      ).join('');
+    }
   }
 }
 
@@ -1682,6 +1729,443 @@ function saveRawJsonEditor() {
     showToast("JSON Database successfully committed!", "success");
   } catch (err) {
     showToast("Invalid JSON syntax: " + err.message, "danger");
+  }
+}
+
+
+// --- ITEM 3: WISHLIST / NEEDS PLANNER CATEGORY MANAGER ---
+function openWishlistCategoryManager() {
+  const cats = (state.wishlistCategories || defaultState.wishlistCategories)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  const html = `
+    <div class="explainer-box" style="margin-bottom: 1rem;">
+      <strong>💡 Tip:</strong> Add, rename, or delete categories here. They'll appear in the dropdown when adding any Needs Planner item.
+    </div>
+    <div id="wcat-list">
+      ${cats.map(c => `
+        <div class="spend-row" data-wcatid="${c.id}">
+          <input type="text" class="form-control wcat-name-input" data-wcatid="${c.id}" value="${c.name}" style="flex: 1; max-width: 300px;">
+          <button class="btn-table-delete" onclick="deleteWishlistCategory('${c.id}')">🗑️</button>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+      <input type="text" id="new-wcat-name" class="form-control" placeholder="New category name..." style="flex: 1;">
+      <button class="btn btn-primary btn-sm" onclick="addWishlistCategory()">➕ Add</button>
+    </div>
+  `;
+  openModal("🗂️ Manage Needs Planner Categories", html, () => {
+    // Save all name edits
+    document.querySelectorAll(".wcat-name-input").forEach(input => {
+      const id = input.dataset.wcatid;
+      const cat = (state.wishlistCategories || []).find(c => c.id === id);
+      if (cat) cat.name = input.value.trim() || cat.name;
+    });
+    persistState();
+    renderApp();
+    showToast("Needs Planner categories saved!", "success");
+  });
+}
+
+function addWishlistCategory() {
+  const nameEl = document.getElementById("new-wcat-name");
+  const name = nameEl?.value.trim();
+  if (!name) return;
+  const maxOrder = Math.max(0, ...(state.wishlistCategories || []).map(c => c.sortOrder || 0));
+  state.wishlistCategories = state.wishlistCategories || [];
+  state.wishlistCategories.push({ id: "wc_" + Date.now(), name, sortOrder: maxOrder + 1 });
+  persistState();
+  // Refresh modal in place
+  closeModal();
+  setTimeout(() => openWishlistCategoryManager(), 100);
+  showToast(`Added category: ${name}`, "success");
+}
+
+function deleteWishlistCategory(id) {
+  state.wishlistCategories = (state.wishlistCategories || []).filter(c => c.id !== id);
+  persistState();
+  // Refresh modal in place
+  closeModal();
+  setTimeout(() => openWishlistCategoryManager(), 100);
+  showToast("Category deleted", "success");
+}
+
+// --- ITEM 2: LOOKUP TABLE CRUD (BNPL PLATFORMS, FIXED BILL CATEGORIES) ---
+function openBnplPlatformManager() {
+  const platforms = state.bnplPlatforms || defaultState.bnplPlatforms;
+  const html = `
+    <div class="explainer-box" style="margin-bottom: 1rem;">
+      <strong>💡</strong> Add a new BNPL platform (e.g. "Spathi") and it will immediately appear in the platform dropdown when adding any BNPL plan.
+    </div>
+    ${platforms.map(p => `
+      <div class="spend-row">
+        <input type="text" class="form-control bnpl-plat-input" data-platid="${p.id}" value="${p.name}" style="flex: 1; max-width: 200px;">
+        <input type="color" class="form-control" data-platid-color="${p.id}" value="${p.color || '#10B981'}" style="width: 50px; height: 38px; padding: 2px;">
+        <button class="btn-table-delete" onclick="deleteBnplPlatform('${p.id}')">🗑️</button>
+      </div>
+    `).join('')}
+    <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+      <input type="text" id="new-plat-name" class="form-control" placeholder="New platform name..." style="flex: 1;">
+      <button class="btn btn-primary btn-sm" onclick="addBnplPlatform()">➕ Add</button>
+    </div>
+  `;
+  openModal("🛍️ Manage BNPL Platforms", html, () => {
+    document.querySelectorAll(".bnpl-plat-input").forEach(input => {
+      const id = input.dataset.platid;
+      const plat = (state.bnplPlatforms || []).find(p => p.id === id);
+      if (plat) plat.name = input.value.trim() || plat.name;
+    });
+    document.querySelectorAll("[data-platid-color]").forEach(input => {
+      const id = input.dataset.platidColor;
+      const plat = (state.bnplPlatforms || []).find(p => p.id === id);
+      if (plat) plat.color = input.value;
+    });
+    persistState();
+    showToast("BNPL platforms saved!", "success");
+  });
+}
+
+function addBnplPlatform() {
+  const name = document.getElementById("new-plat-name")?.value.trim();
+  if (!name) return;
+  state.bnplPlatforms = state.bnplPlatforms || [];
+  state.bnplPlatforms.push({ id: "bp_" + Date.now(), name, color: "#6366F1" });
+  persistState();
+  closeModal();
+  setTimeout(() => openBnplPlatformManager(), 100);
+  showToast(`Added platform: ${name}`, "success");
+}
+
+function deleteBnplPlatform(id) {
+  state.bnplPlatforms = (state.bnplPlatforms || []).filter(p => p.id !== id);
+  persistState();
+  closeModal();
+  setTimeout(() => openBnplPlatformManager(), 100);
+}
+
+// --- ITEM 6: DATA-AWARE AI SNAPSHOT (NOT SELF-TRAINING - FRESH EVERY REQUEST) ---
+function buildAiSnapshot(metrics) {
+  // Assemble a complete, fresh snapshot of the household's current financial state.
+  // This is sent to the AI with every request so advice is always based on real current numbers.
+  const topCats = {};
+  (state.dailySpends || []).forEach(s => {
+    topCats[s.cat] = (topCats[s.cat] || 0) + s.amount;
+  });
+  const topCategories = Object.entries(topCats)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([cat, amt]) => `${cat}: ${fmt(amt)}`);
+
+  const pendingBnpl = (state.installments || [])
+    .filter(i => !i.isPaid)
+    .map(i => `${i.item} (${i.platform}): ${fmt(i.monthly)}/month, ${fmt(i.remaining)} remaining`);
+
+  const pendingFixed = (state.fixedPayments || [])
+    .filter(f => !f.isPaid)
+    .map(f => `${f.name}: ${fmt(f.amount)}`);
+
+  const cycleProgress = state.activeCycle?.daysRemaining 
+    ? Math.round((1 - state.activeCycle.daysRemaining / 30) * 100)
+    : 0;
+
+  return {
+    household_cycle: state.activeCycle?.name || "Current Cycle",
+    cycle_progress_pct: cycleProgress,
+    total_income: fmt(metrics.totalIncome),
+    total_committed_outgoings: fmt(metrics.totalCommitted),
+    total_daily_spent_so_far: fmt(metrics.totalDailySpent),
+    remaining_spendable_balance: fmt(metrics.remainingBalance),
+    projected_cycle_savings: fmt(metrics.projectedSavings),
+    days_remaining: state.activeCycle?.daysRemaining || 26,
+    daily_budget_remaining: fmt(Math.round(metrics.remainingBalance / (state.activeCycle?.daysRemaining || 26))),
+    next_month_forecast: metrics.hasShortfall
+      ? `⚠️ SHORTFALL: ${fmt(Math.abs(metrics.nextNetSurplus))} deficit predicted`
+      : `✅ SURPLUS: ${fmt(metrics.nextNetSurplus)} projected`,
+    safety_reserve_required: fmt(metrics.safetyReserveAmount),
+    pending_bnpl_installments: pendingBnpl,
+    pending_fixed_payments: pendingFixed,
+    top_spending_categories: topCategories,
+    planned_wishlist_deductions: fmt(metrics.totalPlannedWishlist),
+    reserve_percentage_setting: `${metrics.reservePct}%`,
+    members: (state.members || []).map(m => `${m.name} (${m.role}): ${fmt(m.salary)}`).join(", ")
+  };
+}
+
+function buildAiPrompt(userQuestion, metrics) {
+  const snapshot = buildAiSnapshot(metrics);
+  const tone = state.aiSettings?.tone || "balanced";
+  const toneInstruction = tone === "strict"
+    ? "Be direct, no softening — point out risks and shortfalls plainly."
+    : tone === "encouraging"
+    ? "Be warm and encouraging, highlight wins before addressing concerns."
+    : "Be balanced — clear about both positive trends and risks.";
+
+  return `You are a household budget advisor. ${toneInstruction}
+
+IMPORTANT RULES:
+- Your response is NARRATIVE TEXT ONLY — do NOT produce calculation tables or override any numbers. The app's deterministic engine handles all math.
+- Base your advice ENTIRELY on the real snapshot data below. If the snapshot shows a shortfall, say so.
+- Keep response under 120 words.
+
+=== LIVE HOUSEHOLD FINANCIAL SNAPSHOT (Current Cycle) ===
+${JSON.stringify(snapshot, null, 2)}
+=== END SNAPSHOT ===
+
+User question or context: "${userQuestion || 'Give me a brief overall assessment of this cycle.'}"
+
+Provide personalized, data-aware advice based solely on the above snapshot numbers.`;
+}
+
+async function getAiAdvice(userQuestion = "") {
+  const outputEl = document.getElementById("ai-advice-text");
+  const metrics = calculateMetrics();
+
+  if (!state.aiSettings?.geminiKey && !state.aiSettings?.openaiKey) {
+    // Rule-based fallback advice when no AI key configured
+    const advice = metrics.hasShortfall
+      ? `⚠️ Next month shows a projected shortfall of ${fmt(Math.abs(metrics.nextNetSurplus))}. Focus on cutting BNPL purchases and discretionary spend this cycle.`
+      : `✅ You're on track this cycle. With ${fmt(metrics.remainingBalance)} remaining over ${state.activeCycle?.daysRemaining || 26} days, your daily safe budget is ${fmt(Math.round(metrics.remainingBalance / (state.activeCycle?.daysRemaining || 26)))}. Your ${metrics.reservePct}% safety reserve (${fmt(metrics.safetyReserveAmount)}) is well-funded.`;
+    if (outputEl) outputEl.textContent = advice;
+    return;
+  }
+
+  if (outputEl) outputEl.textContent = "⏳ Consulting AI advisor with your live household data...";
+
+  const prompt = buildAiPrompt(userQuestion, metrics);
+  const activeKey = state.aiSettings?.provider === "openai" ? state.aiSettings?.openaiKey : state.aiSettings?.geminiKey;
+
+  try {
+    let responseText = "";
+    if (state.aiSettings?.provider === "openai") {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+        body: JSON.stringify({
+          model: state.aiSettings?.model || "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "Unable to get response.";
+    } else {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${state.aiSettings?.model || 'gemini-1.5-flash'}:generateContent?key=${activeKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await res.json();
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to get response.";
+    }
+    if (outputEl) outputEl.textContent = responseText;
+  } catch (err) {
+    if (outputEl) outputEl.textContent = `❌ AI connection failed: ${err.message}. Using rule-based advice instead.`;
+    await getAiAdvice(""); // fall back to rule-based
+  }
+}
+
+// Override old testAiConnection to use the new snapshot-aware prompt
+async function testAiConnection() {
+  const outputEl = document.getElementById("ai-test-output");
+  if (outputEl) outputEl.innerHTML = "<em>⏳ Building live data snapshot and sending to AI...</em>";
+  const metrics = calculateMetrics();
+  const activeKey = state.aiSettings?.provider === "openai" ? state.aiSettings?.openaiKey : state.aiSettings?.geminiKey;
+  if (!activeKey) {
+    const snapshot = buildAiSnapshot(metrics);
+    if (outputEl) outputEl.innerHTML = `<strong style="color: var(--warning);">⚠️ No API key configured.</strong><br><br><strong>Live snapshot that WOULD be sent to AI:</strong><br><code style="font-size: 0.75rem; white-space: pre-wrap;">${JSON.stringify(snapshot, null, 2)}</code>`;
+    return;
+  }
+  const prompt = buildAiPrompt("Give a one-paragraph summary of my current financial health.", metrics);
+  try {
+    let responseText = "";
+    if (state.aiSettings?.provider === "openai") {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+        body: JSON.stringify({ model: state.aiSettings?.model || "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
+      });
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "No response.";
+    } else {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${state.aiSettings?.model || 'gemini-1.5-flash'}:generateContent?key=${activeKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await res.json();
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+    }
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--success);">✅ AI connected (data-aware snapshot sent):</span><br>${responseText}`;
+  } catch (err) {
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--danger);">❌ Connection Failed: ${err.message}</span>`;
+  }
+}
+
+// --- ITEM 5: ANALYTICS DASHBOARD WITH CHART.JS ---
+let analyticsCharts = {};
+
+function renderAnalyticsDashboard() {
+  const container = document.getElementById("analytics-container");
+  if (!container) return;
+
+  const metrics = calculateMetrics();
+  const history = state.cycleHistory || defaultState.cycleHistory;
+
+  // Spending by Category (current cycle daily spends)
+  const catTotals = {};
+  (state.dailySpends || []).forEach(s => {
+    catTotals[s.cat] = (catTotals[s.cat] || 0) + s.amount;
+  });
+  const catLabels = Object.keys(catTotals);
+  const catData = Object.values(catTotals);
+  const catColors = catLabels.map((c, i) => {
+    const match = (state.categories || []).find(cat => cat.name === c);
+    return match ? match.color : `hsl(${(i * 60) % 360}, 70%, 60%)`;
+  });
+
+  container.innerHTML = `
+    <!-- Summary row -->
+    <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+      <div class="metric-card">
+        <div class="metric-header"><span>Total Settled</span><span class="metric-icon">✅</span></div>
+        <div class="metric-value" style="font-size: 1.3rem;">${fmt(metrics.totalSettledAmount)}</div>
+        <div class="metric-sub">Payments settled this cycle</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header"><span>Daily Avg Spend</span><span class="metric-icon">📊</span></div>
+        <div class="metric-value" style="font-size: 1.3rem;">${fmt(Math.round(metrics.totalDailySpent / Math.max(1, 30 - (state.activeCycle?.daysRemaining || 26))))}</div>
+        <div class="metric-sub">Per day elapsed in cycle</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header"><span>Savings Rate</span><span class="metric-icon">💰</span></div>
+        <div class="metric-value" style="font-size: 1.3rem; color: var(--primary-light);">${Math.round((metrics.projectedSavings / metrics.totalIncome) * 100)}%</div>
+        <div class="metric-sub">Of total income projected saved</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header"><span>BNPL Burden</span><span class="metric-icon">🛍️</span></div>
+        <div class="metric-value" style="font-size: 1.3rem; color: #FCD34D;">${Math.round((metrics.totalInstallments / metrics.totalIncome) * 100)}%</div>
+        <div class="metric-sub">Of income goes to installments</div>
+      </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.5rem;">
+
+      <!-- Chart 1: Cycle History - Income vs Committed vs Remaining -->
+      <div class="section-card">
+        <div class="card-header-flex">
+          <h3>📈 Cycle Trend: Income vs Outgoings vs Balance</h3>
+        </div>
+        <canvas id="chart-cycle-trend" style="max-height: 240px;"></canvas>
+      </div>
+
+      <!-- Chart 2: Category Spending Breakdown -->
+      <div class="section-card">
+        <div class="card-header-flex">
+          <h3>🛒 Current Cycle Spending by Category</h3>
+        </div>
+        <canvas id="chart-category-spend" style="max-height: 240px;"></canvas>
+      </div>
+
+      <!-- Chart 3: BNPL Payoff Progress -->
+      <div class="section-card" style="grid-column: 1 / -1;">
+        <div class="card-header-flex">
+          <h3>🛍️ BNPL Installment Payoff Progress</h3>
+          <p class="text-muted">Progress = amount paid vs total price</p>
+        </div>
+        <div id="chart-bnpl-bars">
+          ${(state.installments || []).map(inst => {
+            const paidAmt = inst.total - inst.remaining;
+            const pct = Math.min(100, Math.round((paidAmt / inst.total) * 100));
+            return `
+              <div style="margin-bottom: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <span style="font-size: 0.85rem; font-weight: 600;">${inst.item} <small style="color: var(--text-muted);">(${inst.member})</small></span>
+                  <span style="font-size: 0.8rem; color: var(--primary-light);">${fmt(paidAmt)} / ${fmt(inst.total)} (${pct}%)</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.08); border-radius: 999px; height: 8px; overflow: hidden;">
+                  <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 999px; transition: width 0.5s ease;"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Chart 4: Savings Rate Trend -->
+      <div class="section-card">
+        <div class="card-header-flex">
+          <h3>💰 Savings Rate Trend (per Cycle)</h3>
+        </div>
+        <canvas id="chart-savings-trend" style="max-height: 200px;"></canvas>
+      </div>
+
+    </div>
+  `;
+
+  // Draw Chart.js charts (loaded from CDN in HTML)
+  if (typeof Chart !== "undefined") {
+    // Destroy old instances to avoid canvas reuse errors
+    Object.values(analyticsCharts).forEach(c => c.destroy());
+    analyticsCharts = {};
+
+    // Chart 1: Cycle Trend Line Chart
+    analyticsCharts.trend = new Chart(document.getElementById("chart-cycle-trend"), {
+      type: "line",
+      data: {
+        labels: history.map(h => h.cycle.split("–")[0].trim()),
+        datasets: [
+          { label: "Income", data: history.map(h => h.income), borderColor: "#10B981", tension: 0.35, fill: false, pointRadius: 4 },
+          { label: "Committed Outgoings", data: history.map(h => h.committed), borderColor: "#F59E0B", tension: 0.35, fill: false, pointRadius: 4 },
+          { label: "Remaining Balance", data: history.map(h => h.saved), borderColor: "#6366F1", tension: 0.35, fill: true, backgroundColor: "rgba(99,102,241,0.08)", pointRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#9CA3AF", font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: "#9CA3AF" }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#9CA3AF", callback: v => `${Math.round(v/1000)}k` }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+
+    // Chart 2: Category Spend Doughnut
+    if (catLabels.length > 0) {
+      analyticsCharts.category = new Chart(document.getElementById("chart-category-spend"), {
+        type: "doughnut",
+        data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 2, borderColor: "rgba(0,0,0,0.15)" }] },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "right", labels: { color: "#9CA3AF", font: { size: 10 }, padding: 8 } } }
+        }
+      });
+    }
+
+    // Chart 4: Savings Rate Trend
+    analyticsCharts.savings = new Chart(document.getElementById("chart-savings-trend"), {
+      type: "bar",
+      data: {
+        labels: history.map(h => h.cycle.split("–")[0].trim()),
+        datasets: [{
+          label: "Savings Rate %",
+          data: history.map(h => Math.round((h.saved / h.income) * 100)),
+          backgroundColor: history.map(h => {
+            const pct = (h.saved / h.income) * 100;
+            return pct > 25 ? "rgba(16,185,129,0.7)" : pct > 15 ? "rgba(245,158,11,0.7)" : "rgba(239,68,68,0.7)";
+          }),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#9CA3AF", font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: "#9CA3AF" }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#9CA3AF", callback: v => v + "%" }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
   }
 }
 

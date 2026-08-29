@@ -82,6 +82,9 @@
         <button class="nav-item" data-tab="subscriptions">
           <span class="icon">📱</span> <span class="nav-label" data-label-key="nav_subscriptions">Subscriptions</span>
         </button>
+        <button class="nav-item" data-tab="analytics" onclick="renderAnalyticsDashboard()">
+          <span class="icon">📊</span> <span class="nav-label">Analytics</span>
+        </button>
 
         <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0;"></div>
 
@@ -566,6 +569,25 @@
         </div>
       </section>
 
+      <!-- TAB 9: ANALYTICS DASHBOARD -->
+      <section id="tab-analytics" class="tab-pane">
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h1>📊 Analytics Dashboard</h1>
+              <p class="text-muted">Live charts and financial performance insights across cycles.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="renderAnalyticsDashboard()">🔄 Refresh Charts</button>
+          </div>
+        </div>
+        <div id="analytics-container" style="margin-top: 1rem;">
+          <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+            <p>Click <strong>Refresh Charts</strong> or navigate here to load analytics.</p>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -584,6 +606,8 @@
     </div>
   </div>
 
+  <!-- Chart.js CDN for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
