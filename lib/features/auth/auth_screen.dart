@@ -33,46 +33,103 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty) return;
+    final password = _passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) return;
 
-    final repo = context.read<BudgetRepository>();
-    repo.setUserProfile(
-      name: email.contains('wife') || email.contains('dhiyan') ? 'Dhiyan' : 'Sathsara',
-      email: email,
-      role: email.contains('wife') ? 'wife' : 'husband',
-      isAdmin: true,
-    );
+    setState(() => _isLoading = true);
+    try {
+      if (!SupabaseService.isConfigured) {
+        throw Exception('Supabase is not configured. Please add URL and Anon Key in Settings.');
+      }
+      
+      await SupabaseService.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
 
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logged in successfully as Admin!')),
-    );
+      // In a real app we'd fetch the user's profile from the DB here
+      final repo = context.read<BudgetRepository>();
+      repo.setUserProfile(
+        name: email.contains('wife') || email.contains('dhiyan') ? 'Dhiyan' : 'Sathsara',
+        email: email,
+        role: email.contains('wife') ? 'wife' : 'husband',
+        isAdmin: true,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logged in successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  void _handleSignup() {
+  Future<void> _handleSignup() async {
     final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
     final name = _nameController.text.trim();
-    if (email.isEmpty || name.isEmpty) {
+    
+    if (email.isEmpty || password.isEmpty || name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all required fields.')),
       );
       return;
     }
 
-    final repo = context.read<BudgetRepository>();
-    repo.setUserProfile(
-      name: name,
-      email: email,
-      role: _selectedRole,
-      isAdmin: true,
-    );
+    setState(() => _isLoading = true);
+    try {
+      if (!SupabaseService.isConfigured) {
+        throw Exception('Supabase is not configured. Please add URL and Anon Key in Settings.');
+      }
+      
+      final authResponse = await SupabaseService.client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      
+      if (authResponse.user != null) {
+        // Automatically claim a new household for the first user
+        await SupabaseService.client.rpc('claim_household', params: {
+          'new_household_name': '${name}\'s Household',
+          'user_name': name,
+          'user_role': _selectedRole,
+        });
 
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Household account created for $name!')),
-    );
+        final repo = context.read<BudgetRepository>();
+        repo.setUserProfile(
+          name: name,
+          email: email,
+          role: _selectedRole,
+          isAdmin: true,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Household account created for $name!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Signup failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

@@ -13,7 +13,7 @@ import 'features/wishlist/wishlist_screen.dart';
 import 'features/daily_spends/daily_spends_screen.dart';
 import 'features/forecast/forecast_screen.dart';
 import 'features/settings/settings_screen.dart';
-import 'features/admin_cms/admin_cms_screen.dart';
+
 import 'features/auth/auth_screen.dart';
 
 void main() async {
@@ -99,14 +99,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 setState(() => _currentIndex = 0);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.admin_panel_settings, color: AppTheme.warning),
-              title: const Text('Admin CMS Control Panel', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.warning)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminCmsScreen()));
-              },
-            ),
+
             ListTile(
               leading: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.primaryLight),
               title: const Text('Income Management'),

@@ -3,17 +3,78 @@ import 'package:http/http.dart' as http;
 import '../models/forecast_result.dart';
 import '../models/cycle.dart';
 
+abstract class AIProvider {
+  Future<String?> generateAdvice({
+    required String prompt,
+    required String apiKey,
+  });
+}
+
+class GeminiProvider implements AIProvider {
+  @override
+  Future<String?> generateAdvice({required String prompt, required String apiKey}) async {
+    final url = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+    );
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': [
+          {'parts': [{'text': prompt}]}
+        ],
+        'generationConfig': {
+          'temperature': 0.3,
+          'maxOutputTokens': 300,
+        }
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
+    }
+    return null;
+  }
+}
+
+class OpenAIProvider implements AIProvider {
+  @override
+  Future<String?> generateAdvice({required String prompt, required String apiKey}) async {
+    final url = Uri.parse('https://api.openai.com/v1/chat/completions');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'messages': [
+          {'role': 'system', 'content': 'You are a wise, supportive household financial advisor.'},
+          {'role': 'user', 'content': prompt}
+        ],
+        'temperature': 0.3,
+        'max_tokens': 300,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['choices']?[0]?['message']?['content'] as String?;
+    }
+    return null;
+  }
+}
+
 class AIAdvisorService {
   /// Generates plain-language financial guidance from deterministic numbers.
-  /// Strict rule: AI NEVER computes financial totals; it strictly interprets the rule engine's output.
   static Future<String> generateCycleAdvice({
     required CurrentCycleMetrics currentMetrics,
     required NextCycleForecast nextForecast,
     required BudgetCycle activeCycle,
     required String currencySymbol,
     String? apiKey,
+    String providerType = 'gemini', // 'gemini' or 'openai'
   }) async {
-    // If no API key is provided, generate high-quality smart rule-based guidance
     if (apiKey == null || apiKey.trim().isEmpty) {
       return _generateLocalSmartAdvice(currentMetrics, nextForecast, activeCycle, currencySymbol);
     }
@@ -49,37 +110,13 @@ Please provide:
 Keep your response friendly, clear, and under 150 words. Do not recalculate numbers.
 ''';
 
-      final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
-      );
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {'text': prompt}
-              ]
-            }
-          ],
-          'generationConfig': {
-            'temperature': 0.3,
-            'maxOutputTokens': 300,
-          }
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
-        if (text != null && text.isNotEmpty) {
-          return text.trim();
-        }
+      AIProvider provider = providerType == 'openai' ? OpenAIProvider() : GeminiProvider();
+      final text = await provider.generateAdvice(prompt: prompt, apiKey: apiKey);
+      if (text != null && text.isNotEmpty) {
+        return text.trim();
       }
     } catch (e) {
-      // Fallback to local advice on network error
+      // Fallback to local advice
     }
 
     return _generateLocalSmartAdvice(currentMetrics, nextForecast, activeCycle, currencySymbol);

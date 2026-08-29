@@ -1,28 +1,62 @@
 // ==============================================================================
-// 100% DETERMINISTIC HOUSEHOLD BUDGET ENGINE & FULL CRUD APP CONTROLLER
+// 100% DETERMINISTIC HOUSEHOLD BUDGET ENGINE & WORDPRESS-GRADE ADMIN CMS v3.5
 // ==============================================================================
 
-const STORAGE_KEY = "household_budget_db_v2";
+const STORAGE_KEY = "household_budget_master_db_v3_5";
 
-// Default Initial State
 const defaultState = {
   household: {
     name: "HomeBudget",
+    tagline: "25th-to-25th Cycle Tracker",
     logo: "💰",
     currency: "Rs.",
+    currencyCode: "LKR",
     cycleStartDay: 25,
-    geminiApiKey: "",
-    themePreset: "theme-emerald"
+    themePreset: "theme-emerald",
+    customCss: ""
   },
-  adminSetup: {
-    hasAdminRegistered: true, // First-run check flag
-    adminEmail: "admin@homebudget.lk"
-  },
-  currentUser: {
+  adminProfile: {
     name: "Sathsara",
     email: "admin@homebudget.lk",
-    role: "husband",
-    isAdmin: true
+    role: "Administrator",
+    avatar: "S"
+  },
+  uiComponents: {
+    showBalanceCard: true,
+    showAiAdvisorCard: true,
+    showMetricsGrid: true,
+    showBreakdownTable: true,
+    showRecentSpends: true,
+    showQuickSpendBtn: true,
+    showForecastBanner: true,
+    showWishlistSection: true
+  },
+  categories: [
+    { id: "cat_1", name: "Groceries", color: "#10B981", monthlyBudget: 45000 },
+    { id: "cat_2", name: "Transport / PickMe", color: "#F59E0B", monthlyBudget: 15000 },
+    { id: "cat_3", name: "Food & Dining", color: "#EC4899", monthlyBudget: 25000 },
+    { id: "cat_4", name: "Personal Care & Saloon", color: "#8B5CF6", monthlyBudget: 8000 },
+    { id: "cat_5", name: "Health & Gym", color: "#06B6D4", monthlyBudget: 6000 },
+    { id: "cat_6", name: "Other / Cash Reserve", color: "#64748B", monthlyBudget: 30000 }
+  ],
+  paymentMethods: [
+    { id: "pm_1", name: "Cash", type: "cash" },
+    { id: "pm_2", name: "Commercial Debit Card", type: "card" },
+    { id: "pm_3", name: "Sampath Card", type: "card" },
+    { id: "pm_4", name: "Fund Transfer", type: "bank" }
+  ],
+  aiSettings: {
+    provider: "gemini", // "gemini" or "openai"
+    geminiKey: "",
+    openaiKey: "",
+    model: "gemini-1.5-flash",
+    tone: "balanced", // "strict", "balanced", "encouraging"
+    customPromptTemplate: ""
+  },
+  forecastSettings: {
+    reservePercentage: 5.0, // 5% of income
+    survivalBufferDays: 30,
+    committedCategories: ["Housing", "Utilities", "Loan", "Insurance", "Telecom"]
   },
   uiLabels: {
     nav_dashboard: "Dashboard",
@@ -34,11 +68,6 @@ const defaultState = {
     nav_subscriptions: "Subscriptions",
     lbl_balance_header: "REALTIME REMAINING SPENDABLE BALANCE",
     lbl_dashboard_title: "Cycle Overview"
-  },
-  forecastSettings: {
-    reservePercentage: 5.0, // 5% of income
-    survivalBufferDays: 30,
-    committedCategories: ["Housing", "Utilities", "Loan", "Insurance", "Telecom"]
   },
   members: [
     { id: "m1", name: "Sathsara", role: "husband", salary: 249585, color: "#10B981" },
@@ -102,50 +131,101 @@ const defaultState = {
   ]
 };
 
+// State initialization
 let state = loadSavedState();
 
 function loadSavedState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch (e) {}
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { 
+        ...defaultState, 
+        ...parsed, 
+        household: { ...defaultState.household, ...parsed.household },
+        uiComponents: { ...defaultState.uiComponents, ...parsed.uiComponents },
+        forecastSettings: { ...defaultState.forecastSettings, ...parsed.forecastSettings }
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load state", e);
+  }
   return JSON.parse(JSON.stringify(defaultState));
 }
 
 function persistState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {}
+  } catch (e) {
+    console.error("Failed to save state", e);
+  }
 }
 
-// --- DETERMINISTIC ENGINE FORMULAS ---
+// Formatter
+function fmt(val) {
+  const sym = state.household?.currency || "Rs.";
+  const num = (Number(val) || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return `${sym} ${num}`;
+}
 
+// Toast System
+function showToast(message, type = "info") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span>${type === "success" ? "✅" : type === "danger" ? "⚠️" : "ℹ️"}</span> <span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Deterministic Calculation Engine
 function calculateMetrics() {
-  const totalIncome = state.incomes.reduce((acc, i) => acc + i.amount, 0);
-  const totalFixed = state.fixedPayments.reduce((acc, f) => acc + f.amount, 0);
-  const totalInstallments = state.installments.reduce((acc, inst) => acc + inst.monthly, 0);
-  const totalCreditCards = state.creditCards.reduce((acc, c) => acc + c.due, 0);
-  const totalSubscriptions = state.subscriptions.reduce((acc, s) => acc + s.amountLkr, 0);
+  const totalIncome = (state.incomes || []).reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
+  const totalFixed = (state.fixedPayments || []).reduce((acc, f) => acc + (Number(f.amount) || 0), 0);
+  const totalInstallments = (state.installments || []).reduce((acc, inst) => acc + (Number(inst.monthly) || 0), 0);
+  const totalCreditCards = (state.creditCards || []).reduce((acc, c) => acc + (Number(c.due) || 0), 0);
+  const totalSubscriptions = (state.subscriptions || []).reduce((acc, s) => acc + (Number(s.amountLkr) || 0), 0);
 
   const totalCommitted = totalFixed + totalInstallments + totalCreditCards + totalSubscriptions;
 
   let totalCash = 0;
   let totalCard = 0;
-  for (const s of state.dailySpends) {
-    if (s.method.toLowerCase().includes("cash")) {
-      totalCash += s.amount;
+  for (const s of (state.dailySpends || [])) {
+    const amt = Number(s.amount) || 0;
+    if ((s.method || "").toLowerCase().includes("cash")) {
+      totalCash += amt;
     } else {
-      totalCard += s.amount;
+      totalCard += amt;
     }
   }
-  const totalSpent = totalCash + totalCard;
+  const totalDailySpent = totalCash + totalCard;
 
-  const totalPlannedWishlist = state.wishlist
+  const totalPlannedWishlist = (state.wishlist || [])
     .filter(w => w.isPlanned)
-    .reduce((acc, w) => acc + w.cost, 0);
+    .reduce((acc, w) => acc + (Number(w.cost) || 0), 0);
 
-  const remainingBalance = totalIncome - (totalCommitted + totalSpent);
+  const remainingBalance = totalIncome - (totalCommitted + totalDailySpent);
   const projectedSavings = remainingBalance - totalPlannedWishlist;
+
+  // Forward Survival Calculation
+  const nextEstimatedIncome = totalIncome;
+  const nextEstimatedCommitted = totalFixed + totalSubscriptions + (totalCreditCards > 0 ? 10000 : 0) +
+    (state.installments || []).filter(inst => (inst.remaining || 0) > (inst.monthly || 0)).reduce((acc, inst) => acc + (Number(inst.monthly) || 0), 0);
+  const nextNetSurplus = nextEstimatedIncome - nextEstimatedCommitted;
+  const hasShortfall = nextNetSurplus < 0;
+  const reservePct = state.forecastSettings?.reservePercentage || 5.0;
+  const safetyReserveAmount = nextEstimatedIncome * (reservePct / 100);
+  const requiredSurvivalBuffer = hasShortfall ? Math.abs(nextNetSurplus) + safetyReserveAmount : safetyReserveAmount;
 
   return {
     totalIncome,
@@ -156,402 +236,877 @@ function calculateMetrics() {
     totalCommitted,
     totalCash,
     totalCard,
-    totalSpent,
+    totalDailySpent,
     totalPlannedWishlist,
     remainingBalance,
-    projectedSavings
-  };
-}
-
-function calculateForecast() {
-  const estimatedIncome = state.members.reduce((acc, m) => acc + m.salary, 0);
-  const recurringFixed = state.fixedPayments.reduce((acc, f) => acc + f.amount, 0);
-  const recurringSubs = state.subscriptions.reduce((acc, s) => acc + s.amountLkr, 0);
-  const estimatedNextCC = 10000;
-
-  let continuingInstallments = 0;
-  let endingCount = 0;
-  let continuingCount = 0;
-
-  for (const plan of state.installments) {
-    const balAfterCurrent = plan.remaining - plan.monthly;
-    if (balAfterCurrent > 0.01) {
-      continuingCount++;
-      const nextDue = balAfterCurrent < plan.monthly ? balAfterCurrent : plan.monthly;
-      continuingInstallments += nextDue;
-    } else {
-      endingCount++;
-    }
-  }
-
-  const totalCommitted = recurringFixed + continuingInstallments + recurringSubs + estimatedNextCC;
-  const netBalance = estimatedIncome - totalCommitted;
-  const hasShortfall = netBalance < 0;
-  const shortfallAmount = hasShortfall ? Math.abs(netBalance) : 0;
-
-  // Tunable reserve percentage (default 5.0%)
-  const reservePct = (state.forecastSettings && state.forecastSettings.reservePercentage) ? state.forecastSettings.reservePercentage : 5.0;
-  const reserveMargin = (reservePct / 100.0) * estimatedIncome;
-  const requiredBuffer = hasShortfall ? (shortfallAmount + reserveMargin) : 0;
-
-  return {
-    estimatedIncome,
-    recurringFixed,
-    continuingInstallments,
-    recurringSubs,
-    estimatedNextCC,
-    totalCommitted,
-    netBalance,
+    projectedSavings,
+    nextEstimatedIncome,
+    nextEstimatedCommitted,
+    nextNetSurplus,
     hasShortfall,
-    shortfallAmount,
-    requiredBuffer,
-    endingCount,
-    continuingCount,
-    reservePct
+    reservePct,
+    safetyReserveAmount,
+    requiredSurvivalBuffer
   };
 }
 
-function fmt(num) {
-  const sym = state.household.currency || "Rs.";
-  return `${sym} ` + Math.round(num).toLocaleString();
+// Modal Engine
+let currentModalSaveCallback = null;
+function openModal(title, bodyHtml, onSave) {
+  const modal = document.getElementById("generic-modal");
+  if (!modal) return;
+  document.getElementById("generic-modal-title").textContent = title;
+  document.getElementById("generic-modal-body").innerHTML = bodyHtml;
+  currentModalSaveCallback = onSave;
+  modal.classList.add("active");
+}
+function closeModal() {
+  const modal = document.getElementById("generic-modal");
+  if (modal) modal.classList.remove("active");
+  currentModalSaveCallback = null;
+}
+function handleModalSave() {
+  if (typeof currentModalSaveCallback === "function") {
+    currentModalSaveCallback();
+  }
 }
 
-// --- RENDER APPLICATION & THEME ---
-
-function applyTheme() {
-  const theme = state.household.themePreset || "theme-emerald";
-  document.body.className = theme;
-
-  const appName = state.household.name || "HomeBudget";
-  const appLogo = state.household.logo || "💰";
-
-  document.getElementById("sidebar-app-name").textContent = appName;
-  document.getElementById("app-logo-icon").textContent = appLogo;
-  document.getElementById("html-head-title").textContent = `${appName} | 25th Cycle Tracker`;
-
-  // Highlight active theme preset card in CMS
-  document.querySelectorAll(".theme-card").forEach(c => {
-    c.classList.toggle("active", c.getAttribute("data-theme") === theme);
+function customConfirm(message, onConfirm) {
+  const html = `
+    <div style="padding: 0.5rem 0;">
+      <p style="font-size: 1rem; color: #F3F4F6; margin-bottom: 1rem;">${message}</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">This action updates your household database immediately.</p>
+    </div>
+  `;
+  openModal("Confirm Action", html, () => {
+    closeModal();
+    onConfirm();
   });
 }
 
-function renderApp() {
-  persistState();
-  applyTheme();
+// --- CONTEXTUAL HELP & USER MANUAL HUB ---
 
-  const m = calculateMetrics();
-  const f = calculateForecast();
-
-  // User & Auth State
-  const user = state.currentUser;
-  document.getElementById("user-display-name").textContent = `${user.name} (${user.isAdmin ? "Admin" : "Member"})`;
-  document.getElementById("user-display-email").textContent = user.email;
-  document.getElementById("user-avatar-badge").textContent = (user.name || "A").charAt(0).toUpperCase();
-
-  // Balance Header
-  document.getElementById("remaining-balance-display").textContent = fmt(m.remainingBalance);
-  document.getElementById("projected-savings-display").textContent = fmt(m.projectedSavings);
-  document.getElementById("total-income-display").textContent = fmt(m.totalIncome);
-
-  const forecastBadge = document.getElementById("forecast-badge");
-  if (f.hasShortfall) {
-    forecastBadge.className = "badge badge-danger";
-    forecastBadge.textContent = `⚠️ Next Month Shortfall (${fmt(f.shortfallAmount)})`;
-  } else {
-    forecastBadge.className = "badge badge-success";
-    forecastBadge.textContent = `✅ Next Month Surplus (${fmt(f.netBalance)})`;
+const HELP_TOPICS = {
+  cycle: {
+    title: "📅 The 25th-to-25th Salary Cycle",
+    content: `
+      <p>Most households in Sri Lanka receive salaries on or around the <strong>25th of every month</strong>. Traditional calendar-month (1st-30th) budget apps cause confusion because major bills (Rent, Bank Loans, Koko Installments) are deducted immediately upon salary arrival on the 25th.</p>
+      <p style="margin-top:0.5rem;">This app aligns all metrics directly with your <strong>25th-to-25th salary window</strong> so you always know your exact spendable cash until next payday.</p>
+    `
+  },
+  balance: {
+    title: "💰 Realtime Remaining Spendable Balance",
+    content: `
+      <p><strong>Formula:</strong></p>
+      <div class="formula-badge">Spendable Balance = Total Salary - Committed Fixed Bills - Daily Spends</div>
+      <p style="margin-top:0.5rem;">Unlike normal bank balances, this calculation accounts for future committed obligations (like your rent or loan) so you never accidentally overspend money you need for bills.</p>
+    `
+  },
+  forecast: {
+    title: "📐 Forward Survival Forecasting & Safety Reserve",
+    content: `
+      <p>The forward survival engine predicts next month's financial health <em>before</em> next month starts.</p>
+      <p><strong>Key Governors:</strong></p>
+      <ul style="margin-left:1.2rem; margin-top:0.4rem; color: var(--text-secondary);">
+        <li><strong>Safety Contingency Reserve (%):</strong> A percentage of monthly income (default 5%) set aside as an emergency safety cushion.</li>
+        <li><strong>Required Runway Buffer:</strong> Target survival window (default 30 days). If next month income decreases or commitments rise, the app calculates the exact reserve buffer you must keep from this month to prevent debt.</li>
+      </ul>
+    `
+  },
+  bnpl: {
+    title: "🛍️ Buy Now Pay Later (BNPL) & Koko Tracking",
+    content: `
+      <p>Koko, Mintpay, and PayZy split purchases into 3 monthly installments. When a plan reaches 3/3 paid installments, it automatically terminates and frees up monthly cashflow for next month's forecast.</p>
+    `
+  },
+  ai: {
+    title: "🤖 AI Advisor & Bring-Your-Own-Key",
+    content: `
+      <p>The AI Advisor connects to <strong>Google Gemini (1.5 Flash)</strong> or <strong>OpenAI GPT-4o-mini</strong> using your private free API key.</p>
+      <p style="margin-top:0.5rem;"><strong>Strict Privacy & Math Guarantee:</strong> The AI NEVER calculates financial math; all numbers are calculated 100% deterministically by the rule engine. The AI strictly provides clear, supportive financial guidance.</p>
+    `
+  },
+  cms: {
+    title: "👑 WordPress-Grade Admin CMS Control",
+    content: `
+      <p>The Admin CMS gives you total control over the entire platform without touching any code:</p>
+      <ul style="margin-left:1.2rem; margin-top:0.4rem; color: var(--text-secondary);">
+        <li><strong>Page Builder & Component Toggles:</strong> Show/hide any card or button on the live site.</li>
+        <li><strong>Appearance Studio:</strong> Change theme presets, currency symbols, and write live custom CSS.</li>
+        <li><strong>Member Roles:</strong> Manage partners, salaries, and permissions.</li>
+        <li><strong>Database Manager:</strong> Live Raw JSON database editor and one-click backups.</li>
+      </ul>
+    `
   }
+};
 
-  // AI Guidance with Safe Fallback
-  const aiCard = document.getElementById("ai-guidance-card");
-  if (aiCard) {
-    document.getElementById("ai-advice-text").innerHTML = generateGuidanceText(m, f);
-  }
-
-  // Metric Cards
-  document.getElementById("metric-income").textContent = fmt(m.totalIncome);
-  document.getElementById("metric-committed").textContent = fmt(m.totalCommitted);
-  document.getElementById("metric-spent").textContent = fmt(m.totalSpent);
-  document.getElementById("metric-spent-sub").textContent = `Cash: ${fmt(m.totalCash)} • Card: ${fmt(m.totalCard)}`;
-  document.getElementById("metric-wishlist").textContent = fmt(m.totalPlannedWishlist);
-
-  // Outgoings Breakdown
-  document.getElementById("bk-fixed").textContent = fmt(m.totalFixed);
-  document.getElementById("bk-installments").textContent = fmt(m.totalInstallments);
-  document.getElementById("bk-cc").textContent = fmt(m.totalCreditCards);
-  document.getElementById("bk-subs").textContent = fmt(m.totalSubscriptions);
-
-  // Render all tabs
-  renderRecentSpends();
-  renderDailySpendsTab();
-  renderInstallmentsTab();
-  renderFixedBillsTab();
-  renderWishlistTab();
-  renderSubscriptionsTab();
-  renderCreditCardsTab();
-  renderForecastTab(f, m);
-  renderAdminCmsTables();
-}
-
-function generateGuidanceText(m, f) {
-  if (f.hasShortfall) {
-    return `⚠️ <strong>Survival Warning:</strong> Next cycle shows a projected deficit of <strong>${fmt(f.shortfallAmount)}</strong>. Based on your <strong>${f.reservePct}% reserve margin</strong>, reserve at least <strong>${fmt(f.requiredBuffer)}</strong> from your current remaining balance (${fmt(m.remainingBalance)}) to guarantee you do not run short. Consider deferring wishlist items.`;
-  } else {
-    return `✅ <strong>Solid Financial Position:</strong> You have <strong>${fmt(m.remainingBalance)}</strong> remaining with 26 days to go. <strong>${f.endingCount} installment plans</strong> finish this cycle, freeing up cash flow. Next cycle is projected to have a healthy surplus of <strong>${fmt(f.netBalance)}</strong>.`;
-  }
-}
-
-// --- RENDER MAIN USER SCREENS WITH FULL IN-PLACE CRUD ---
-
-function renderRecentSpends() {
-  const container = document.getElementById("dashboard-recent-spends");
-  const recent = state.dailySpends.slice(0, 5);
-
-  container.innerHTML = recent.map(s => `
-    <div class="spend-item">
-      <div class="item-left">
-        <span class="item-icon">${s.method.toLowerCase().includes("cash") ? "💵" : "💳"}</span>
-        <div>
-          <div class="item-title">${s.title}</div>
-          <div class="item-meta">${s.date} • ${s.cat} (${s.method})</div>
+function openHelpGuide(topicKey = "cycle") {
+  const topic = HELP_TOPICS[topicKey] || HELP_TOPICS["cycle"];
+  const html = `
+    <div style="padding: 0.5rem 0;">
+      <div class="explainer-box">
+        ${topic.content}
+      </div>
+      <div style="margin-top: 1.25rem;">
+        <h4 style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Explore Other Topics:</h4>
+        <div class="chip-group">
+          <button class="chip ${topicKey === 'cycle' ? 'active' : ''}" onclick="openHelpGuide('cycle')">📅 Salary Cycle</button>
+          <button class="chip ${topicKey === 'balance' ? 'active' : ''}" onclick="openHelpGuide('balance')">💰 Spendable Balance</button>
+          <button class="chip ${topicKey === 'forecast' ? 'active' : ''}" onclick="openHelpGuide('forecast')">📐 Forecast Math</button>
+          <button class="chip ${topicKey === 'bnpl' ? 'active' : ''}" onclick="openHelpGuide('bnpl')">🛍️ BNPL Tracking</button>
+          <button class="chip ${topicKey === 'ai' ? 'active' : ''}" onclick="openHelpGuide('ai')">🤖 AI Advisor</button>
+          <button class="chip ${topicKey === 'cms' ? 'active' : ''}" onclick="openHelpGuide('cms')">👑 Admin CMS</button>
         </div>
       </div>
-      <div class="item-right">
-        <div class="item-amount danger">-${fmt(s.amount)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="editSpendModal('${s.id}')">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteSpend('${s.id}')">🗑️</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderDailySpendsTab() {
-  const container = document.getElementById("daily-spends-container");
-  container.innerHTML = state.dailySpends.map(s => `
-    <div class="spend-item" style="margin-bottom: 8px;">
-      <div class="item-left">
-        <span class="item-icon">${s.method.toLowerCase().includes("cash") ? "💵" : "💳"}</span>
-        <div>
-          <div class="item-title">${s.title}</div>
-          <div class="item-meta">${s.date} • ${s.cat} • <strong>${s.method}</strong></div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount danger">-${fmt(s.amount)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="editSpendModal('${s.id}')">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteSpend('${s.id}')">🗑️ Delete</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderInstallmentsTab() {
-  const container = document.getElementById("installments-container");
-  container.innerHTML = state.installments.map(inst => {
-    const pct = Math.min(100, Math.round(((inst.total - inst.remaining) / inst.total) * 100));
-    const continues = (inst.remaining - inst.monthly) > 0.01;
-
-    return `
-      <div class="installment-card">
-        <div class="installment-top">
-          <span class="platform-tag">${inst.platform} • ${inst.member}</span>
-          <div style="display: flex; gap: 6px;">
-            <button class="btn btn-sm ${inst.isPaid ? 'btn-primary' : 'btn-secondary'}" onclick="toggleInstPaid('${inst.id}')">
-              ${inst.isPaid ? '✓ Paid This Month' : 'Mark Paid'}
-            </button>
-            <button class="btn-item-edit" onclick="openBnplModal(state.installments.find(x => x.id === '${inst.id}'))">✏️</button>
-            <button class="btn-item-delete" onclick="deleteBnpl('${inst.id}')">🗑️</button>
-          </div>
-        </div>
-        <div class="item-title" style="font-size: 15px;">${inst.item}</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width: ${pct}%;"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 13px;">
-          <span>Monthly: <strong>${fmt(inst.monthly)}</strong></span>
-          <span class="text-muted">Balance: ${fmt(inst.remaining)}</span>
-        </div>
-        <div style="font-size: 11px; margin-top: 6px; color: ${continues ? 'var(--warning)' : 'var(--primary-light)'};">
-          ${continues ? '➔ Continues to next month' : '🎉 Finishes this month!'}
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function renderFixedBillsTab() {
-  const container = document.getElementById("fixed-bills-container");
-  container.innerHTML = state.fixedPayments.map(b => `
-    <div class="bill-item">
-      <div class="item-left">
-        <button class="btn-icon" onclick="toggleBillPaid('${b.id}')">
-          ${b.isPaid ? '✅' : '⭕'}
-        </button>
-        <div>
-          <div class="item-title" style="${b.isPaid ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${b.name}</div>
-          <div class="item-meta">Due: ${b.dueDay}th • ${b.category} (${b.dest || 'Bank Account'})</div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount">${fmt(b.amount)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="openBillModal(state.fixedPayments.find(x => x.id === '${b.id}'))">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteBill('${b.id}')">🗑️</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderWishlistTab() {
-  const container = document.getElementById("wishlist-container");
-  container.innerHTML = state.wishlist.map(w => `
-    <div class="bill-item" style="margin-bottom: 8px;">
-      <div class="item-left">
-        <input type="checkbox" ${w.isPlanned ? 'checked' : ''} onchange="toggleWishlistPlan('${w.id}')" style="width: 18px; height: 18px; cursor: pointer;">
-        <div>
-          <div class="item-title">${w.item}</div>
-          <div class="item-meta">${w.category} • Priority: <strong>${w.priority.toUpperCase()}</strong> • ${w.isPlanned ? '<span style="color: var(--primary-light)">Planned this cycle</span>' : 'Not planned'}</div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount">${fmt(w.cost)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="openWishlistModal(state.wishlist.find(x => x.id === '${w.id}'))">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteWishlistItem('${w.id}')">🗑️</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderSubscriptionsTab() {
-  const container = document.getElementById("subscriptions-container");
-  container.innerHTML = state.subscriptions.map(s => `
-    <div class="bill-item" style="margin-bottom: 8px;">
-      <div class="item-left">
-        <button class="btn-icon" onclick="toggleSubPaid('${s.id}')">
-          ${s.isPaid ? '✅' : '⭕'}
-        </button>
-        <div>
-          <div class="item-title" style="${s.isPaid ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.name}</div>
-          <div class="item-meta">Billing: ${s.billingDay}th of month</div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount">${fmt(s.amountLkr)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="openSubModal(state.subscriptions.find(x => x.id === '${s.id}'))">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteSub('${s.id}')">🗑️</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderCreditCardsTab() {
-  const container = document.getElementById("credit-cards-container");
-  if (!container) return;
-  container.innerHTML = state.creditCards.map(c => `
-    <div class="bill-item" style="margin-bottom: 8px;">
-      <div class="item-left">
-        <span class="item-icon">💳</span>
-        <div>
-          <div class="item-title">${c.name}</div>
-          <div class="item-meta">${c.bank}</div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount">${fmt(c.due)}</div>
-        <div class="item-actions">
-          <button class="btn-item-edit" onclick="openCardModal(state.creditCards.find(x => x.id === '${c.id}'))">✏️ Edit</button>
-          <button class="btn-item-delete" onclick="deleteCard('${c.id}')">🗑️</button>
-        </div>
-      </div>
-    </div>
-  `).join("");
-}
-
-function renderForecastTab(f, m) {
-  const heroBox = document.getElementById("forecast-hero-box");
-  const verdictTitle = document.getElementById("forecast-verdict-title");
-  const verdictDesc = document.getElementById("forecast-verdict-desc");
-
-  if (f.hasShortfall) {
-    heroBox.className = "forecast-hero shortfall";
-    verdictTitle.textContent = `Shortfall Alert: -${fmt(f.shortfallAmount)}`;
-    verdictDesc.textContent = `Next month will be short by ${fmt(f.shortfallAmount)}. Mandatory Action: Reserve at least ${fmt(f.requiredBuffer)} (including ${f.reservePct}% reserve) from this month's balance to avoid debt.`;
-  } else {
-    heroBox.className = "forecast-hero";
-    verdictTitle.textContent = `Next Cycle Surplus: +${fmt(f.netBalance)}`;
-    verdictDesc.textContent = `Your regular salaries comfortably cover recurring bills and continuing BNPL installments. Safe spendable buffer available.`;
-  }
-
-  document.getElementById("fc-income").textContent = fmt(f.estimatedIncome);
-  document.getElementById("fc-committed").textContent = fmt(f.totalCommitted);
-  document.getElementById("fc-ending").textContent = `${f.endingCount} Plans Ending 🎉`;
-  document.getElementById("fc-buffer").textContent = f.hasShortfall ? fmt(f.requiredBuffer) : "Rs. 0 (Safe)";
-  document.getElementById("fc-buffer-sub").textContent = `Based on ${f.reservePct}% safety reserve`;
-
-  const detailsList = document.getElementById("forecast-details-list");
-  detailsList.innerHTML = `
-    <div class="breakdown-item"><span class="dot green"></span><span>Estimated Next Salaries (Husband + Wife)</span><strong>+${fmt(f.estimatedIncome)}</strong></div>
-    <div class="breakdown-item"><span class="dot red"></span><span>Recurring Fixed Bills (Rent, ECB, Loan)</span><strong>-${fmt(f.recurringFixed)}</strong></div>
-    <div class="breakdown-item"><span class="dot amber"></span><span>Continuing BNPL Installments (${f.continuingCount} active)</span><strong>-${fmt(f.continuingInstallments)}</strong></div>
-    <div class="breakdown-item"><span class="dot purple"></span><span>Active Subscriptions (Dialog, Netflix, Apple)</span><strong>-${fmt(f.recurringSubs)}</strong></div>
-    <div class="breakdown-item"><span class="dot blue"></span><span>Estimated Credit Card Base</span><strong>-${fmt(f.estimatedNextCC)}</strong></div>
-    <div class="breakdown-item" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
-      <span><strong>Projected Net Balance</strong></span>
-      <strong style="color: ${f.hasShortfall ? 'var(--danger)' : 'var(--primary-light)'}; font-size: 16px;">
-        ${f.hasShortfall ? '-' : '+'}${fmt(f.hasShortfall ? f.shortfallAmount : f.netBalance)}
-      </strong>
     </div>
   `;
+  openModal(topic.title, html, null);
 }
 
-// --- ADMIN CMS RENDER & THEME SWITCHER ---
+// --- CRUD OPERATIONS ---
+
+// Members CRUD
+function openMemberModal(member = null) {
+  const isEdit = member !== null;
+  const html = `
+    <div class="form-group">
+      <label>Member Name</label>
+      <input type="text" id="m-name" class="form-control" value="${isEdit ? member.name : ''}" placeholder="e.g. Sathsara, Dhiyan">
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="m-role" class="form-control">
+        <option value="husband" ${isEdit && member.role === 'husband' ? 'selected' : ''}>Husband</option>
+        <option value="wife" ${isEdit && member.role === 'wife' ? 'selected' : ''}>Wife</option>
+        <option value="partner" ${isEdit && member.role === 'partner' ? 'selected' : ''}>Partner</option>
+        <option value="member" ${isEdit && member.role === 'member' ? 'selected' : ''}>Family Member</option>
+        <option value="admin" ${isEdit && member.role === 'admin' ? 'selected' : ''}>Administrator</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Regular Monthly Base Salary (${state.household.currency})</label>
+      <input type="number" id="m-salary" class="form-control" value="${isEdit ? member.salary : '150000'}">
+    </div>
+    <div class="form-group">
+      <label>Avatar Color</label>
+      <input type="color" id="m-color" class="form-control" value="${isEdit ? (member.color || '#10B981') : '#10B981'}" style="height: 40px; padding: 2px;">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Household Member" : "Add New Member", html, () => {
+    const name = document.getElementById("m-name").value.trim();
+    const role = document.getElementById("m-role").value.trim();
+    const salary = parseFloat(document.getElementById("m-salary").value) || 0;
+    const color = document.getElementById("m-color").value || "#10B981";
+
+    if (!name) return showToast("Please enter a member name", "danger");
+
+    if (isEdit) {
+      member.name = name; member.role = role; member.salary = salary; member.color = color;
+      showToast(`Updated member: ${name}`, "success");
+    } else {
+      state.members.push({ id: "m_" + Date.now(), name, role, salary, color });
+      showToast(`Added member: ${name}`, "success");
+    }
+    closeModal();
+    persistState();
+    renderApp();
+  });
+}
+
+function deleteMember(id) {
+  const member = (state.members || []).find(m => m.id === id);
+  const memberName = member ? member.name : "this member";
+
+  customConfirm(`Delete member <strong>${memberName}</strong>? Incomes and assignments associated with this member will be detached cleanly.`, () => {
+    state.members = (state.members || []).filter(m => m.id !== id);
+    persistState();
+    renderApp();
+    showToast(`Deleted member: ${memberName}`, "success");
+  });
+}
+
+// Category Manager CRUD
+function openCategoryModal(cat = null) {
+  const isEdit = cat !== null;
+  const html = `
+    <div class="form-group">
+      <label>Category Name</label>
+      <input type="text" id="cat-name" class="form-control" value="${isEdit ? cat.name : ''}" placeholder="e.g. Groceries, Dining, Transport">
+    </div>
+    <div class="form-group">
+      <label>Monthly Budget Limit (${state.household.currency})</label>
+      <input type="number" id="cat-budget" class="form-control" value="${isEdit ? (cat.monthlyBudget || 20000) : '20000'}">
+    </div>
+    <div class="form-group">
+      <label>Category Tag Color</label>
+      <input type="color" id="cat-color" class="form-control" value="${isEdit ? (cat.color || '#10B981') : '#10B981'}" style="height: 40px; padding: 2px;">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Expense Category" : "Add New Category", html, () => {
+    const name = document.getElementById("cat-name").value.trim();
+    const monthlyBudget = parseFloat(document.getElementById("cat-budget").value) || 0;
+    const color = document.getElementById("cat-color").value || "#10B981";
+
+    if (!name) return showToast("Please enter a category name", "danger");
+
+    if (isEdit) {
+      cat.name = name; cat.monthlyBudget = monthlyBudget; cat.color = color;
+    } else {
+      state.categories.push({ id: "cat_" + Date.now(), name, monthlyBudget, color });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} category: ${name}`, "success");
+  });
+}
+
+function deleteCategory(id) {
+  customConfirm("Delete this expense category?", () => {
+    state.categories = (state.categories || []).filter(c => c.id !== id);
+    persistState();
+    renderApp();
+    showToast("Category removed", "success");
+  });
+}
+
+// Component & Page Layout Toggles
+function toggleComponent(key, isChecked) {
+  if (!state.uiComponents) state.uiComponents = { ...defaultState.uiComponents };
+  state.uiComponents[key] = isChecked;
+  persistState();
+  renderApp();
+  showToast(`Updated frontend layout for ${key}`, "info");
+}
+
+// Fixed Bills CRUD
+function openBillModal(bill = null) {
+  const isEdit = bill !== null;
+  const html = `
+    <div class="form-group">
+      <label>Bill Name / Purpose</label>
+      <input type="text" id="b-name" class="form-control" value="${isEdit ? bill.name : ''}" placeholder="e.g. Apartment Rent, Personal Loan">
+    </div>
+    <div class="form-group">
+      <label>Monthly Amount (${state.household.currency})</label>
+      <input type="number" id="b-amount" class="form-control" value="${isEdit ? bill.amount : '20000'}">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="b-cat" class="form-control">
+        <option value="Housing" ${isEdit && bill.category === 'Housing' ? 'selected' : ''}>Housing & Rent</option>
+        <option value="Utilities" ${isEdit && bill.category === 'Utilities' ? 'selected' : ''}>Utilities (ECB/Water)</option>
+        <option value="Loan" ${isEdit && bill.category === 'Loan' ? 'selected' : ''}>Bank Loan / Gold Loan</option>
+        <option value="Insurance" ${isEdit && bill.category === 'Insurance' ? 'selected' : ''}>Insurance</option>
+        <option value="Other" ${isEdit && bill.category === 'Other' ? 'selected' : ''}>Other Fixed</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Due Day of Month (e.g. 25th)</label>
+      <input type="number" id="b-due" class="form-control" value="${isEdit ? bill.dueDay : '25'}">
+    </div>
+    <div class="form-group">
+      <label>Destination Account / Bank</label>
+      <input type="text" id="b-dest" class="form-control" value="${isEdit ? (bill.dest || '') : 'BOC Account'}">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Fixed Bill" : "Add Fixed Bill", html, () => {
+    const name = document.getElementById("b-name").value.trim();
+    const amount = parseFloat(document.getElementById("b-amount").value) || 0;
+    const category = document.getElementById("b-cat").value;
+    const dueDay = parseInt(document.getElementById("b-due").value) || 25;
+    const dest = document.getElementById("b-dest").value.trim();
+
+    if (!name || amount <= 0) return showToast("Please provide valid name and amount", "danger");
+
+    if (isEdit) {
+      bill.name = name; bill.amount = amount; bill.category = category; bill.dueDay = dueDay; bill.dest = dest;
+    } else {
+      state.fixedPayments.push({ id: "f_" + Date.now(), name, amount, category, dueDay, dest, isPaid: false });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} bill: ${name}`, "success");
+  });
+}
+
+function deleteBill(id) {
+  customConfirm("Delete this fixed bill?", () => {
+    state.fixedPayments = (state.fixedPayments || []).filter(f => f.id !== id);
+    persistState();
+    renderApp();
+    showToast("Bill deleted", "success");
+  });
+}
+
+// BNPL CRUD
+function openBnplModal(inst = null) {
+  const isEdit = inst !== null;
+  const html = `
+    <div class="form-group">
+      <label>Item Name / Purchase Description</label>
+      <input type="text" id="i-name" class="form-control" value="${isEdit ? inst.item : ''}" placeholder="e.g. Water Filter, Perfume">
+    </div>
+    <div class="form-group">
+      <label>Platform</label>
+      <select id="i-plat" class="form-control">
+        <option value="Koko" ${isEdit && inst.platform === 'Koko' ? 'selected' : ''}>Koko</option>
+        <option value="Mintpay" ${isEdit && inst.platform === 'Mintpay' ? 'selected' : ''}>Mintpay</option>
+        <option value="PayZy" ${isEdit && inst.platform === 'PayZy' ? 'selected' : ''}>PayZy</option>
+        <option value="Other" ${isEdit && inst.platform === 'Other' ? 'selected' : ''}>Other BNPL</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Purchased By Member</label>
+      <select id="i-mem" class="form-control">
+        ${(state.members || []).map(m => `<option value="${m.name}" ${isEdit && inst.member === m.name ? 'selected' : ''}>${m.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Monthly Installment (${state.household.currency})</label>
+      <input type="number" id="i-month" class="form-control" value="${isEdit ? inst.monthly : '4500'}">
+    </div>
+    <div class="form-group">
+      <label>Remaining Balance (${state.household.currency})</label>
+      <input type="number" id="i-rem" class="form-control" value="${isEdit ? inst.remaining : '9000'}">
+    </div>
+    <div class="form-group">
+      <label>Total Price (${state.household.currency})</label>
+      <input type="number" id="i-tot" class="form-control" value="${isEdit ? inst.total : '13500'}">
+    </div>
+  `;
+  openModal(isEdit ? "Edit BNPL Plan" : "Add BNPL Plan", html, () => {
+    const item = document.getElementById("i-name").value.trim();
+    const platform = document.getElementById("i-plat").value;
+    const member = document.getElementById("i-mem").value;
+    const monthly = parseFloat(document.getElementById("i-month").value) || 0;
+    const remaining = parseFloat(document.getElementById("i-rem").value) || 0;
+    const total = parseFloat(document.getElementById("i-tot").value) || (monthly * 3);
+
+    if (!item || monthly <= 0) return showToast("Please provide valid item and monthly amount", "danger");
+
+    if (isEdit) {
+      inst.item = item; inst.platform = platform; inst.member = member; inst.monthly = monthly; inst.remaining = remaining; inst.total = total;
+    } else {
+      state.installments.push({ id: "inst_" + Date.now(), item, platform, member, monthly, remaining, total, isPaid: false });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} BNPL: ${item}`, "success");
+  });
+}
+
+function deleteBnpl(id) {
+  customConfirm("Delete this installment plan?", () => {
+    state.installments = (state.installments || []).filter(i => i.id !== id);
+    persistState();
+    renderApp();
+    showToast("BNPL plan deleted", "success");
+  });
+}
+
+// Subscriptions CRUD
+function openSubModal(sub = null) {
+  const isEdit = sub !== null;
+  const html = `
+    <div class="form-group">
+      <label>Subscription Name</label>
+      <input type="text" id="s-name" class="form-control" value="${isEdit ? sub.name : ''}" placeholder="e.g. Netflix, Dialog Router">
+    </div>
+    <div class="form-group">
+      <label>Monthly Cost (${state.household.currency})</label>
+      <input type="number" id="s-amt" class="form-control" value="${isEdit ? sub.amountLkr : '1500'}">
+    </div>
+    <div class="form-group">
+      <label>Billing Day of Month</label>
+      <input type="number" id="s-day" class="form-control" value="${isEdit ? sub.billingDay : '24'}">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Subscription" : "Add Subscription", html, () => {
+    const name = document.getElementById("s-name").value.trim();
+    const amountLkr = parseFloat(document.getElementById("s-amt").value) || 0;
+    const billingDay = parseInt(document.getElementById("s-day").value) || 24;
+
+    if (!name || amountLkr <= 0) return showToast("Please enter valid subscription details", "danger");
+
+    if (isEdit) {
+      sub.name = name; sub.amountLkr = amountLkr; sub.billingDay = billingDay;
+    } else {
+      state.subscriptions.push({ id: "s_" + Date.now(), name, amountLkr, billingDay, isPaid: false });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} subscription: ${name}`, "success");
+  });
+}
+
+function deleteSub(id) {
+  customConfirm("Delete this subscription?", () => {
+    state.subscriptions = (state.subscriptions || []).filter(s => s.id !== id);
+    persistState();
+    renderApp();
+    showToast("Subscription deleted", "success");
+  });
+}
+
+// Credit Cards CRUD
+function openCardModal(card = null) {
+  const isEdit = card !== null;
+  const html = `
+    <div class="form-group">
+      <label>Bank Name</label>
+      <input type="text" id="c-bank" class="form-control" value="${isEdit ? card.bank : ''}" placeholder="e.g. Commercial Bank, Sampath">
+    </div>
+    <div class="form-group">
+      <label>Card Name / Level</label>
+      <input type="text" id="c-name" class="form-control" value="${isEdit ? card.name : ''}" placeholder="e.g. Platinum Visa, Signature">
+    </div>
+    <div class="form-group">
+      <label>Statement Due Amount (${state.household.currency})</label>
+      <input type="number" id="c-due" class="form-control" value="${isEdit ? card.due : '0'}">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Credit Card" : "Add Credit Card", html, () => {
+    const bank = document.getElementById("c-bank").value.trim();
+    const name = document.getElementById("c-name").value.trim();
+    const due = parseFloat(document.getElementById("c-due").value) || 0;
+
+    if (!bank || !name) return showToast("Please provide bank and card name", "danger");
+
+    if (isEdit) {
+      card.bank = bank; card.name = name; card.due = due;
+    } else {
+      state.creditCards.push({ id: "cc_" + Date.now(), bank, name, due, isPaid: false });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} card: ${bank} ${name}`, "success");
+  });
+}
+
+function deleteCard(id) {
+  customConfirm("Delete this credit card?", () => {
+    state.creditCards = (state.creditCards || []).filter(c => c.id !== id);
+    persistState();
+    renderApp();
+    showToast("Credit card deleted", "success");
+  });
+}
+
+// Wishlist CRUD
+function openWishlistModal(item = null) {
+  const isEdit = item !== null;
+  const html = `
+    <div class="form-group">
+      <label>Item Name</label>
+      <input type="text" id="w-name" class="form-control" value="${isEdit ? item.item : ''}" placeholder="e.g. Air Fryer, Litro Gas Refill">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <input type="text" id="w-cat" class="form-control" value="${isEdit ? item.category : 'Kitchen'}">
+    </div>
+    <div class="form-group">
+      <label>Estimated Cost (${state.household.currency})</label>
+      <input type="number" id="w-cost" class="form-control" value="${isEdit ? item.cost : '2500'}">
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <select id="w-pri" class="form-control">
+        <option value="high" ${isEdit && item.priority === 'high' ? 'selected' : ''}>High (Must Buy This Month)</option>
+        <option value="medium" ${isEdit && item.priority === 'medium' ? 'selected' : ''}>Medium (If Surplus Exists)</option>
+        <option value="low" ${isEdit && item.priority === 'low' ? 'selected' : ''}>Low (Future Wishlist)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <input type="checkbox" id="w-plan" ${isEdit && item.isPlanned ? 'checked' : ''} style="width: 18px; height: 18px;">
+        <span>Plan for Current Cycle (Deduct from Spendable Balance)</span>
+      </label>
+    </div>
+  `;
+  openModal(isEdit ? "Edit Wishlist Item" : "Add Wishlist Item", html, () => {
+    const itemName = document.getElementById("w-name").value.trim();
+    const category = document.getElementById("w-cat").value.trim();
+    const cost = parseFloat(document.getElementById("w-cost").value) || 0;
+    const priority = document.getElementById("w-pri").value;
+    const isPlanned = document.getElementById("w-plan").checked;
+
+    if (!itemName || cost <= 0) return showToast("Please enter valid item and cost", "danger");
+
+    if (isEdit) {
+      item.item = itemName; item.category = category; item.cost = cost; item.priority = priority; item.isPlanned = isPlanned;
+    } else {
+      state.wishlist.push({ id: "w_" + Date.now(), item: itemName, category, cost, priority, isPlanned });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} wishlist item: ${itemName}`, "success");
+  });
+}
+
+function deleteWishlist(id) {
+  customConfirm("Delete this wishlist item?", () => {
+    state.wishlist = (state.wishlist || []).filter(w => w.id !== id);
+    persistState();
+    renderApp();
+    showToast("Wishlist item deleted", "success");
+  });
+}
+
+// Quick Daily Spend
+function openSpendModal() {
+  const categoryOptions = (state.categories || defaultState.categories).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  const paymentOptions = (state.paymentMethods || defaultState.paymentMethods).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+
+  const html = `
+    <div class="form-group">
+      <label>Amount (${state.household.currency})</label>
+      <input type="number" id="qs-amt" class="form-control form-control-lg" placeholder="0.00" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Description / Item</label>
+      <input type="text" id="qs-title" class="form-control" placeholder="e.g. Food City Groceries, PickMe Tuk, Gym Water">
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="qs-method" class="form-control">
+        ${paymentOptions}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="qs-cat" class="form-control">
+        ${categoryOptions}
+      </select>
+    </div>
+  `;
+  openModal("Quick Log Daily Expense", html, () => {
+    const amount = parseFloat(document.getElementById("qs-amt").value) || 0;
+    const title = document.getElementById("qs-title").value.trim();
+    const method = document.getElementById("qs-method").value;
+    const cat = document.getElementById("qs-cat").value;
+
+    if (amount <= 0 || !title) return showToast("Please enter amount and description", "danger");
+
+    state.dailySpends.unshift({
+      id: "d_" + Date.now(),
+      date: new Date().toISOString().split("T")[0],
+      amount,
+      title,
+      method,
+      cat
+    });
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`Logged expense: ${fmt(amount)} for ${title}`, "success");
+  });
+}
+
+function deleteSpend(id) {
+  customConfirm("Delete this expense log?", () => {
+    state.dailySpends = (state.dailySpends || []).filter(s => s.id !== id);
+    persistState();
+    renderApp();
+    showToast("Expense log deleted", "success");
+  });
+}
+
+// --- WORDPRESS-STYLE ADMIN CMS HANDLERS ---
 
 function selectThemePreset(themeClass) {
+  document.body.className = themeClass;
   state.household.themePreset = themeClass;
-  renderApp();
+  persistState();
+  document.querySelectorAll(".theme-card").forEach(c => {
+    c.classList.toggle("active", c.dataset.theme === themeClass);
+  });
+  showToast(`Switched theme to ${themeClass.replace('theme-', '')}`, "info");
 }
 
-function saveThemeSettings() {
-  state.household.name = document.getElementById("cms-app-name-input").value.trim() || "HomeBudget";
-  state.household.logo = document.getElementById("cms-app-logo-input").value.trim() || "💰";
-  alert("Theme and branding updated successfully!");
+function saveThemeAndBranding() {
+  const name = document.getElementById("cms-app-name-input")?.value.trim();
+  const tagline = document.getElementById("cms-tagline-input")?.value.trim();
+  const logo = document.getElementById("cms-app-logo-input")?.value.trim();
+  const currency = document.getElementById("cms-currency-input")?.value.trim();
+  const customCss = document.getElementById("cms-custom-css")?.value;
+
+  if (name) state.household.name = name;
+  if (tagline) state.household.tagline = tagline;
+  if (logo) state.household.logo = logo;
+  if (currency) state.household.currency = currency;
+  if (customCss !== undefined) state.household.customCss = customCss;
+
+  persistState();
+  applyCustomCss();
   renderApp();
+  showToast("Appearance & Branding saved live with zero redeploy!", "success");
 }
 
-function saveUiLabels() {
-  state.uiLabels.lbl_dashboard_title = document.getElementById("lbl-input-dashboard").value.trim();
-  state.uiLabels.lbl_balance_header = document.getElementById("lbl-input-balance").value.trim();
-  state.household.currency = document.getElementById("lbl-input-currency").value.trim() || "Rs.";
-  alert("UI labels saved!");
-  renderApp();
+function applyCustomCss() {
+  let styleTag = document.getElementById("user-custom-css-tag");
+  if (!styleTag) {
+    styleTag = document.createElement("style");
+    styleTag.id = "user-custom-css-tag";
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = state.household?.customCss || "";
 }
 
 function saveForecastSettings() {
-  const pct = parseFloat(document.getElementById("fc-reserve-pct-input").value) || 5.0;
-  const days = parseInt(document.getElementById("fc-buffer-days-input").value) || 30;
-  state.forecastSettings.reservePercentage = pct;
+  const reserve = parseFloat(document.getElementById("fc-reserve-input")?.value) || 5.0;
+  const days = parseInt(document.getElementById("fc-days-input")?.value) || 30;
+  state.forecastSettings.reservePercentage = reserve;
   state.forecastSettings.survivalBufferDays = days;
-  alert("Forecast parameters updated! Survival buffer re-calculated.");
+  persistState();
   renderApp();
+  updateMathSandbox();
+  showToast("Forecast engine parameters saved!", "success");
 }
 
-function renderAdminCmsTables() {
+// Live Math Sandbox Simulator
+function updateMathSandbox() {
+  const salaryMod = parseFloat(document.getElementById("sb-salary-slider")?.value) || 100;
+  const shockAmt = parseFloat(document.getElementById("sb-shock-input")?.value) || 0;
+  const reservePct = parseFloat(document.getElementById("fc-reserve-input")?.value) || (state.forecastSettings?.reservePercentage || 5.0);
+
+  const baseIncome = (state.incomes || []).reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
+  const simulatedIncome = (baseIncome * (salaryMod / 100));
+
+  const totalFixed = (state.fixedPayments || []).reduce((acc, f) => acc + (Number(f.amount) || 0), 0);
+  const totalSubs = (state.subscriptions || []).reduce((acc, s) => acc + (Number(s.amountLkr) || 0), 0);
+  const continuingBnpl = (state.installments || []).filter(i => (i.remaining || 0) > (i.monthly || 0)).reduce((acc, i) => acc + (Number(i.monthly) || 0), 0);
+  const totalCommitted = totalFixed + totalSubs + 10000 + continuingBnpl + shockAmt;
+
+  const netDiff = simulatedIncome - totalCommitted;
+  const hasShortfall = netDiff < 0;
+  const safetyReserveAmt = simulatedIncome * (reservePct / 100);
+  const requiredBuffer = hasShortfall ? Math.abs(netDiff) + safetyReserveAmt : safetyReserveAmt;
+
+  const resEl = document.getElementById("sb-output-container");
+  if (resEl) {
+    resEl.innerHTML = `
+      <div style="flex: 1; min-width: 250px;">
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">SIMULATED NEXT MONTH SALARY (${salaryMod}%)</div>
+        <div style="font-size: 1.3rem; font-weight: 800; color: #FFF;">${fmt(simulatedIncome)}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Committed Bills: ${fmt(totalCommitted)}</div>
+      </div>
+      <div style="flex: 1; min-width: 250px;">
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">PROJECTED OUTCOME</div>
+        <div style="font-size: 1.3rem; font-weight: 800; color: ${hasShortfall ? 'var(--danger)' : 'var(--success)'};">
+          ${hasShortfall ? '⚠️ SHORTFALL: - ' + fmt(Math.abs(netDiff)) : '✅ SURPLUS: + ' + fmt(netDiff)}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Mandatory Safety Buffer: <strong>${fmt(requiredBuffer)}</strong></div>
+      </div>
+    `;
+  }
+}
+
+function saveAiSettings() {
+  const provider = document.getElementById("ai-provider-select")?.value || "gemini";
+  const geminiKey = document.getElementById("ai-gemini-key")?.value.trim() || "";
+  const openaiKey = document.getElementById("ai-openai-key")?.value.trim() || "";
+  const model = document.getElementById("ai-model-select")?.value || "gemini-1.5-flash";
+  const tone = document.getElementById("ai-tone-select")?.value || "balanced";
+
+  state.aiSettings = { provider, geminiKey, openaiKey, model, tone };
+  persistState();
+  showToast("AI Studio settings saved!", "success");
+}
+
+async function testAiConnection() {
+  const outputEl = document.getElementById("ai-test-output");
+  if (outputEl) outputEl.innerHTML = "<em>Connecting to AI provider and generating deterministic advice...</em>";
+
+  const metrics = calculateMetrics();
+  const activeKey = state.aiSettings?.provider === "openai" ? state.aiSettings?.openaiKey : state.aiSettings?.geminiKey;
+
+  const prompt = `Household Financial Brief: Total Income: ${fmt(metrics.totalIncome)}, Committed Bills: ${fmt(metrics.totalCommitted)}, Spendable Balance: ${fmt(metrics.remainingBalance)}, Next Month Surplus: ${fmt(metrics.nextNetSurplus)}. Tone: ${state.aiSettings?.tone || 'balanced'}. Provide 2 sentences of advice.`;
+
+  if (!activeKey) {
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--warning);">⚠️ No API key set. Local Rule Engine generated advice:</span><br><strong>Surplus active:</strong> You have ${fmt(metrics.remainingBalance)} remaining. All recurring fixed commitments are funded.`;
+    return;
+  }
+
+  try {
+    const url = state.aiSettings?.provider === "openai"
+      ? "https://api.openai.com/v1/chat/completions"
+      : `https://generativelanguage.googleapis.com/v1beta/models/${state.aiSettings.model || 'gemini-1.5-flash'}:generateContent?key=${activeKey}`;
+
+    let responseText = "";
+    if (state.aiSettings.provider === "openai") {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+        body: JSON.stringify({
+          model: state.aiSettings.model || "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "Connected!";
+    } else {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await res.json();
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Connected!";
+    }
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--success);">✅ Connection Success (${state.aiSettings.provider}):</span><br>${responseText}`;
+  } catch (err) {
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--danger);">❌ Connection Failed: ${err.message}</span>`;
+  }
+}
+
+// Database Export & Import
+function exportDatabaseJson() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+  const a = document.createElement("a");
+  a.href = dataStr;
+  a.download = `homebudget_backup_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast("Database exported as JSON", "success");
+}
+
+function importDatabaseJson(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (parsed.household && parsed.members) {
+        state = parsed;
+        persistState();
+        renderApp();
+        showToast("Database restored successfully!", "success");
+      } else {
+        showToast("Invalid JSON schema backup file", "danger");
+      }
+    } catch (err) {
+      showToast("JSON parsing error", "danger");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetToSampleData() {
+  customConfirm("Reset all database records back to Notebook Sample Data?", () => {
+    state = JSON.parse(JSON.stringify(defaultState));
+    persistState();
+    renderApp();
+    showToast("Reset to default sample data", "info");
+  });
+}
+
+// Navigation & Tab Switching
+function switchTab(tabId) {
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".tab-pane").forEach(pane => {
+    pane.classList.toggle("active", pane.id === `tab-${tabId}`);
+  });
+}
+
+// Master Renderer
+function renderApp() {
+  // Theme & CSS
+  if (state.household?.themePreset) {
+    document.body.className = state.household.themePreset;
+  }
+  applyCustomCss();
+
+  // Branding
+  document.querySelectorAll("#app-logo-icon, .app-logo-icon").forEach(el => el.textContent = state.household?.logo || "💰");
+  document.querySelectorAll("#sidebar-app-name, .sidebar-app-name").forEach(el => el.textContent = state.household?.name || "HomeBudget");
+  document.querySelectorAll("#sidebar-cycle-tag, .sidebar-cycle-tag").forEach(el => el.textContent = state.household?.tagline || "25th-to-25th Cycle");
+
+  // Metrics
+  const metrics = calculateMetrics();
+
+  // Frontend Displays
+  const remainingEl = document.getElementById("remaining-balance-display");
+  if (remainingEl) remainingEl.textContent = fmt(metrics.remainingBalance);
+
+  const projectedEl = document.getElementById("projected-savings-display");
+  if (projectedEl) projectedEl.textContent = fmt(metrics.projectedSavings);
+
+  const totalIncEl = document.getElementById("total-income-display");
+  if (totalIncEl) totalIncEl.textContent = fmt(metrics.totalIncome);
+
+  const metricInc = document.getElementById("metric-income");
+  if (metricInc) metricInc.textContent = fmt(metrics.totalIncome);
+
+  const metricCom = document.getElementById("metric-committed");
+  if (metricCom) metricCom.textContent = fmt(metrics.totalCommitted);
+
+  const metricSp = document.getElementById("metric-spent");
+  if (metricSp) metricSp.textContent = fmt(metrics.totalDailySpent);
+
+  const metricWish = document.getElementById("metric-wishlist");
+  if (metricWish) metricWish.textContent = fmt(metrics.totalPlannedWishlist);
+
+  // Breakdown numbers
+  if (document.getElementById("bk-fixed")) document.getElementById("bk-fixed").textContent = fmt(metrics.totalFixed);
+  if (document.getElementById("bk-installments")) document.getElementById("bk-installments").textContent = fmt(metrics.totalInstallments);
+  if (document.getElementById("bk-cc")) document.getElementById("bk-cc").textContent = fmt(metrics.totalCreditCards);
+  if (document.getElementById("bk-subs")) document.getElementById("bk-subs").textContent = fmt(metrics.totalSubscriptions);
+
+  // Dynamic Component Visibility on Frontend
+  if (state.uiComponents) {
+    const comp = state.uiComponents;
+    const setVis = (id, show) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? "" : "none";
+    };
+    setVis("frontend-balance-card", comp.showBalanceCard !== false);
+    setVis("frontend-ai-card", comp.showAiAdvisorCard !== false);
+    setVis("frontend-metrics-grid", comp.showMetricsGrid !== false);
+    setVis("frontend-breakdown-card", comp.showBreakdownTable !== false);
+    setVis("frontend-recent-spends-card", comp.showRecentSpends !== false);
+  }
+
+  // Admin Dashboard Stats
+  if (document.getElementById("admin-stat-members")) {
+    document.getElementById("admin-stat-members").textContent = (state.members || []).length;
+    document.getElementById("admin-stat-income").textContent = fmt(metrics.totalIncome);
+    document.getElementById("admin-stat-committed").textContent = fmt(metrics.totalCommitted);
+    document.getElementById("admin-stat-reserve").textContent = `${metrics.reservePct}% (${fmt(metrics.safetyReserveAmount)})`;
+  }
+
+  // Render CMS Tables
+  renderCmsDataTables();
+
+  // Render Frontend Tables
+  renderFrontendLists();
+
+  // Update Math Sandbox
+  updateMathSandbox();
+}
+
+function renderCmsDataTables() {
   // Members Table
   const membersBody = document.getElementById("cms-members-table-body");
   if (membersBody) {
-    membersBody.innerHTML = state.members.map(m => `
+    membersBody.innerHTML = (state.members || []).map(m => `
       <tr>
-        <td><strong>${m.name}</strong></td>
-        <td><span class="platform-tag">${m.role}</span></td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="avatar" style="background: ${m.color || 'var(--primary)'}; width: 26px; height: 26px; font-size: 0.75rem;">${(m.name || 'M')[0]}</span>
+            <strong>${m.name}</strong>
+          </div>
+        </td>
+        <td><span class="badge badge-admin">${m.role}</span></td>
         <td><strong>${fmt(m.salary)}</strong></td>
         <td>
           <div class="action-btns">
@@ -563,586 +1118,130 @@ function renderAdminCmsTables() {
     `).join("");
   }
 
-  // System & Keys Inputs
-  if (document.getElementById("cms-cycle-day")) {
-    document.getElementById("cms-cycle-day").value = state.household.cycleStartDay;
-    document.getElementById("cms-gemini-key").value = state.household.geminiApiKey || "";
+  // Categories CMS Table
+  const catBody = document.getElementById("cms-categories-table-body");
+  if (catBody) {
+    catBody.innerHTML = (state.categories || []).map(c => `
+      <tr>
+        <td>
+          <span class="category-tag">
+            <span class="category-dot" style="background: ${c.color};"></span>
+            <strong>${c.name}</strong>
+          </span>
+        </td>
+        <td><strong>${fmt(c.monthlyBudget)}</strong> / month</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-table-edit" onclick="openCategoryModal(state.categories.find(x => x.id === '${c.id}'))">✏️ Edit</button>
+            <button class="btn-table-delete" onclick="deleteCategory('${c.id}')">🗑️ Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // Fixed Bills Table
+  const billsBody = document.getElementById("cms-bills-table-body");
+  if (billsBody) {
+    billsBody.innerHTML = (state.fixedPayments || []).map(b => `
+      <tr>
+        <td><strong>${b.name}</strong></td>
+        <td><span class="badge">${b.category}</span></td>
+        <td>${b.dueDay}th of month</td>
+        <td><strong>${fmt(b.amount)}</strong></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-table-edit" onclick="openBillModal(state.fixedPayments.find(x => x.id === '${b.id}'))">✏️ Edit</button>
+            <button class="btn-table-delete" onclick="deleteBill('${b.id}')">🗑️ Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // BNPL Table
+  const bnplBody = document.getElementById("cms-bnpl-table-body");
+  if (bnplBody) {
+    bnplBody.innerHTML = (state.installments || []).map(i => `
+      <tr>
+        <td><strong>${i.item}</strong></td>
+        <td><span class="badge badge-admin">${i.platform}</span></td>
+        <td>${i.member || 'Dhiyan'}</td>
+        <td><strong>${fmt(i.monthly)}</strong></td>
+        <td>${fmt(i.remaining)} / ${fmt(i.total)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-table-edit" onclick="openBnplModal(state.installments.find(x => x.id === '${i.id}'))">✏️ Edit</button>
+            <button class="btn-table-delete" onclick="deleteBnpl('${i.id}')">🗑️ Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // Raw JSON editor sync
+  const jsonEditor = document.getElementById("cms-raw-json-editor");
+  if (jsonEditor && document.activeElement !== jsonEditor) {
+    jsonEditor.value = JSON.stringify(state, null, 2);
   }
 }
 
-// --- CMS EDIT/ADD MODAL UTILS ---
-const cmsModal = document.getElementById("cms-modal");
-let cmsSaveCallback = null;
-
-function openCmsModal(title, formHtml, onSave) {
-  document.getElementById("cms-modal-title").textContent = title;
-  document.getElementById("cms-modal-body").innerHTML = formHtml;
-  cmsSaveCallback = onSave;
-  cmsModal.classList.add("active");
-}
-
-function closeCmsModal() {
-  cmsModal.classList.remove("active");
-  cmsSaveCallback = null;
-}
-
-document.getElementById("cms-modal-save-btn").addEventListener("click", () => {
-  if (cmsSaveCallback) cmsSaveCallback();
-});
-
-// --- MEMBER CRUD ---
-function openMemberModal(member = null) {
-  const isEdit = member !== null;
-  const html = `
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" id="m-name" class="form-control" value="${isEdit ? member.name : ''}">
-    </div>
-    <div class="form-group">
-      <label>Role</label>
-      <input type="text" id="m-role" class="form-control" value="${isEdit ? member.role : 'husband'}">
-    </div>
-    <div class="form-group">
-      <label>Regular Monthly Salary (Rs.)</label>
-      <input type="number" id="m-salary" class="form-control" value="${isEdit ? member.salary : '200000'}">
-    </div>
-  `;
-
-  openCmsModal(isEdit ? "Edit Member" : "Add Member", html, () => {
-    const name = document.getElementById("m-name").value.trim();
-    const role = document.getElementById("m-role").value.trim();
-    const salary = parseFloat(document.getElementById("m-salary").value) || 0;
-
-    if (!name) return alert("Please enter a name.");
-
-    if (isEdit) {
-      member.name = name; member.role = role; member.salary = salary;
-    } else {
-      state.members.push({ id: "m_" + Date.now(), name, role, salary, color: "#10B981" });
-    }
-    closeCmsModal();
+function saveRawJsonEditor() {
+  const editor = document.getElementById("cms-raw-json-editor");
+  if (!editor) return;
+  try {
+    const parsed = JSON.parse(editor.value);
+    state = parsed;
+    persistState();
     renderApp();
-  });
-}
-
-function deleteMember(id) {
-  if (confirm("Delete this household member?")) {
-    state.members = state.members.filter(x => x.id !== id);
-    renderApp();
+    showToast("JSON Database successfully committed!", "success");
+  } catch (err) {
+    showToast("Invalid JSON syntax: " + err.message, "danger");
   }
 }
 
-// --- FIXED BILL CRUD ---
-function openBillModal(bill = null) {
-  const isEdit = bill !== null;
-  const html = `
-    <div class="form-group">
-      <label>Bill Name</label>
-      <input type="text" id="b-name" class="form-control" value="${isEdit ? bill.name : ''}">
-    </div>
-    <div class="form-group">
-      <label>Amount (Rs.)</label>
-      <input type="number" id="b-amount" class="form-control" value="${isEdit ? bill.amount : '50000'}">
-    </div>
-    <div class="form-group">
-      <label>Category</label>
-      <input type="text" id="b-cat" class="form-control" value="${isEdit ? bill.category : 'Housing'}">
-    </div>
-    <div class="form-group">
-      <label>Due Day of Month</label>
-      <input type="number" id="b-due" class="form-control" value="${isEdit ? bill.dueDay : '25'}">
-    </div>
-    <div class="form-group">
-      <label>Destination Account / Bank</label>
-      <input type="text" id="b-dest" class="form-control" value="${isEdit ? (bill.dest || '') : 'BOC Account'}">
-    </div>
-  `;
+function renderFrontendLists() {
+  const recentSpends = document.getElementById("dashboard-recent-spends");
+  if (recentSpends) {
+    recentSpends.innerHTML = (state.dailySpends || []).slice(0, 5).map(s => `
+      <div class="spend-row">
+        <div class="spend-info">
+          <strong>${s.title}</strong>
+          <small>${s.date} • ${s.cat} • ${s.method}</small>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
+          <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️</button>
+        </div>
+      </div>
+    `).join("");
+  }
 
-  openCmsModal(isEdit ? "Edit Fixed Bill" : "Add Fixed Bill", html, () => {
-    const name = document.getElementById("b-name").value.trim();
-    const amount = parseFloat(document.getElementById("b-amount").value) || 0;
-    const category = document.getElementById("b-cat").value.trim();
-    const dueDay = parseInt(document.getElementById("b-due").value) || 25;
-    const dest = document.getElementById("b-dest").value.trim();
-
-    if (!name || amount <= 0) return alert("Please fill valid bill name and amount.");
-
-    if (isEdit) {
-      bill.name = name; bill.amount = amount; bill.category = category; bill.dueDay = dueDay; bill.dest = dest;
-    } else {
-      state.fixedPayments.push({ id: "f_" + Date.now(), name, amount, category, dueDay, dest, isPaid: false });
-    }
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteBill(id) {
-  if (confirm("Delete this bill?")) {
-    state.fixedPayments = state.fixedPayments.filter(x => x.id !== id);
-    renderApp();
+  const allSpends = document.getElementById("dashboard-recent-spends-full");
+  if (allSpends) {
+    allSpends.innerHTML = (state.dailySpends || []).map(s => `
+      <div class="spend-row">
+        <div class="spend-info">
+          <strong>${s.title}</strong>
+          <small>${s.date} • ${s.cat} • ${s.method}</small>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
+          <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join("");
   }
 }
 
-// --- BNPL CRUD ---
-function openBnplModal(inst = null) {
-  const isEdit = inst !== null;
-  const html = `
-    <div class="form-group">
-      <label>Item Name</label>
-      <input type="text" id="i-name" class="form-control" value="${isEdit ? inst.item : ''}">
-    </div>
-    <div class="form-group">
-      <label>Platform (Koko, Mintpay, PayZy)</label>
-      <input type="text" id="i-plat" class="form-control" value="${isEdit ? inst.platform : 'Koko'}">
-    </div>
-    <div class="form-group">
-      <label>Assigned Member</label>
-      <input type="text" id="i-mem" class="form-control" value="${isEdit ? inst.member : 'Dhiyan'}">
-    </div>
-    <div class="form-group">
-      <label>Monthly Installment (Rs.)</label>
-      <input type="number" id="i-month" class="form-control" value="${isEdit ? inst.monthly : '4500'}">
-    </div>
-    <div class="form-group">
-      <label>Remaining Balance (Rs.)</label>
-      <input type="number" id="i-rem" class="form-control" value="${isEdit ? inst.remaining : '9000'}">
-    </div>
-    <div class="form-group">
-      <label>Total Cost (Rs.)</label>
-      <input type="number" id="i-tot" class="form-control" value="${isEdit ? inst.total : '13500'}">
-    </div>
-  `;
-
-  openCmsModal(isEdit ? "Edit BNPL Plan" : "Add BNPL Plan", html, () => {
-    const item = document.getElementById("i-name").value.trim();
-    const platform = document.getElementById("i-plat").value.trim();
-    const member = document.getElementById("i-mem").value.trim();
-    const monthly = parseFloat(document.getElementById("i-month").value) || 0;
-    const remaining = parseFloat(document.getElementById("i-rem").value) || 0;
-    const total = parseFloat(document.getElementById("i-tot").value) || monthly * 3;
-
-    if (!item || monthly <= 0) return alert("Please fill valid item name and monthly amount.");
-
-    if (isEdit) {
-      inst.item = item; inst.platform = platform; inst.member = member; inst.monthly = monthly; inst.remaining = remaining; inst.total = total;
-    } else {
-      state.installments.push({ id: "inst_" + Date.now(), item, platform, member, monthly, remaining, total, isPaid: false });
-    }
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteBnpl(id) {
-  if (confirm("Delete this BNPL plan?")) {
-    state.installments = state.installments.filter(x => x.id !== id);
-    renderApp();
-  }
-}
-
-// --- SUBSCRIPTIONS & CARDS CRUD ---
-function openSubModal(sub = null) {
-  const isEdit = sub !== null;
-  const html = `
-    <div class="form-group">
-      <label>Subscription Name</label>
-      <input type="text" id="s-name" class="form-control" value="${isEdit ? sub.name : ''}">
-    </div>
-    <div class="form-group">
-      <label>Monthly LKR Amount</label>
-      <input type="number" id="s-amt" class="form-control" value="${isEdit ? sub.amountLkr : '2500'}">
-    </div>
-    <div class="form-group">
-      <label>Billing Day</label>
-      <input type="number" id="s-day" class="form-control" value="${isEdit ? sub.billingDay : '24'}">
-    </div>
-  `;
-
-  openCmsModal(isEdit ? "Edit Subscription" : "Add Subscription", html, () => {
-    const name = document.getElementById("s-name").value.trim();
-    const amountLkr = parseFloat(document.getElementById("s-amt").value) || 0;
-    const billingDay = parseInt(document.getElementById("s-day").value) || 24;
-
-    if (!name || amountLkr <= 0) return alert("Please fill valid subscription details.");
-
-    if (isEdit) {
-      sub.name = name; sub.amountLkr = amountLkr; sub.billingDay = billingDay;
-    } else {
-      state.subscriptions.push({ id: "s_" + Date.now(), name, amountLkr, billingDay, isPaid: false });
-    }
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteSub(id) {
-  if (confirm("Delete this subscription?")) {
-    state.subscriptions = state.subscriptions.filter(x => x.id !== id);
-    renderApp();
-  }
-}
-
-function openCardModal(card = null) {
-  const isEdit = card !== null;
-  const html = `
-    <div class="form-group">
-      <label>Card Name</label>
-      <input type="text" id="c-name" class="form-control" value="${isEdit ? card.name : 'Combank Platinum'}">
-    </div>
-    <div class="form-group">
-      <label>Bank Name</label>
-      <input type="text" id="c-bank" class="form-control" value="${isEdit ? card.bank : 'Commercial Bank'}">
-    </div>
-    <div class="form-group">
-      <label>Statement Due Amount (Rs.)</label>
-      <input type="number" id="c-due" class="form-control" value="${isEdit ? card.due : '40000'}">
-    </div>
-  `;
-
-  openCmsModal(isEdit ? "Edit Credit Card" : "Add Credit Card", html, () => {
-    const name = document.getElementById("c-name").value.trim();
-    const bank = document.getElementById("c-bank").value.trim();
-    const due = parseFloat(document.getElementById("c-due").value) || 0;
-
-    if (!name) return alert("Please enter card name.");
-
-    if (isEdit) {
-      card.name = name; card.bank = bank; card.due = due;
-    } else {
-      state.creditCards.push({ id: "cc_" + Date.now(), name, bank, due, isPaid: false });
-    }
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteCard(id) {
-  if (confirm("Delete this card?")) {
-    state.creditCards = state.creditCards.filter(x => x.id !== id);
-    renderApp();
-  }
-}
-
-// --- WISHLIST CRUD ---
-function openWishlistModal(item = null) {
-  const isEdit = item !== null;
-  const html = `
-    <div class="form-group">
-      <label>Item Name</label>
-      <input type="text" id="w-item" class="form-control" value="${isEdit ? item.item : ''}">
-    </div>
-    <div class="form-group">
-      <label>Category</label>
-      <input type="text" id="w-cat" class="form-control" value="${isEdit ? item.category : 'Kitchen'}">
-    </div>
-    <div class="form-group">
-      <label>Estimated Cost (Rs.)</label>
-      <input type="number" id="w-cost" class="form-control" value="${isEdit ? item.cost : '2000'}">
-    </div>
-    <div class="form-group">
-      <label>Priority (high / medium / low)</label>
-      <input type="text" id="w-pri" class="form-control" value="${isEdit ? item.priority : 'medium'}">
-    </div>
-  `;
-
-  openCmsModal(isEdit ? "Edit Wishlist Item" : "Add Wishlist Item", html, () => {
-    const itemName = document.getElementById("w-item").value.trim();
-    const category = document.getElementById("w-cat").value.trim();
-    const cost = parseFloat(document.getElementById("w-cost").value) || 0;
-    const priority = document.getElementById("w-pri").value.trim().toLowerCase();
-
-    if (!itemName) return alert("Please enter item name.");
-
-    if (isEdit) {
-      item.item = itemName; item.category = category; item.cost = cost; item.priority = priority;
-    } else {
-      state.wishlist.push({ id: "w_" + Date.now(), item: itemName, category, cost, priority, isPlanned: false });
-    }
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteWishlistItem(id) {
-  if (confirm("Delete this wishlist item?")) {
-    state.wishlist = state.wishlist.filter(x => x.id !== id);
-    renderApp();
-  }
-}
-
-// --- SPENDS CRUD ---
-function editSpendModal(id) {
-  const s = state.dailySpends.find(x => x.id === id);
-  if (!s) return;
-
-  const html = `
-    <div class="form-group">
-      <label>Description</label>
-      <input type="text" id="sp-title" class="form-control" value="${s.title}">
-    </div>
-    <div class="form-group">
-      <label>Amount (Rs.)</label>
-      <input type="number" id="sp-amt" class="form-control" value="${s.amount}">
-    </div>
-    <div class="form-group">
-      <label>Category</label>
-      <input type="text" id="sp-cat" class="form-control" value="${s.cat}">
-    </div>
-    <div class="form-group">
-      <label>Payment Method</label>
-      <input type="text" id="sp-method" class="form-control" value="${s.method}">
-    </div>
-  `;
-
-  openCmsModal("Edit Daily Spend", html, () => {
-    const title = document.getElementById("sp-title").value.trim();
-    const amount = parseFloat(document.getElementById("sp-amt").value) || 0;
-    const cat = document.getElementById("sp-cat").value.trim();
-    const method = document.getElementById("sp-method").value.trim();
-
-    if (!title || amount <= 0) return alert("Please fill valid details.");
-
-    s.title = title; s.amount = amount; s.cat = cat; s.method = method;
-    closeCmsModal();
-    renderApp();
-  });
-}
-
-function deleteSpend(id) {
-  if (confirm("Delete this spend entry?")) {
-    state.dailySpends = state.dailySpends.filter(s => s.id !== id);
-    renderApp();
-  }
-}
-
-// --- SYSTEM CONFIG & BACKUP ---
-function saveCmsSystemSettings() {
-  state.household.cycleStartDay = parseInt(document.getElementById("cms-cycle-day").value) || 25;
-  state.household.geminiApiKey = document.getElementById("cms-gemini-key").value.trim();
-  alert("System parameters saved!");
+// Initial Bootstrapping
+document.addEventListener("DOMContentLoaded", () => {
   renderApp();
-}
 
-function exportDatabaseJson() {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `homebudget_backup_${new Date().toISOString().split('T')[0]}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-}
-
-function importDatabaseJson(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (imported.household && imported.members) {
-        state = imported;
-        alert("Database restored successfully!");
-        renderApp();
-      } else {
-        alert("Invalid backup JSON format.");
-      }
-    } catch (err) {
-      alert("Error reading JSON file.");
-    }
-  };
-  reader.readAsText(file);
-}
-
-function resetToSampleData() {
-  if (confirm("Reset everything back to handwritten notebook sample data?")) {
-    state = JSON.parse(JSON.stringify(defaultState));
-    localStorage.removeItem(STORAGE_KEY);
-    renderApp();
-  }
-}
-
-// --- AUTH CONTROLLER & FIRST-RUN SETUP ---
-const authModal = document.getElementById("auth-modal");
-
-function openAuthModal() {
-  const isFirstRun = !state.adminSetup.hasAdminRegistered;
-  document.getElementById("auth-first-run-banner").style.display = isFirstRun ? "block" : "none";
-  document.getElementById("auth-name-group").style.display = isFirstRun ? "block" : "none";
-  document.getElementById("auth-submit-btn").textContent = isFirstRun ? "Register Household Admin" : "Log In";
-  document.getElementById("auth-modal-title").textContent = isFirstRun ? "👑 First-Run Admin Setup" : "🔐 Household Access";
-  authModal.classList.add("active");
-}
-
-function closeAuthModal() {
-  authModal.classList.remove("active");
-}
-
-function quickLoginDemo() {
-  state.currentUser = {
-    name: "Sathsara",
-    email: "admin@homebudget.lk",
-    role: "husband",
-    isAdmin: true
-  };
-  closeAuthModal();
-  renderApp();
-}
-
-function handleAuthSubmit() {
-  const email = document.getElementById("auth-email-input").value.trim();
-  const password = document.getElementById("auth-password-input").value.trim();
-
-  if (!email || !password) return alert("Please enter email and password.");
-
-  if (!state.adminSetup.hasAdminRegistered) {
-    const name = document.getElementById("auth-name-input").value.trim() || "Admin";
-    state.adminSetup.hasAdminRegistered = true;
-    state.adminSetup.adminEmail = email;
-    state.currentUser = { name, email, role: "husband", isAdmin: true };
-    alert(`Admin account created! Registration is now permanently locked to ${email}.`);
-  } else {
-    state.currentUser = {
-      name: email.includes("wife") || email.includes("dhiyan") ? "Dhiyan" : "Sathsara",
-      email: email,
-      role: email.includes("wife") ? "wife" : "husband",
-      isAdmin: email === state.adminSetup.adminEmail || email.includes("admin")
-    };
-  }
-
-  closeAuthModal();
-  renderApp();
-}
-
-document.getElementById("btn-auth-action").addEventListener("click", openAuthModal);
-document.getElementById("auth-modal-close").addEventListener("click", closeAuthModal);
-document.getElementById("auth-modal-cancel").addEventListener("click", closeAuthModal);
-
-// --- NAVIGATION & EVENT LISTENERS ---
-function toggleBillPaid(id) {
-  const bill = state.fixedPayments.find(b => b.id === id);
-  if (bill) { bill.isPaid = !bill.isPaid; renderApp(); }
-}
-
-function toggleInstPaid(id) {
-  const inst = state.installments.find(i => i.id === id);
-  if (inst) { inst.isPaid = !inst.isPaid; renderApp(); }
-}
-
-function toggleSubPaid(id) {
-  const sub = state.subscriptions.find(s => s.id === id);
-  if (sub) { sub.isPaid = !sub.isPaid; renderApp(); }
-}
-
-function toggleWishlistPlan(id) {
-  const item = state.wishlist.find(w => w.id === id);
-  if (item) { item.isPlanned = !item.isPlanned; renderApp(); }
-}
-
-function switchTab(tabId) {
-  document.querySelectorAll(".tab-pane").forEach(el => el.classList.remove("active"));
-  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-
-  const targetPane = document.getElementById("tab-" + tabId);
-  const targetNav = document.querySelector(`[data-tab="${tabId}"]`);
-
-  if (targetPane) targetPane.classList.add("active");
-  if (targetNav) targetNav.classList.add("active");
-
-  const titles = {
-    "dashboard": "Cycle Overview",
-    "daily-spends": "Daily Spend Tracker",
-    "installments": "BNPL & Koko Installments",
-    "fixed-bills": "Fixed Bills & Loans",
-    "forecast": "Forward Survival Forecast",
-    "wishlist": "Wishlist & Things to Buy",
-    "subscriptions": "Subscriptions & Auto-Pay",
-    "admin-cms": "Scoped Admin CMS Control Panel"
-  };
-  document.getElementById("page-title").textContent = titles[tabId] || "Household Budget";
-}
-
-document.querySelectorAll(".nav-item").forEach(btn => {
-  btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab")));
-});
-
-document.querySelectorAll(".cms-nav-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".cms-nav-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".cms-view-pane").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    const target = btn.getAttribute("data-cms-view");
-    const pane = document.getElementById(target);
-    if (pane) pane.classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      if (tab) switchTab(tab);
+    });
   });
 });
-
-document.getElementById("btn-open-cms").addEventListener("click", () => switchTab("admin-cms"));
-document.getElementById("btn-forecast-modal").addEventListener("click", () => switchTab("forecast"));
-
-// Spend Dialog
-const spendModal = document.getElementById("spend-modal");
-let currentSpendMethod = "Cash";
-let currentSpendCat = "Groceries";
-
-function openSpendModal() {
-  spendModal.classList.add("active");
-  document.getElementById("spend-amount-input").value = "";
-  document.getElementById("spend-title-input").value = "";
-  document.getElementById("spend-amount-input").focus();
-}
-
-function closeSpendModal() {
-  spendModal.classList.remove("active");
-}
-
-document.getElementById("btn-quick-spend").addEventListener("click", openSpendModal);
-document.getElementById("btn-add-spend-page").addEventListener("click", openSpendModal);
-document.getElementById("modal-close-btn").addEventListener("click", closeSpendModal);
-document.getElementById("modal-cancel-btn").addEventListener("click", closeSpendModal);
-
-document.querySelectorAll("#payment-method-chips .chip").forEach(c => {
-  c.addEventListener("click", () => {
-    document.querySelectorAll("#payment-method-chips .chip").forEach(x => x.classList.remove("active"));
-    c.classList.add("active");
-    currentSpendMethod = c.getAttribute("data-method");
-  });
-});
-
-document.querySelectorAll("#category-chips .chip").forEach(c => {
-  c.addEventListener("click", () => {
-    document.querySelectorAll("#category-chips .chip").forEach(x => x.classList.remove("active"));
-    c.classList.add("active");
-    currentSpendCat = c.getAttribute("data-cat");
-  });
-});
-
-document.getElementById("modal-save-spend-btn").addEventListener("click", () => {
-  const amount = parseFloat(document.getElementById("spend-amount-input").value);
-  const title = document.getElementById("spend-title-input").value.trim();
-
-  if (!amount || amount <= 0 || !title) {
-    alert("Please enter a valid amount and description.");
-    return;
-  }
-
-  const now = new Date();
-  const dateStr = now.toISOString().split("T")[0];
-
-  state.dailySpends.unshift({
-    id: "d_" + Date.now(),
-    date: dateStr,
-    amount: amount,
-    cat: currentSpendCat,
-    method: currentSpendMethod,
-    title: title
-  });
-
-  closeSpendModal();
-  renderApp();
-});
-
-// Initial Render
-renderApp();

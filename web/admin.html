@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WordPress Admin CMS | Household Budget Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-emerald">
+
+  <!-- WordPress Top Admin Bar -->
+  <header class="wp-admin-bar">
+    <div class="wp-bar-left">
+      <a href="/" class="wp-bar-item brand-indicator" title="Go to Live Customer App">
+        <span>🏠</span> <strong>Visit Live Site</strong>
+      </a>
+      <span class="wp-bar-item">|</span>
+      <button class="wp-bar-item wp-bar-btn-primary" onclick="openMemberModal()">
+        <span>➕</span> New Member
+      </button>
+      <button class="wp-bar-item" onclick="openBillModal()">
+        <span>➕</span> Fixed Bill
+      </button>
+      <button class="wp-bar-item" onclick="openBnplModal()">
+        <span>➕</span> BNPL Plan
+      </button>
+      <button class="wp-bar-item" onclick="openCategoryModal()">
+        <span>➕</span> Category
+      </button>
+    </div>
+    <div class="wp-bar-right">
+      <button class="btn-help-pill" onclick="openHelpGuide('cms')">
+        <span>📖</span> CMS Guide & Help
+      </button>
+      <span class="badge badge-admin">👑 Super Admin</span>
+      <div class="wp-bar-item" style="gap: 0.5rem;">
+        <span class="avatar" style="width: 24px; height: 24px; font-size: 0.75rem;">S</span>
+        <span>Sathsara (Admin)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- WordPress Admin App Shell -->
+  <div class="app-shell">
+    
+    <!-- Left WP Admin Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">⚙️</div>
+        <div>
+          <h2>Admin CMS</h2>
+          <span class="cycle-tag">Control Center v3.5</span>
+        </div>
+      </div>
+
+      <div class="nav-section-title">Core Management</div>
+      <nav class="nav-links">
+        <button class="nav-item active" data-tab="cms-dashboard">
+          <span class="icon">📊</span> <span>Dashboard & Health</span>
+        </button>
+        <button class="nav-item" data-tab="cms-layout">
+          <span class="icon">🧩</span> <span>UI & Component Builder</span>
+        </button>
+        <button class="nav-item" data-tab="cms-appearance">
+          <span class="icon">🎨</span> <span>Appearance / Themes</span>
+        </button>
+        <button class="nav-item" data-tab="cms-members">
+          <span class="icon">👥</span> <span>Members & Roles</span>
+          <span class="nav-badge" id="badge-member-count">2</span>
+        </button>
+        <button class="nav-item" data-tab="cms-financials">
+          <span class="icon">💳</span> <span>Financial Modules</span>
+        </button>
+        <button class="nav-item" data-tab="cms-categories">
+          <span class="icon">🏷️</span> <span>Expense Categories</span>
+        </button>
+        <button class="nav-item" data-tab="cms-engine">
+          <span class="icon">📐</span> <span>Forecast & Math Engine</span>
+        </button>
+        <button class="nav-item" data-tab="cms-ai">
+          <span class="icon">🤖</span> <span>AI Advisor Studio</span>
+        </button>
+        <button class="nav-item" data-tab="cms-guide">
+          <span class="icon">📖</span> <span>Handbook & Guide Hub</span>
+        </button>
+        <button class="nav-item" data-tab="cms-database">
+          <span class="icon">💾</span> <span>Database Tools & JSON</span>
+        </button>
+
+        <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0;"></div>
+
+        <a href="/" class="nav-item nav-admin-link">
+          <span class="icon">🚀</span> <strong>Back to Live App</strong>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="member-chip">
+          <span class="avatar">S</span>
+          <div class="user-info-text">
+            <div class="member-name">Sathsara (Admin)</div>
+            <div class="member-role">Full CMS Privileges</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Admin CMS Content Views -->
+    <main class="main-content">
+
+      <!-- TAB 1: CMS DASHBOARD & HEALTH -->
+      <section id="tab-cms-dashboard" class="tab-pane active">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>Admin CMS Dashboard</h1>
+              <span class="badge badge-success">System Operational</span>
+              <button class="btn-help-pill" onclick="openHelpGuide('cms')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Comprehensive household content management system and engine governor.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="exportDatabaseJson()">📥 Quick Backup</button>
+            <a href="/" class="btn btn-secondary">🌐 Preview Live Site</a>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Active Household Members</span>
+              <span class="metric-icon">👥</span>
+            </div>
+            <div class="metric-value" id="admin-stat-members">2</div>
+            <div class="metric-sub">Sathsara, Dhiyan</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Total Household Income</span>
+              <span class="metric-icon">💵</span>
+            </div>
+            <div class="metric-value" id="admin-stat-income">Rs. 399,585</div>
+            <div class="metric-sub">Combined Base Salaries</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Committed Fixed Outgoings</span>
+              <span class="metric-icon">📑</span>
+            </div>
+            <div class="metric-value" id="admin-stat-committed">Rs. 251,745</div>
+            <div class="metric-sub">Rent, Loan, BNPL, CC, Subs</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Safety Reserve Buffer</span>
+              <span class="metric-icon">🛡️</span>
+            </div>
+            <div class="metric-value" id="admin-stat-reserve">5.0%</div>
+            <div class="metric-sub">Configured Survival Runway</div>
+          </div>
+        </div>
+
+        <!-- Quick Launch Pad -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <h3>⚡ CMS Quick Actions</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button class="btn btn-secondary" onclick="openMemberModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>➕</span> <strong>Add New Member</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openBillModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>🏠</span> <strong>Add Fixed Bill / Loan</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openBnplModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>🛍️</span> <strong>Add BNPL Plan</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openCategoryModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>🏷️</span> <strong>Add Expense Category</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openCardModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>💳</span> <strong>Add Credit Card</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openSubModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>📱</span> <strong>Add Subscription</strong>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: UI & COMPONENT BUILDER -->
+      <section id="tab-cms-layout" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>🧩 UI & Component Layout Builder</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('cms')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Control exactly which cards, banners, and buttons are visible on the customer/user-end dashboard.</p>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3>Customer Dashboard Component Toggles</h3>
+          <p class="text-muted">Turn features on or off in real-time. Changes immediately reflect on the live app.</p>
+          
+          <div style="margin-top: 1.25rem;">
+            <div class="toggle-item">
+              <div class="toggle-label">
+                <strong>Realtime Spendable Balance Banner</strong>
+                <small>Hero banner displaying spendable cash and projected end-of-cycle savings.</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked onchange="toggleComponent('showBalanceCard', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-label">
+                <strong>AI Advisor Guidance Card</strong>
+                <small>Intelligent deterministic financial advice card at the top of the dashboard.</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked onchange="toggleComponent('showAiAdvisorCard', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-label">
+                <strong>4-Card Key Metrics Grid</strong>
+                <small>Displays Total Income, Committed Outgoings, Daily Spent, and Planned Wishlist.</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked onchange="toggleComponent('showMetricsGrid', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-label">
+                <strong>Cycle Outgoings Breakdown Table</strong>
+                <small>Detailed breakdown card of Fixed Bills, BNPL, Credit Cards, and Subscriptions.</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked onchange="toggleComponent('showBreakdownTable', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-label">
+                <strong>Recent Daily Spends List</strong>
+                <small>Recent itemized expense logs on the main dashboard.</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked onchange="toggleComponent('showRecentSpends', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: APPEARANCE & THEME CUSTOMIZER -->
+      <section id="tab-cms-appearance" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>🎨 Appearance & Customizer</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('cms')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Customize theme palettes, site identity, typography, and live custom CSS with zero code redeploy.</p>
+          </div>
+          <button class="btn btn-primary" onclick="saveThemeAndBranding()">💾 Save & Publish</button>
+        </div>
+
+        <div class="section-card">
+          <h3>Curated Theme Palettes</h3>
+          <p class="text-muted">Select a palette. Changes instantly apply across all client pages.</p>
+          
+          <div class="theme-presets-grid">
+            <div class="theme-card active" data-theme="theme-emerald" onclick="selectThemePreset('theme-emerald')">
+              <div class="theme-swatch emerald"></div>
+              <div class="theme-info">
+                <strong>Emerald Forest</strong>
+                <small>Vibrant Green</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-sapphire" onclick="selectThemePreset('theme-sapphire')">
+              <div class="theme-swatch sapphire"></div>
+              <div class="theme-info">
+                <strong>Sapphire Ocean</strong>
+                <small>Deep Royal Blue</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-amethyst" onclick="selectThemePreset('theme-amethyst')">
+              <div class="theme-swatch amethyst"></div>
+              <div class="theme-info">
+                <strong>Royal Amethyst</strong>
+                <small>Purple & Indigo</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-amber" onclick="selectThemePreset('theme-amber')">
+              <div class="theme-swatch amber"></div>
+              <div class="theme-info">
+                <strong>Amber Sunset</strong>
+                <small>Warm Golden Glow</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-crimson" onclick="selectThemePreset('theme-crimson')">
+              <div class="theme-swatch crimson"></div>
+              <div class="theme-info">
+                <strong>Crimson Ruby</strong>
+                <small>Bold Scarlet Red</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-cyberpunk" onclick="selectThemePreset('theme-cyberpunk')">
+              <div class="theme-swatch cyberpunk"></div>
+              <div class="theme-info">
+                <strong>Cyberpunk Neon</strong>
+                <small>Cyan & Hot Pink</small>
+              </div>
+            </div>
+
+            <div class="theme-card" data-theme="theme-obsidian" onclick="selectThemePreset('theme-obsidian')">
+              <div class="theme-swatch obsidian"></div>
+              <div class="theme-info">
+                <strong>Obsidian Gold</strong>
+                <small>Luxury Deep Black</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 1.5rem;">
+            <div class="form-group">
+              <label>App Name</label>
+              <input type="text" id="cms-app-name-input" class="form-control" value="HomeBudget">
+            </div>
+            <div class="form-group">
+              <label>Tagline / Cycle Descriptor</label>
+              <input type="text" id="cms-tagline-input" class="form-control" value="25th-to-25th Cycle Tracker">
+            </div>
+            <div class="form-group">
+              <label>Logo Icon (Emoji / Character)</label>
+              <input type="text" id="cms-app-logo-input" class="form-control" value="💰">
+            </div>
+            <div class="form-group">
+              <label>Currency Symbol</label>
+              <input type="text" id="cms-currency-input" class="form-control" value="Rs.">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Live Custom CSS Overrides (Injected into live app)</label>
+            <textarea id="cms-custom-css" class="form-control" rows="4" style="font-family: 'Fira Code', monospace; font-size: 0.85rem;" placeholder="/* Custom CSS overrides */&#10;.balance-amount { text-shadow: 0 0 10px rgba(16,185,129,0.5); }"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: MEMBERS & ROLES -->
+      <section id="tab-cms-members" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>👥 Household Members & Roles</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('cycle')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Manage household accounts, roles, salaries, and color accents.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openMemberModal()">➕ Add Member</button>
+        </div>
+
+        <div class="section-card">
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Role</th>
+                  <th>Regular Monthly Base Salary</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-members-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: FINANCIAL MODULES -->
+      <section id="tab-cms-financials" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>💳 Financial Modules Manager</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('bnpl')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Full CRUD control over all fixed bills, BNPL plans, credit cards, and subscriptions.</p>
+          </div>
+        </div>
+
+        <!-- Fixed Bills -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🏠 Fixed Bills & Bank Loans</h3>
+              <p class="text-muted">Rent, ECB, Water, Personal loans, Gold loans</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openBillModal()">➕ Add Fixed Bill</button>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Bill Name</th>
+                  <th>Category</th>
+                  <th>Due Day</th>
+                  <th>Monthly Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-bills-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BNPL Plans -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🛍️ Buy Now Pay Later (BNPL)</h3>
+              <p class="text-muted">Koko, Mintpay, PayZy installment tracking</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openBnplModal()">➕ Add BNPL Plan</button>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Platform</th>
+                  <th>Purchaser</th>
+                  <th>Monthly Installment</th>
+                  <th>Remaining / Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-bnpl-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: EXPENSE CATEGORIES -->
+      <section id="tab-cms-categories" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>🏷️ Expense Categories & Monthly Budgets</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('balance')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Manage itemized spending categories, tag colors, and monthly target budgets.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCategoryModal()">➕ Add Category</button>
+        </div>
+
+        <div class="section-card">
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Monthly Target Budget</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-categories-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: FORECAST & MATH ENGINE (SUPER DETAILED & VISUAL) -->
+      <section id="tab-cms-engine" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>📐 Forecast & Math Engine (Visual Explanation & Governors)</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('forecast')">❓ Full Math Guide</button>
+            </div>
+            <p class="cycle-subtitle">Clear plain-English explanation of how your survival numbers are calculated with zero magic.</p>
+          </div>
+          <button class="btn btn-primary" onclick="saveForecastSettings()">💾 Save Engine Governors</button>
+        </div>
+
+        <!-- 1. The Core Formulas in Plain English -->
+        <div class="math-formula-box">
+          <h3 style="color: #A5B4FC; margin-bottom: 0.5rem;">📖 How the Deterministic Math Works (Step-by-Step)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            You never have to guess where your money went. The engine calculates everything deterministically in two simple steps:
+          </p>
+
+          <div class="math-step-card">
+            <strong style="color: var(--primary-light);">STEP 1: Current Month Spendable Cash</strong>
+            <div class="formula-badge">
+              Spendable Balance = Total Salary (Rs. 399,585) - Total Committed Bills (Rs. 251,745) - Daily Spends
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+              Committed Bills includes your Rent, ECB+Water, Bank Loans, Koko installments, CC dues, and Subscriptions. Deducting them upfront ensures you never accidentally spend rent money!
+            </p>
+          </div>
+
+          <div class="math-step-card" style="margin-top: 0.75rem;">
+            <strong style="color: var(--warning);">STEP 2: Next Month Forward Survival Forecast</strong>
+            <div class="formula-badge">
+              Next Month Surplus = Next Month Salary - (Recurring Fixed Bills + Continuing BNPL + Subscriptions)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+              BNPL plans that finish this cycle (e.g. 3/3 installments paid) are <strong>automatically excluded</strong> from next month's committed costs, freeing up your cashflow!
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. The Two Tunable Governors -->
+        <div class="section-card">
+          <h3>⚙️ Tunable Engine Governors (Parameters)</h3>
+          <p class="text-muted">Adjust how conservative or aggressive the app should be in protecting your household.</p>
+
+          <div class="form-grid" style="margin-top: 1.25rem;">
+            <div class="form-group">
+              <label>1. Safety Contingency Reserve (%)</label>
+              <input type="number" id="fc-reserve-input" class="form-control form-control-lg" value="5.0" step="0.5" oninput="updateMathSandbox()">
+              <div class="explainer-box" style="margin-top: 0.5rem;">
+                <strong>What is this?</strong> A safety cushion percentage (default <strong>5%</strong> = approx <strong>Rs. 19,979</strong>) locked away in case next month's salary is delayed or unexpected expenses arise.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>2. Required Runway Buffer (Days)</label>
+              <input type="number" id="fc-days-input" class="form-control form-control-lg" value="30">
+              <div class="explainer-box" style="margin-top: 0.5rem;">
+                <strong>What is this?</strong> The number of days ahead you want 100% financial peace of mind. Default is <strong>30 days</strong> (1 full salary cycle until the next 25th payday).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Interactive Live Math Sandbox / Simulator -->
+        <div class="sandbox-box">
+          <div class="card-header-flex">
+            <div>
+              <h3 style="color: #A5B4FC;">🧪 Live Math Simulator (Interactive Sandbox)</h3>
+              <p class="text-muted">Test what happens if income decreases or an emergency expense occurs:</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Simulate Next Month Income Level: <strong id="sb-slider-label">100% (Normal Salary)</strong></label>
+              <input type="range" id="sb-salary-slider" min="30" max="150" value="100" class="form-control" style="cursor: pointer;" oninput="document.getElementById('sb-slider-label').textContent = this.value + '%'; updateMathSandbox();">
+            </div>
+
+            <div class="form-group">
+              <label>Simulate Unexpected Shock Expense (Rs.)</label>
+              <input type="number" id="sb-shock-input" class="form-control" value="0" placeholder="e.g. 35000" oninput="updateMathSandbox()">
+            </div>
+          </div>
+
+          <!-- Dynamic Output Container -->
+          <div class="sandbox-result" id="sb-output-container"></div>
+        </div>
+      </section>
+
+      <!-- TAB 8: AI ADVISOR STUDIO -->
+      <section id="tab-cms-ai" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <div class="header-title-flex">
+              <h1>🤖 AI Advisor Studio</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('ai')">❓ Guide</button>
+            </div>
+            <p class="cycle-subtitle">Configure Bring-Your-Own (BYO) AI API keys, model endpoints, and advisor persona.</p>
+          </div>
+          <button class="btn btn-primary" onclick="saveAiSettings()">💾 Save AI Settings</button>
+        </div>
+
+        <div class="section-card">
+          <h3>AI Provider Configuration</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>AI Provider</label>
+              <select id="ai-provider-select" class="form-control">
+                <option value="gemini">Google Gemini (Recommended Free Tier)</option>
+                <option value="openai">OpenAI ChatGPT</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Model</label>
+              <select id="ai-model-select" class="form-control">
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Accurate)</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro (Deep Analysis)</option>
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+                <option value="gpt-4o">gpt-4o</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Google Gemini API Key</label>
+              <input type="password" id="ai-gemini-key" class="form-control" placeholder="AIzaSy...">
+            </div>
+
+            <div class="form-group">
+              <label>OpenAI API Key</label>
+              <input type="password" id="ai-openai-key" class="form-control" placeholder="sk-proj-...">
+            </div>
+
+            <div class="form-group">
+              <label>Advisor Persona Tone</label>
+              <select id="ai-tone-select" class="form-control">
+                <option value="balanced">Balanced & Supportive Financial Coach</option>
+                <option value="strict">Strict Budget Disciplinarian</option>
+                <option value="optimistic">Optimistic Family Growth Planner</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+            <button class="btn btn-secondary" onclick="testAiConnection()">⚡ Test Connection & Generate Advice</button>
+          </div>
+
+          <div id="ai-test-output" style="margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-md); font-size: 0.88rem; min-height: 50px;">
+            <em>Click "Test Connection" to test your API key against current household metrics.</em>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 9: HANDBOOK & USER GUIDE HUB -->
+      <section id="tab-cms-guide" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <h1>📖 Household Budgeting Guide & CMS Handbook</h1>
+            <p class="cycle-subtitle">Comprehensive documentation for both Household Admins and Family Members.</p>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3>Frequently Asked Questions & How-To Guides</h3>
+          
+          <div class="faq-item">
+            <h4>📅 Why does our budget run from 25th to 25th?</h4>
+            <p>
+              In Sri Lanka, major corporate salaries and bank payments are credited on the 25th. Running budgets on calendar months (1st to 30th) causes misleading balances because rent and loan deductions happen on the 25th. This app guarantees your spendable cash matches your actual salary rhythm.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <h4>🛍️ How do Koko and Mintpay BNPL plans affect our budget?</h4>
+            <p>
+              When you purchase an item via Koko (e.g. Rs. 15,000 in 3 installments of Rs. 5,000), only Rs. 5,000 is deducted in the current cycle. In the 3rd and final month, the engine automatically frees up that Rs. 5,000 for next month's forward survival forecast.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <h4>✨ Should I buy items on my Wishlist this month?</h4>
+            <p>
+              Look at the <strong>Projected Savings at Cycle End</strong> on the top banner. If projected savings is greater than the wishlist item cost, and Next Month is in <strong>Surplus</strong>, you can safely purchase it without going into credit card debt!
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <h4>🎨 How do I change colors and branding with zero redeployment?</h4>
+            <p>
+              Navigate to <strong>Appearance / Themes</strong> in the CMS sidebar. Click any theme palette or write custom CSS in the live editor and click <strong>Save & Publish</strong>. All changes apply immediately across all client browsers without reloading code.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 10: DATABASE TOOLS & RAW JSON -->
+      <section id="tab-cms-database" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <h1>💾 Database Manager & Raw JSON Editor</h1>
+            <p class="cycle-subtitle">Directly edit raw database state, export backups, or restore schema.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="exportDatabaseJson()">📥 Download Backup</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('db-file-input').click()">📤 Restore File</button>
+            <input type="file" id="db-file-input" style="display: none;" accept=".json" onchange="importDatabaseJson(event)">
+            <button class="btn btn-danger" onclick="resetToSampleData()">🔄 Reset to Sample Data</button>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="card-header-flex">
+            <h3>Live Raw JSON Database</h3>
+            <button class="btn btn-primary btn-sm" onclick="saveRawJsonEditor()">💾 Commit JSON Changes</button>
+          </div>
+          <textarea id="cms-raw-json-editor" class="form-control" rows="18" style="font-family: 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.4;"></textarea>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Generic Non-Blocking Modal Dialog -->
+  <div class="modal-overlay" id="generic-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="generic-modal-title">Item Editor</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="generic-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="generic-modal-save-btn" onclick="handleModalSave()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

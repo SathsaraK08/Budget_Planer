@@ -1,0 +1,38 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+pubspec.lock
+
+# Android / iOS
+android/app/build/
+ios/.symlinks/
+ios/Pods/
+ios/Podfile.lock
+
+# Web
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE & Editors
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Python / Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.env.local
+.venv/
+venv/
+ENV/
+
+# OS Files
+.DS_Store
+Thumbs.db
