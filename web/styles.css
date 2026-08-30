@@ -1230,7 +1230,21 @@ input:checked + .slider:before {
   gap: 0.5rem;
 }
 
-/* Responsive */
+/* ==============================================================================
+   COMPREHENSIVE RESPONSIVE STYLES (Mobile, iPhone, iPad, Tablet, Desktop)
+   ============================================================================== */
+
+/* Tablets & Small Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .theme-presets-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+/* Tablets & Large Phones (<= 900px) */
 @media (max-width: 900px) {
   .app-shell {
     flex-direction: column;
@@ -1239,11 +1253,234 @@ input:checked + .slider:before {
     width: 100%;
     height: auto;
     position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+  }
+  .sidebar .brand {
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .sidebar .nav-links {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.4rem;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .sidebar .nav-links::-webkit-scrollbar {
+    height: 4px;
+  }
+  .sidebar .nav-links::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  .sidebar .nav-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+  }
+  .sidebar .nav-divider,
+  .sidebar-footer {
+    display: none;
   }
   .main-content {
-    padding: 1rem;
+    padding: 1rem 0.85rem;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
   .balance-amount {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
 }
+
+/* Standard Mobile (<= 640px) - iPhone 14/15/16, Android */
+@media (max-width: 640px) {
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Top Bar */
+  .wp-admin-bar {
+    padding: 0 0.5rem;
+    height: auto;
+    min-height: 38px;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .wp-bar-left, .wp-bar-right {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Page Headers */
+  .top-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .header-title-flex {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .header-title-flex h1 {
+    font-size: 1.35rem;
+  }
+  .header-actions {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .header-actions .btn,
+  .header-actions a.btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* Balance Card */
+  .balance-card {
+    padding: 1.25rem 1rem;
+    border-radius: var(--radius-lg);
+  }
+  .balance-card-header {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+  }
+  .balance-amount {
+    font-size: 1.9rem;
+    margin: 0.5rem 0;
+  }
+  .balance-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 0.6rem;
+  }
+
+  /* Metrics Grid (2 columns on mobile) */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .metric-card {
+    padding: 0.85rem 0.75rem;
+  }
+  .metric-value {
+    font-size: 1.15rem;
+  }
+  .metric-sub {
+    font-size: 0.68rem;
+  }
+
+  /* Breakdown list */
+  .breakdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .breakdown-item strong {
+    align-self: flex-end;
+  }
+
+  /* Tables horizontal momentum scroll */
+  .table-responsive {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  .cms-table {
+    min-width: 540px;
+    font-size: 0.82rem;
+  }
+  .cms-table th, .cms-table td {
+    padding: 0.65rem 0.5rem;
+  }
+
+  /* Modals on Mobile */
+  .modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+    padding: 1.25rem 1rem;
+    margin: 0;
+  }
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+  .modal-footer .btn {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  /* AI Chat Widget on Small Screens */
+  #ai-chat-widget {
+    bottom: 1rem !important;
+    right: 1rem !important;
+  }
+  #ai-chat-panel {
+    width: calc(100vw - 2rem) !important;
+    max-width: 380px !important;
+    max-height: 75vh !important;
+  }
+  #ai-chat-fab {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.35rem !important;
+  }
+
+  /* Calendar Grid on Small Screens */
+  #calendar-container > div:last-child > div {
+    min-height: 44px !important;
+    padding: 0.2rem !important;
+  }
+
+  /* Section Cards */
+  .section-card {
+    padding: 1rem 0.85rem;
+    border-radius: var(--radius-md);
+  }
+  .card-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .card-header-flex .btn,
+  .card-header-flex a.btn {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+/* Extra Small Phones (<= 375px) - iPhone SE */
+@media (max-width: 375px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .balance-amount {
+    font-size: 1.65rem;
+  }
+}
+
