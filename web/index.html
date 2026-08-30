@@ -60,7 +60,10 @@
       </div>
 
       <nav class="nav-links">
-        <button class="nav-item active" data-tab="dashboard">
+        <button class="nav-item active" data-tab="landing" onclick="switchTab('landing')">
+          <span class="icon">✨</span> <span class="nav-label">3D Home &amp; Features</span>
+        </button>
+        <button class="nav-item" data-tab="dashboard">
           <span class="icon">📊</span> <span class="nav-label" data-label-key="nav.dashboard">Dashboard</span>
         </button>
         <button class="nav-item" data-tab="completed-payments">
@@ -140,8 +143,201 @@
         </div>
       </header>
 
+      <!-- TAB 0: 3D FULL INTERACTIVE LANDING PAGE -->
+      <section id="tab-landing" class="tab-pane active">
+        
+        <!-- Full 3D Interactive WebGL Hero -->
+        <div class="landing-hero-3d">
+          <div class="landing-canvas-container">
+            <canvas id="three-hero-canvas"></canvas>
+          </div>
+          <div class="landing-hero-overlay">
+            <div class="hero-3d-badge">
+              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine • Powered by Gemini AI
+            </div>
+            <h1 class="landing-hero-title">
+              Take 100% Control of Your <span>Household Financial Rhythm</span>
+            </h1>
+            <p class="landing-hero-subtitle">
+              Deterministic salary cycle budgeting, automated BNPL installment tracking, forward survival forecasting, and live AI financial coaching — all synced in real-time.
+            </p>
+            <div class="landing-hero-actions">
+              <button class="btn btn-primary" onclick="switchTab('dashboard')">
+                <span>🚀</span> Launch App Dashboard
+              </button>
+              <button class="btn btn-secondary" onclick="openSpendModal()">
+                <span>⚡</span> Quick Log Expense
+              </button>
+              <button class="btn btn-secondary" onclick="toggleAiChat()">
+                <span>🤖</span> Talk to AI Copilot
+              </button>
+              <a href="admin.html" class="btn btn-admin">
+                <span>👑</span> Admin CMS Portal
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Metrics & Value Ticker -->
+        <div class="landing-ticker">
+          <div class="ticker-card">
+            <div class="ticker-icon">📅</div>
+            <div class="ticker-info">
+              <strong>25th-to-25th Cycle</strong>
+              <small>Synced with salary day</small>
+            </div>
+          </div>
+          <div class="ticker-card">
+            <div class="ticker-icon">☁️</div>
+            <div class="ticker-info">
+              <strong>Supabase Cloud</strong>
+              <small>Instant multi-device sync</small>
+            </div>
+          </div>
+          <div class="ticker-card">
+            <div class="ticker-icon">🛍️</div>
+            <div class="ticker-info">
+              <strong>BNPL Auto-Payoff</strong>
+              <small>Koko &amp; Mintpay tracking</small>
+            </div>
+          </div>
+          <div class="ticker-card">
+            <div class="ticker-icon">🤖</div>
+            <div class="ticker-info">
+              <strong>Gemini 2.0 AI</strong>
+              <small>Data-aware financial coach</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Header: Explore App Modules -->
+        <div class="landing-section-header">
+          <h2>⚡ Complete Financial Command Center</h2>
+          <p>Click any module below to instantly jump to that live interactive section in the app.</p>
+        </div>
+
+        <!-- 10 Feature Cards with Direct Quick-Action Routing -->
+        <div class="landing-grid">
+          
+          <div class="landing-card">
+            <div class="landing-card-icon">📊</div>
+            <h3>Realtime Cycle Dashboard</h3>
+            <p>Real-time spendable cashflow banner after commitments, live outgoings breakdown, and safety reserve tracking.</p>
+            <button class="btn btn-primary" onclick="switchTab('dashboard')">🚀 Open Dashboard</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">🛍️</div>
+            <h3>BNPL &amp; Koko Plans</h3>
+            <p>Track active 3-month installments with remaining balances, payment status, and automatic monthly cashflow liberation.</p>
+            <button class="btn btn-secondary" onclick="switchTab('installments')">🛍️ Manage BNPL</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">🏠</div>
+            <h3>Fixed Bills &amp; Bank Loans</h3>
+            <p>Track mandatory rent, utility bills, insurance, and bank loans with automated status ticks and settled archives.</p>
+            <button class="btn btn-secondary" onclick="switchTab('fixed-bills')">🏠 View Fixed Bills</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">🔮</div>
+            <h3>Forward Survival Forecast</h3>
+            <p>Deterministic mathematical engine projecting next cycle's surplus or deficit before next month even starts.</p>
+            <button class="btn btn-secondary" onclick="switchTab('forecast')">🔮 View Forecast</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">✨</div>
+            <h3>Needs Planner &amp; Wishlist</h3>
+            <p>Categorized buy-list bucket cart with real-time affordability checks based on current cycle spendable balance.</p>
+            <button class="btn btn-secondary" onclick="switchTab('wishlist')">✨ Plan Needs</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">⚡</div>
+            <h3>Daily Expense Logs</h3>
+            <p>Instant daily expense logging with payment method tagging and shared multi-member attribution.</p>
+            <button class="btn btn-secondary" onclick="switchTab('daily-spends')">⚡ Log Spends</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">📅</div>
+            <h3>Spend Calendar &amp; Heatmap</h3>
+            <p>Monthly calendar view with green, amber, and red color-coded spend thresholds and itemized daily drill-downs.</p>
+            <button class="btn btn-secondary" onclick="switchTab('calendar')">📅 Open Calendar</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">📈</div>
+            <h3>Analytics &amp; Chart.js Live Trends</h3>
+            <p>Live interactive trend lines, spending category doughnut charts, and cycle-over-cycle savings rate comparisons.</p>
+            <button class="btn btn-secondary" onclick="switchTab('analytics')">📈 View Analytics</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">🤖</div>
+            <h3>Data-Aware Gemini AI Advisor</h3>
+            <p>Intelligent floating AI advisor with live access to your household figures for deterministic personalized coaching.</p>
+            <button class="btn btn-secondary" onclick="toggleAiChat()">🤖 Ask AI Advisor</button>
+          </div>
+
+          <div class="landing-card">
+            <div class="landing-card-icon">👑</div>
+            <h3>WordPress-Style Admin CMS</h3>
+            <p>Zero-redeploy CMS to rename every title, header, label, and button across the app, manage themes, and edit schema.</p>
+            <a href="admin.html" class="btn btn-admin">👑 Open Admin CMS</a>
+          </div>
+
+        </div>
+
+        <!-- 25th-to-25th Cycle Explainer Card -->
+        <div class="landing-explainer-card">
+          <div class="landing-explainer-grid">
+            <div class="landing-explainer-content">
+              <h3>📅 Why 25th-to-25th Cycle Sync Matters</h3>
+              <p>
+                In corporate environments, salaries are credited on the 25th, but rent and loan deductions happen immediately. Traditional calendar month trackers (1st–30th) give a false illusion of excess money in early days, leading to mid-month cashflow crises.
+              </p>
+              <p>
+                <strong>HomeBudget synchronizes directly with your salary payday</strong>, reserving all mandatory bills first and giving you a 100% mathematically accurate spendable daily budget.
+              </p>
+            </div>
+            <div class="landing-comparison-box">
+              <div class="comparison-row">
+                <span style="color:var(--danger);">❌ Traditional Calendar Budget</span>
+                <span style="color:var(--text-muted);">Misleading balances, mid-month cash shortfall</span>
+              </div>
+              <div class="comparison-row">
+                <span style="color:var(--success);font-weight:700;">✅ HomeBudget 25th Cycle</span>
+                <span style="color:#A7F3D0;">Guaranteed accurate daily cashflow until next payday</span>
+              </div>
+              <div class="comparison-row">
+                <span style="color:var(--primary-light);">🛡️ Forward Safety Buffer</span>
+                <span style="color:#9CA3AF;">Predicts next cycle's surplus before it starts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom CTA Banner -->
+        <div class="landing-cta-banner">
+          <h2>Ready to Take Total Control of Your Finances?</h2>
+          <p>Start tracking your real-time spendable cashflow, planned needs, and BNPL commitments today.</p>
+          <div class="cta-buttons">
+            <button class="btn btn-primary btn-lg" onclick="switchTab('dashboard')">
+              <span>🚀</span> Launch App Dashboard
+            </button>
+            <a href="admin.html" class="btn btn-admin btn-lg">
+              <span>👑</span> Open Admin CMS
+            </a>
+          </div>
+        </div>
+
+      </section>
+
       <!-- TAB 1: DASHBOARD -->
-      <section id="tab-dashboard" class="tab-pane active">
+      <section id="tab-dashboard" class="tab-pane">
         
         <!-- 3D Interactive WebGL Financial Hero / Landing Section -->
         <div class="hero-3d-wrapper" id="hero-3d-wrapper">

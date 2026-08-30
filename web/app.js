@@ -1041,6 +1041,10 @@ function switchTab(tabId) {
   document.querySelectorAll(".tab-pane").forEach(pane => {
     pane.classList.toggle("active", pane.id === `tab-${tabId}`);
   });
+  if (tabId === "landing") {
+    setTimeout(() => initThreeHeroScene(), 50);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
   if (tabId === "cms-labels") {
     renderLabelsCmsScreen();
   }
