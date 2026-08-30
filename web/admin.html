@@ -58,38 +58,38 @@
 
       <div class="nav-section-title">Core Management</div>
       <nav class="nav-links">
-        <button class="nav-item active" data-tab="cms-dashboard">
+        <button class="nav-item active" data-tab="cms-dashboard" onclick="switchTab('cms-dashboard')">
           <span class="icon">📊</span> <span>Dashboard & Health</span>
         </button>
-        <button class="nav-item" data-tab="cms-layout">
-          <span class="icon">🧩</span> <span>UI & Component Builder</span>
+        <button class="nav-item" data-tab="cms-labels" onclick="switchTab('cms-labels')">
+          <span class="icon">🔤</span> <span>✏️ Labels & Text Editor</span>
         </button>
-        <button class="nav-item" data-tab="cms-appearance">
+        <button class="nav-item" data-tab="cms-appearance" onclick="switchTab('cms-appearance')">
           <span class="icon">🎨</span> <span>Appearance / Themes</span>
         </button>
-        <button class="nav-item" data-tab="cms-members">
+        <button class="nav-item" data-tab="cms-layout" onclick="switchTab('cms-layout')">
+          <span class="icon">🧩</span> <span>Page Layout Toggles</span>
+        </button>
+        <button class="nav-item" data-tab="cms-members" onclick="switchTab('cms-members')">
           <span class="icon">👥</span> <span>Members & Roles</span>
           <span class="nav-badge" id="badge-member-count">2</span>
         </button>
-        <button class="nav-item" data-tab="cms-financials">
+        <button class="nav-item" data-tab="cms-financials" onclick="switchTab('cms-financials')">
           <span class="icon">💳</span> <span>Financial Modules</span>
         </button>
-        <button class="nav-item" data-tab="cms-categories">
+        <button class="nav-item" data-tab="cms-categories" onclick="switchTab('cms-categories')">
           <span class="icon">🏷️</span> <span>Expense Categories</span>
         </button>
-        <button class="nav-item" data-tab="cms-engine">
+        <button class="nav-item" data-tab="cms-engine" onclick="switchTab('cms-engine')">
           <span class="icon">📐</span> <span>Forecast & Math Engine</span>
         </button>
-        <button class="nav-item" data-tab="cms-ai">
+        <button class="nav-item" data-tab="cms-ai" onclick="switchTab('cms-ai')">
           <span class="icon">🤖</span> <span>AI Advisor Studio</span>
         </button>
-        <button class="nav-item" data-tab="cms-labels">
-          <span class="icon">🔤</span> <span>Labels & Text</span>
-        </button>
-        <button class="nav-item" data-tab="cms-database">
+        <button class="nav-item" data-tab="cms-database" onclick="switchTab('cms-database')">
           <span class="icon">💾</span> <span>Database Tools & JSON</span>
         </button>
-        <button class="nav-item" data-tab="cms-supabase">
+        <button class="nav-item" data-tab="cms-supabase" onclick="switchTab('cms-supabase')">
           <span class="icon">☁️</span> <span>Supabase Cloud</span>
         </button>
 
@@ -411,11 +411,37 @@
               <h1>💳 Financial Modules Manager</h1>
               <button class="btn-help-pill" onclick="openHelpGuide('bnpl')">❓ Guide</button>
             </div>
-            <p class="cycle-subtitle">Full CRUD control over all fixed bills, BNPL plans, credit cards, and subscriptions.</p>
+            <p class="cycle-subtitle">Full CRUD control over all incomes, fixed bills, BNPL plans, credit cards, and subscriptions.</p>
+          </div>
+        </div>
+
+        <!-- Income Management (NEW) -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>💵 Cycle Income Entries</h3>
+              <p class="text-muted">Log each salary, bonus, or other income received this cycle. This drives all balance calculations.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openIncomeModal()">➕ Add Income</button>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Source / Label</th>
+                  <th>Member</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-incomes-table-body"></tbody>
+            </table>
           </div>
         </div>
 
         <!-- Fixed Bills -->
+
         <div class="section-card">
           <div class="card-header-flex">
             <div>
@@ -636,10 +662,12 @@
             <div class="form-group">
               <label>Model</label>
               <select id="ai-model-select" class="form-control">
-                <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Accurate)</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro (Deep Analysis)</option>
-                <option value="gpt-4o-mini">gpt-4o-mini</option>
-                <option value="gpt-4o">gpt-4o</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash (Recommended — Fast & Smart)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Better Reasoning)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (Most Capable)</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Legacy)</option>
+                <option value="gpt-4o-mini">gpt-4o-mini (OpenAI)</option>
+                <option value="gpt-4o">gpt-4o (OpenAI)</option>
               </select>
             </div>
 
@@ -712,22 +740,57 @@
               Navigate to <strong>Appearance / Themes</strong> in the CMS sidebar. Click any theme palette or write custom CSS in the live editor and click <strong>Save & Publish</strong>. All changes apply immediately across all client browsers without reloading code.
             </p>
           </div>
+        </div>
+      </section>
+
       <!-- TAB 9: LABELS & TEXT MANAGER -->
       <section id="tab-cms-labels" class="tab-pane">
         <div class="top-header">
           <div>
-            <h1>🔤 Master Labels & UI Text Manager</h1>
-            <p class="cycle-subtitle">Rename any page title, table header, button label, or subtitle live with zero redeploy.</p>
+            <div class="header-title-flex">
+              <h1>✏️ Labels, Page Names & UI Text</h1>
+              <button class="btn-help-pill" onclick="openHelpGuide('cms')">❓ How It Works</button>
+            </div>
+            <p class="cycle-subtitle">Rename <strong>any page title, sidebar nav label, button, table column header, or section heading</strong> — live, with zero code changes.</p>
           </div>
           <button class="btn btn-primary" onclick="saveAllUiLabels()">💾 Save All Labels</button>
         </div>
 
+        <!-- Quick Guide Card -->
+        <div class="section-card" style="margin-bottom: 1.25rem; border-left: 3px solid #6366F1;">
+          <div class="card-header-flex">
+            <h3>📖 How to Use This Editor</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.75rem;">
+            <div style="background: rgba(99,102,241,0.08); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-weight:700; color:#818CF8; margin-bottom:0.3rem;">📛 Sidebar Nav Labels</div>
+              <div style="font-size:0.82rem; color:var(--text-muted);">Keys like <code>nav.bnpl</code>, <code>nav.wishlist</code>, <code>nav.fixed_bills</code> — rename the left sidebar navigation items.</div>
+            </div>
+            <div style="background: rgba(16,185,129,0.08); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-weight:700; color:#34D399; margin-bottom:0.3rem;">📄 Page Titles & Headings</div>
+              <div style="font-size:0.82rem; color:var(--text-muted);">Keys like <code>page.bnpl.title</code>, <code>page.wishlist.title</code> — rename the big H1 heading at the top of each page.</div>
+            </div>
+            <div style="background: rgba(245,158,11,0.08); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-weight:700; color:#FCD34D; margin-bottom:0.3rem;">🔘 Buttons & Actions</div>
+              <div style="font-size:0.82rem; color:var(--text-muted);">Keys like <code>page.bnpl.btn_add</code>, <code>btn.log_spend</code> — rename action buttons across the app.</div>
+            </div>
+          </div>
+          <div class="explainer-box" style="margin-top: 1rem;">
+            <strong>Example:</strong> To rename "BNPL & Koko Plans" → find key <code>page.bnpl.title</code> → type new name → click <strong>💾 Save All Labels</strong>. Done! The sidebar nav item, page heading, and subtitle all update instantly.
+          </div>
+        </div>
+
         <div class="section-card">
           <div class="card-header-flex">
-            <h3>Custom UI Dictionary</h3>
-            <p class="text-muted">Changes instantly update the customer app and admin panel without touching code.</p>
+            <h3>🗃️ All Editable Labels</h3>
+            <p class="text-muted">Edit the "Current Live Text" column. Changes instantly apply to the live app after saving.</p>
           </div>
-          <div id="cms-labels-container"></div>
+          <div id="cms-labels-container">
+            <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+              <div style="font-size:2rem; margin-bottom:0.5rem;">⏳</div>
+              <p>Loading labels editor...</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -826,8 +889,15 @@
             <button class="btn btn-secondary" onclick="saveStateSnapshot('Admin manual snapshot — ' + new Date().toLocaleString());">
               📸 Save Snapshot Now
             </button>
+            <button class="btn btn-secondary" style="border-color: var(--danger); color: var(--danger);" onclick="customConfirm('⚠️ This will push a BLANK state to Supabase cloud, removing all old data. Your current browser data stays intact. Then you can use the Onboarding wizard to re-enter your details fresh. Proceed?', () => { const blank = JSON.parse(JSON.stringify(defaultState)); saveToSupabase(blank).then(() => { state = blank; persistState(); renderApp(); showToast('Cloud cleared! Refresh the page to see the onboarding wizard.', 'info'); }); });">
+              🗑️ Clear Cloud Data &amp; Start Fresh
+            </button>
+          </div>
+          <div class="explainer-box" style="margin-top: 1rem;">
+            <strong>💡 Start Fresh:</strong> Use "Clear Cloud Data" if you want to remove old test/demo data and re-enter your real household details from scratch via the onboarding wizard. This only affects Supabase cloud — your local browser session is updated too.
           </div>
         </div>
+
 
         <!-- Schema Reference -->
         <div class="section-card" style="margin-top: 1.5rem;">

@@ -14,24 +14,32 @@ const defaultUiLabels = {
   "nav.forecast": "Survival Forecast",
   "nav.wishlist": "Needs Planner",
   "nav.subscriptions": "Subscriptions",
+  "nav.calendar": "Spend Calendar",
+  "nav.analytics": "Analytics",
 
   // Dashboard Page
   "page.dashboard.title": "Cycle Overview",
-  "page.dashboard.subtitle": "Aug 25 – Sep 25, 2026 • 26 Days Remaining",
+  "page.dashboard.cycle_badge": "25th-to-25th Cycle",
   "page.dashboard.balance_header": "REALTIME REMAINING SPENDABLE BALANCE",
   "page.dashboard.card_income": "Total Cycle Income",
+  "page.dashboard.card_income_sub": "Combined salaries this cycle",
   "page.dashboard.card_committed": "Committed Outgoings",
+  "page.dashboard.card_committed_sub": "Rent, Loans, BNPL, CC, Subs",
   "page.dashboard.card_spent": "Daily Spent so far",
-  "page.dashboard.card_wishlist": "Planned Wishlist",
+  "page.dashboard.card_spent_sub": "Cash & Debit Card",
+  "page.dashboard.card_wishlist": "Planned Needs",
+  "page.dashboard.card_wishlist_sub": "Allocated for Current Cycle",
   "page.dashboard.breakdown_title": "Cycle Outgoings Breakdown",
+  "page.dashboard.breakdown_sub": "Exact breakdown of commitments deducted from your salary",
   "page.dashboard.recent_spends_title": "Recent Daily Spends",
+  "page.dashboard.recent_spends_sub": "Itemized cash and card transactions",
 
   // BNPL Page
   "page.bnpl.title": "BNPL & Koko Plans",
   "page.bnpl.subtitle": "Active installments, remaining balances, and monthly commitments.",
   "page.bnpl.active_heading": "Pending Installments (Current Cycle)",
   "page.bnpl.completed_heading": "Settled BNPL Installments in this Cycle",
-  "page.bnpl.btn_add": "Add BNPL Plan",
+  "page.bnpl.btn_add": "➕ Add BNPL Plan",
   "table.bnpl.col.status": "Status",
   "table.bnpl.col.item": "Item Name",
   "table.bnpl.col.platform": "Platform",
@@ -45,27 +53,41 @@ const defaultUiLabels = {
   "page.fixed.subtitle": "Mandatory recurring payments due on or around salary day.",
   "page.fixed.active_heading": "Pending Fixed Payments (Current Cycle)",
   "page.fixed.completed_heading": "Settled Fixed Bills in this Cycle",
-  "page.fixed.btn_add": "Add Fixed Bill",
+  "page.fixed.btn_add": "➕ Add Fixed Bill",
 
   // Needs Planner / Wishlist Page
   "page.wishlist.title": "Needs Planner & Wishlist",
   "page.wishlist.subtitle": "Categorized buy-list and needs planning prioritized for purchase.",
   "page.wishlist.active_heading": "Pending Needs & Items",
   "page.wishlist.completed_heading": "Purchased & Settled Items",
-  "page.wishlist.btn_add": "Add Item to Plan",
+  "page.wishlist.btn_add": "➕ Add Item to Plan",
+
+  // Daily Spends Page
+  "page.daily.title": "Daily Expense Logs",
+  "page.daily.subtitle": "Track every daily cash, card, and transfer expenditure.",
+  "page.daily.btn_add": "➕ Log Spend",
 
   // Subscriptions Page
   "page.subs.title": "Subscriptions & Recurring Cards",
   "page.subs.subtitle": "Digital services, mobile packages, broadband routers, and cards.",
-  "page.subs.btn_add": "Add Subscription",
+  "page.subs.btn_add": "➕ Add Subscription",
 
   // Completed Page
-  "page.completed.title": "Completed & Settled Payments",
+  "page.completed.title": "✅ Completed & Settled Payments",
   "page.completed.subtitle": "Master record of all payments settled in this cycle, organized by originating category.",
+
+  // Forecast Page
+  "page.forecast.title": "Forward Survival Forecast",
+  "page.forecast.subtitle": "Deterministic forward-looking projection for next month.",
+
+  // Calendar Page
+  "nav.calendar": "Spend Calendar",
 
   // Buttons & Global
   "btn.log_spend": "Log Daily Spend",
-  "btn.admin_cms": "Admin CMS"
+  "btn.admin_cms": "Admin CMS",
+  "btn.how_it_works": "❓ How It Works",
+  "btn.refresh_charts": "🔄 Refresh Charts"
 };
 
 const defaultState = {
@@ -80,10 +102,10 @@ const defaultState = {
     customCss: ""
   },
   adminProfile: {
-    name: "Sathsara",
+    name: "Admin",
     email: "admin@homebudget.lk",
     role: "Administrator",
-    avatar: "S"
+    avatar: "A"
   },
   uiComponents: {
     showBalanceCard: true,
@@ -96,7 +118,7 @@ const defaultState = {
     showWishlistSection: true
   },
   uiLabels: { ...defaultUiLabels },
-  // Dynamic lookup tables (Items 2 & 3 — all dropdowns read from these)
+  // Dynamic lookup tables — configuration only (not personal data)
   bnplPlatforms: [
     { id: "bp_1", name: "Koko", color: "#F59E0B" },
     { id: "bp_2", name: "Mintpay", color: "#6366F1" },
@@ -112,36 +134,33 @@ const defaultState = {
   ],
   wishlistCategories: [
     { id: "wc_1", name: "Home Needs", sortOrder: 1 },
-    { id: "wc_2", name: "My Needs (Sathsara)", sortOrder: 2 },
-    { id: "wc_3", name: "Partner Needs (Dhiyan)", sortOrder: 3 },
+    { id: "wc_2", name: "My Needs", sortOrder: 2 },
+    { id: "wc_3", name: "Partner Needs", sortOrder: 3 },
     { id: "wc_4", name: "Kitchen", sortOrder: 4 },
     { id: "wc_5", name: "Bathroom", sortOrder: 5 },
     { id: "wc_6", name: "Tech & Gadgets", sortOrder: 6 }
   ],
-  cycleHistory: [
-    { cycle: "Jun 25–Jul 25, 2026", income: 399585, committed: 248000, spent: 38200, saved: 113385 },
-    { cycle: "Jul 25–Aug 25, 2026", income: 399585, committed: 251745, spent: 42100, saved: 105740 },
-    { cycle: "Aug 25–Sep 25, 2026", income: 399585, committed: 251745, spent: 30205, saved: 117635 }
-  ],
+  cycleHistory: [],
   categories: [
     { id: "cat_1", name: "Groceries", color: "#10B981", monthlyBudget: 45000 },
-    { id: "cat_2", name: "Transport / PickMe", color: "#F59E0B", monthlyBudget: 15000 },
+    { id: "cat_2", name: "Transport", color: "#F59E0B", monthlyBudget: 15000 },
     { id: "cat_3", name: "Food & Dining", color: "#EC4899", monthlyBudget: 25000 },
-    { id: "cat_4", name: "Personal Care & Saloon", color: "#8B5CF6", monthlyBudget: 8000 },
+    { id: "cat_4", name: "Personal Care", color: "#8B5CF6", monthlyBudget: 8000 },
     { id: "cat_5", name: "Health & Gym", color: "#06B6D4", monthlyBudget: 6000 },
-    { id: "cat_6", name: "Other / Cash Reserve", color: "#64748B", monthlyBudget: 30000 }
+    { id: "cat_6", name: "Other", color: "#64748B", monthlyBudget: 30000 }
   ],
   paymentMethods: [
     { id: "pm_1", name: "Cash", type: "cash" },
-    { id: "pm_2", name: "Commercial Debit Card", type: "card" },
-    { id: "pm_3", name: "Sampath Card", type: "card" },
-    { id: "pm_4", name: "Fund Transfer", type: "bank" }
+    { id: "pm_2", name: "Debit Card", type: "card" },
+    { id: "pm_3", name: "Credit Card", type: "card" },
+    { id: "pm_4", name: "Bank Transfer", type: "bank" }
   ],
+  // AI key is set only through Admin CMS → AI Advisor Studio — never hardcoded here
   aiSettings: {
     provider: "gemini",
     geminiKey: "",
     openaiKey: "",
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     tone: "balanced",
     customPromptTemplate: ""
   },
@@ -150,66 +169,19 @@ const defaultState = {
     survivalBufferDays: 30,
     committedCategories: ["Housing", "Utilities", "Loan", "Insurance", "Telecom"]
   },
-  members: [
-    { id: "m1", name: "Sathsara", role: "husband", salary: 249585, color: "#10B981" },
-    { id: "m2", name: "Dhiyan", role: "wife", salary: 150000, color: "#EC4899" }
-  ],
+  // Personal data — starts EMPTY. Use Admin CMS or onboarding wizard to populate.
+  members: [],
   activeCycle: {
-    name: "Aug 25 – Sep 25, 2026",
-    daysRemaining: 26
+    name: "",
+    daysRemaining: 30
   },
-  incomes: [
-    { id: "inc1", memberId: "m1", source: "Husband Salary", amount: 249585, date: "2026-08-24" },
-    { id: "inc2", memberId: "m2", source: "Wife Salary", amount: 150000, date: "2026-08-25" }
-  ],
-  fixedPayments: [
-    { id: "f1", name: "Apartment Rent", amount: 70000, dueDay: 25, category: "Housing", dest: "BOC Account", isPaid: true, paidDate: "2026-08-25" },
-    { id: "f2", name: "Apartment ECB + Water", amount: 20000, dueDay: 25, category: "Utilities", dest: "BOC Account", isPaid: true, paidDate: "2026-08-25" },
-    { id: "f3", name: "Commercial Bank Personal Loan", amount: 47544, dueDay: 26, category: "Loan", dest: "Combank", isPaid: true, paidDate: "2026-08-26" },
-    { id: "f4", name: "Gold Loan Interest (Bracelet & Rings)", amount: 8500, dueDay: 26, category: "Loan", dest: "Combank", isPaid: false, paidDate: null }
-  ],
-  subscriptions: [
-    { id: "s1", name: "Dialog Mobile", amountLkr: 2054, billingDay: 24, isPaid: true, paidDate: "2026-08-24" },
-    { id: "s2", name: "Dialog Broadband Router", amountLkr: 5000, billingDay: 24, isPaid: false, paidDate: null },
-    { id: "s3", name: "Office Phone Loan", amountLkr: 4500, billingDay: 24, isPaid: false, paidDate: null },
-    { id: "s4", name: "Netflix Basic ($3.99)", amountLkr: 1400, billingDay: 24, isPaid: true, paidDate: "2026-08-24" },
-    { id: "s5", name: "Apple Music ($3.29)", amountLkr: 1080, billingDay: 26, isPaid: true, paidDate: "2026-08-26" },
-    { id: "s6", name: "Apple iCloud ($2.99)", amountLkr: 1000, billingDay: 26, isPaid: true, paidDate: "2026-08-26" },
-    { id: "s7", name: "YouTube Premium", amountLkr: 1200, billingDay: 28, isPaid: false, paidDate: null }
-  ],
-  creditCards: [
-    { id: "cc1", bank: "Commercial Bank", name: "Combank Platinum", due: 40000, isPaid: true, paidDate: "2026-08-25" },
-    { id: "cc2", bank: "Sampath Bank", name: "Sampath Signature", due: 5000, isPaid: true, paidDate: "2026-08-25" },
-    { id: "cc3", bank: "DFCC", name: "DFCC Visa", due: 0, isPaid: true, paidDate: "2026-08-25" }
-  ],
-  installments: [
-    { id: "inst1", member: "Dhiyan", platform: "Koko", item: "Dinapala Group (Water Filter)", vendor: "Dinapala", total: 13647, monthly: 4549, remaining: 4549, isPaid: true, paidDate: "2026-08-25" },
-    { id: "inst2", member: "Dhiyan", platform: "Koko", item: "Strong.lk (Supplements)", vendor: "Strong.lk", total: 14424, monthly: 4808, remaining: 4808, isPaid: true, paidDate: "2026-08-25" },
-    { id: "inst3", member: "Dhiyan", platform: "Koko", item: "Dmart (Vacuum Cleaner)", vendor: "Dmart", total: 2850, monthly: 950, remaining: 950, isPaid: true, paidDate: "2026-08-25" },
-    { id: "inst4", member: "Dhiyan", platform: "Koko", item: "Candy (Clothes)", vendor: "Candy", total: 5316, monthly: 1772, remaining: 1772, isPaid: true, paidDate: "2026-08-25" },
-    { id: "inst5", member: "Sathsara", platform: "Koko", item: "Sensara (Perfume)", vendor: "Sensara", total: 16131, monthly: 5377, remaining: 10754, isPaid: false, paidDate: null },
-    { id: "inst6", member: "Sathsara", platform: "Koko", item: "Deedat (Shirt)", vendor: "Deedat", total: 3990, monthly: 1330, remaining: 2660, isPaid: false, paidDate: null },
-    { id: "inst7", member: "Sathsara", platform: "Mintpay", item: "Online Kade (Groceries 1)", vendor: "Online Kade", total: 16941, monthly: 5647, remaining: 5647, isPaid: true, paidDate: "2026-08-25" },
-    { id: "inst8", member: "Sathsara", platform: "PayZy", item: "Beauty Harbour (Cosmetics)", vendor: "Beauty Harbour", total: 16500, monthly: 5500, remaining: 11000, isPaid: false, paidDate: null }
-  ],
-  wishlist: [
-    { id: "w1", item: "Potato Smasher", category: "Kitchen", cost: 800, priority: "high", isPlanned: true, isPaid: false },
-    { id: "w2", item: "Litro Gas Cylinder Refill", category: "Kitchen", cost: 4200, priority: "high", isPlanned: true, isPaid: false },
-    { id: "w3", item: "Air Fryer / Convection Oven", category: "Kitchen", cost: 38000, priority: "medium", isPlanned: false, isPaid: false },
-    { id: "w4", item: "New Bidet Shower Sprayer", category: "Bathroom", cost: 2800, priority: "high", isPlanned: true, isPaid: false },
-    { id: "w5", item: "Floor Wiper", category: "Bathroom", cost: 1100, priority: "medium", isPlanned: true, isPaid: false },
-    { id: "w6", item: "Spice Bottles Glass Set", category: "Kitchen", cost: 1500, priority: "low", isPlanned: false, isPaid: false }
-  ],
-  dailySpends: [
-    { id: "d1", date: "2026-08-25", amount: 200, cat: "Health & Gym", method: "Cash", title: "Gym Pure Water", isPaid: true },
-    { id: "d2", date: "2026-08-25", amount: 1400, cat: "Groceries", method: "Cash", title: "Chicken 1.1kg", isPaid: true },
-    { id: "d3", date: "2026-08-25", amount: 6802, cat: "Groceries", method: "Commercial Debit Card", title: "Food City Groceries", isPaid: true },
-    { id: "d4", date: "2026-08-25", amount: 406, cat: "Transport / PickMe", method: "Cash", title: "PickMe Tuk to Grocery", isPaid: true },
-    { id: "d5", date: "2026-08-25", amount: 4100, cat: "Food & Dining", method: "Commercial Debit Card", title: "Spar Supermarket Beverages", isPaid: true },
-    { id: "d6", date: "2026-08-26", amount: 10000, cat: "Other / Cash Reserve", method: "Fund Transfer", title: "Transfer to Wife Combank", isPaid: true },
-    { id: "d7", date: "2026-08-26", amount: 4500, cat: "Other / Cash Reserve", method: "Cash", title: "ATM Cash Withdrawal", isPaid: true },
-    { id: "d8", date: "2026-08-26", amount: 520, cat: "Personal Care & Saloon", method: "Cash", title: "Saloon Haircut & Grooming", isPaid: true }
-  ]
+  incomes: [],
+  fixedPayments: [],
+  subscriptions: [],
+  creditCards: [],
+  installments: [],
+  wishlist: [],
+  dailySpends: []
 };
 
 // State initialization
@@ -615,7 +587,61 @@ function deleteMember(id) {
   });
 }
 
+// 1b. Income Management (Cycle Incomes)
+function openIncomeModal(income = null) {
+  const isEdit = income !== null;
+  const memberOptions = (state.members || []).map(m =>
+    `<option value="${m.id}" ${isEdit && income.memberId === m.id ? 'selected' : ''}>${m.name} (${m.role})</option>`
+  ).join('');
+  const today = new Date().toISOString().split("T")[0];
+  const html = `
+    <div class="form-group">
+      <label>Member</label>
+      <select id="inc-member" class="form-control">${memberOptions || '<option value="">No members yet</option>'}</select>
+    </div>
+    <div class="form-group">
+      <label>Income Source / Label</label>
+      <input type="text" id="inc-source" class="form-control" value="${isEdit ? income.source : ''}" placeholder="e.g. Monthly Salary, Bonus, Freelance">
+    </div>
+    <div class="form-group">
+      <label>Amount (${state.household.currency})</label>
+      <input type="number" id="inc-amount" class="form-control" value="${isEdit ? income.amount : ''}" placeholder="e.g. 250000">
+    </div>
+    <div class="form-group">
+      <label>Date Received</label>
+      <input type="date" id="inc-date" class="form-control" value="${isEdit ? income.date : today}">
+    </div>
+  `;
+  openModal(isEdit ? "Edit Income Entry" : "Add Income Entry", html, () => {
+    const memberId = document.getElementById("inc-member").value;
+    const source = document.getElementById("inc-source").value.trim();
+    const amount = parseFloat(document.getElementById("inc-amount").value) || 0;
+    const date = document.getElementById("inc-date").value;
+    if (!source || amount <= 0) return showToast("Please provide valid source and amount", "danger");
+    if (isEdit) {
+      income.memberId = memberId; income.source = source; income.amount = amount; income.date = date;
+    } else {
+      state.incomes = state.incomes || [];
+      state.incomes.push({ id: "inc_" + Date.now(), memberId, source, amount, date });
+    }
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`${isEdit ? 'Updated' : 'Added'} income: ${source} — ${fmt(amount)}`, "success");
+  });
+}
+
+function deleteIncome(id) {
+  customConfirm("Delete this income entry?", () => {
+    state.incomes = (state.incomes || []).filter(i => i.id !== id);
+    persistState();
+    renderApp();
+    showToast("Income entry deleted", "success");
+  });
+}
+
 // 2. Fixed Bills
+
 function openBillModal(bill = null) {
   const isEdit = bill !== null;
   const html = `
@@ -891,10 +917,19 @@ function deleteWishlist(id) {
   });
 }
 
-// 7. Daily Spends
+// 7. Daily Spends — with member tracking
 function openSpendModal() {
   const categoryOptions = (state.categories || defaultState.categories).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   const paymentOptions = (state.paymentMethods || defaultState.paymentMethods).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const memberOptions = (state.members || []).length
+    ? `<div class="form-group">
+        <label>Who is spending this?</label>
+        <select id="qs-member" class="form-control">
+          <option value="">-- Household (shared) --</option>
+          ${(state.members || []).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+        </select>
+       </div>`
+    : '';
 
   const html = `
     <div class="form-group">
@@ -913,12 +948,15 @@ function openSpendModal() {
       <label>Category</label>
       <select id="qs-cat" class="form-control">${categoryOptions}</select>
     </div>
+    ${memberOptions}
   `;
   openModal("Quick Log Daily Expense", html, () => {
     const amount = parseFloat(document.getElementById("qs-amt").value) || 0;
     const title = document.getElementById("qs-title").value.trim();
     const method = document.getElementById("qs-method").value;
     const cat = document.getElementById("qs-cat").value;
+    const memberId = document.getElementById("qs-member")?.value || "";
+    const member = (state.members || []).find(m => m.id === memberId);
 
     if (amount <= 0 || !title) return showToast("Please enter amount and description", "danger");
 
@@ -929,12 +967,15 @@ function openSpendModal() {
       title,
       method,
       cat,
+      memberId: memberId || null,
+      memberName: member ? member.name : null,
       isPaid: true
     });
     closeModal();
     persistState();
     renderApp();
-    showToast(`Logged expense: ${fmt(amount)} for ${title}`, "success");
+    checkDailySpendAlert();
+    showToast(`Logged expense: ${fmt(amount)} for ${title}${member ? ' (' + member.name + ')' : ''}`, "success");
   });
 }
 
@@ -1003,9 +1044,17 @@ function switchTab(tabId) {
   if (tabId === "cms-labels") {
     renderLabelsCmsScreen();
   }
+  if (tabId === "cms-ai") {
+    renderAiStudioFields();
+  }
   if (tabId === "analytics") {
-    // Auto-render charts when navigating to Analytics tab
     setTimeout(() => renderAnalyticsDashboard(), 50);
+  }
+  if (tabId === "calendar") {
+    renderCalendarView();
+  }
+  if (tabId === "cms-supabase") {
+    testSupabaseConnection();
   }
   if (tabId === "cms-categories") {
     // Render platform and wishlist category preview chips in Admin
@@ -1129,7 +1178,28 @@ function saveAiSettings() {
 
   state.aiSettings = { provider, geminiKey, openaiKey, model, tone };
   persistState();
-  showToast("AI Studio settings saved!", "success");
+
+  const activeKey = provider === "openai" ? openaiKey : geminiKey;
+  if (activeKey) {
+    showToast(`✅ AI settings saved! Key active: ${activeKey.slice(0, 8)}...${activeKey.slice(-4)} (synced to cloud)`, "success");
+  } else {
+    showToast("AI settings saved. No API key set — AI will use rule-based advice.", "info");
+  }
+}
+
+// Populates AI Studio form fields with stored values when tab is opened
+function renderAiStudioFields() {
+  const s = state.aiSettings || {};
+  const provEl = document.getElementById("ai-provider-select");
+  const modelEl = document.getElementById("ai-model-select");
+  const gemKeyEl = document.getElementById("ai-gemini-key");
+  const oaiKeyEl = document.getElementById("ai-openai-key");
+  const toneEl = document.getElementById("ai-tone-select");
+  if (provEl) provEl.value = s.provider || "gemini";
+  if (modelEl) modelEl.value = s.model || "gemini-1.5-flash";
+  if (gemKeyEl && s.geminiKey) gemKeyEl.placeholder = `Key saved: ${s.geminiKey.slice(0,8)}...${s.geminiKey.slice(-4)} (enter new to replace)`;
+  if (oaiKeyEl && s.openaiKey) oaiKeyEl.placeholder = `Key saved: ${s.openaiKey.slice(0,8)}...${s.openaiKey.slice(-4)} (enter new to replace)`;
+  if (toneEl) toneEl.value = s.tone || "balanced";
 }
 
 async function testAiConnection() {
@@ -1208,11 +1278,111 @@ function importDatabaseJson(event) {
 }
 
 function resetToSampleData() {
-  customConfirm("Reset all database records back to Notebook Sample Data?", () => {
-    state = JSON.parse(JSON.stringify(defaultState));
+  customConfirm("⚠️ Clear all personal financial data? This removes all members, incomes, bills, BNPL, spends and cycle history. Lookup tables (platforms, categories) are kept. This cannot be undone.", () => {
+    // Keep configuration/lookup tables, clear personal data only
+    const keepConfig = {
+      bnplPlatforms: state.bnplPlatforms,
+      fixedBillCategories: state.fixedBillCategories,
+      wishlistCategories: state.wishlistCategories,
+      categories: state.categories,
+      paymentMethods: state.paymentMethods,
+      household: state.household,
+      uiComponents: state.uiComponents,
+      uiLabels: state.uiLabels,
+      forecastSettings: state.forecastSettings,
+      adminProfile: state.adminProfile,
+      aiSettings: state.aiSettings // preserve AI key set by user
+    };
+    state = Object.assign(JSON.parse(JSON.stringify(defaultState)), keepConfig);
     persistState();
     renderApp();
-    showToast("Reset to sample data", "info");
+    showToast("All personal data cleared. Add your household members to get started.", "info");
+  });
+}
+
+// First-run check — true if no members have been added yet
+function isFirstRun() {
+  return !state.members || state.members.length === 0;
+}
+
+// First-run onboarding wizard — shown on fresh installations
+function showFirstRunOnboarding() {
+  // Calculate current cycle name from today's date
+  const now = new Date();
+  const cycleDay = state.household?.cycleStartDay || 25;
+  let cycleStart = new Date(now.getFullYear(), now.getMonth(), cycleDay);
+  if (now.getDate() < cycleDay) {
+    cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, cycleDay);
+  }
+  let cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleDay);
+  const daysLeft = Math.max(0, Math.ceil((cycleEnd - now) / (1000 * 60 * 60 * 24)));
+  const cycleName = cycleStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + cycleEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const html = `
+    <div style="text-align: center; padding: 0.5rem 0 1rem;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏠</div>
+      <h2 style="font-size: 1.4rem; color: #F3F4F6; margin-bottom: 0.5rem;">Welcome to HomeBudget!</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Let's set up your household in 3 quick steps.</p>
+    </div>
+
+    <div class="explainer-box" style="margin-bottom: 1.25rem;">
+      <strong>📅 Detected Cycle:</strong> ${cycleName} &nbsp;|&nbsp; <strong>${daysLeft} days remaining</strong>
+    </div>
+
+    <div class="form-group">
+      <label>Step 1 — Your Name (Primary Member)</label>
+      <input type="text" id="ob-name1" class="form-control" placeholder="e.g. Sathsara" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Monthly Salary (${state.household.currency})</label>
+      <input type="number" id="ob-salary1" class="form-control" placeholder="e.g. 250000">
+    </div>
+    <hr style="border-color: rgba(255,255,255,0.08); margin: 1rem 0;">
+    <div class="form-group">
+      <label>Step 2 — Partner / Second Member Name <small style="color: var(--text-muted);">(optional)</small></label>
+      <input type="text" id="ob-name2" class="form-control" placeholder="e.g. Dhiyan">
+    </div>
+    <div class="form-group">
+      <label>Partner Monthly Salary (${state.household.currency}) <small style="color: var(--text-muted);">(optional)</small></label>
+      <input type="number" id="ob-salary2" class="form-control" placeholder="e.g. 150000">
+    </div>
+    <hr style="border-color: rgba(255,255,255,0.08); margin: 1rem 0;">
+    <div class="form-group">
+      <label>Step 3 — Household Name <small style="color: var(--text-muted);">(appears in sidebar)</small></label>
+      <input type="text" id="ob-hname" class="form-control" value="${state.household.name}" placeholder="e.g. HomeBudget">
+    </div>
+  `;
+
+  openModal("🚀 First-Time Setup", html, () => {
+    const name1 = document.getElementById("ob-name1").value.trim();
+    const salary1 = parseFloat(document.getElementById("ob-salary1").value) || 0;
+    const name2 = document.getElementById("ob-name2").value.trim();
+    const salary2 = parseFloat(document.getElementById("ob-salary2").value) || 0;
+    const hname = document.getElementById("ob-hname").value.trim();
+
+    if (!name1 || salary1 <= 0) return showToast("Please enter at least your name and salary to continue.", "danger");
+
+    // Add primary member
+    state.members = [{ id: "m_" + Date.now(), name: name1, role: "primary", salary: salary1, color: "#10B981" }];
+    // Add incomes for this cycle
+    const today = new Date().toISOString().split("T")[0];
+    state.incomes = [{ id: "inc_" + Date.now(), memberId: state.members[0].id, source: name1 + " Salary", amount: salary1, date: today }];
+
+    // Optionally add partner
+    if (name2 && salary2 > 0) {
+      const m2id = "m_" + (Date.now() + 1);
+      state.members.push({ id: m2id, name: name2, role: "partner", salary: salary2, color: "#EC4899" });
+      state.incomes.push({ id: "inc_" + (Date.now() + 1), memberId: m2id, source: name2 + " Salary", amount: salary2, date: today });
+    }
+
+    // Update household name and active cycle
+    if (hname) state.household.name = hname;
+    state.activeCycle = { name: cycleName, daysRemaining: daysLeft };
+
+    closeModal();
+    persistState();
+    renderApp();
+    showToast(`✅ Welcome ${name1}! Your household is set up. Now add your fixed bills and BNPL plans from the top bar.`, "success");
   });
 }
 
@@ -1297,6 +1467,23 @@ function renderApp() {
     document.getElementById("admin-stat-reserve").textContent = `${metrics.reservePct}% (${fmt(metrics.safetyReserveAmount)})`;
   }
 
+  // Populate Admin Branding Inputs
+  const appNameInp = document.getElementById("cms-app-name-input");
+  if (appNameInp && state.household?.name) appNameInp.value = state.household.name;
+  const taglineInp = document.getElementById("cms-tagline-input");
+  if (taglineInp && state.household?.tagline) taglineInp.value = state.household.tagline;
+  const logoInp = document.getElementById("cms-app-logo-input");
+  if (logoInp && state.household?.logo) logoInp.value = state.household.logo;
+  const currInp = document.getElementById("cms-currency-input");
+  if (currInp && state.household?.currency) currInp.value = state.household.currency;
+  const cssInp = document.getElementById("cms-custom-css");
+  if (cssInp && state.household?.customCss !== undefined) cssInp.value = state.household.customCss;
+
+  // Render CMS Labels Editor if on admin page
+  if (document.getElementById("cms-labels-container")) {
+    renderLabelsCmsScreen();
+  }
+
   // Render Tables & Lists
   renderAllTables(metrics);
 
@@ -1328,7 +1515,30 @@ function renderAllTables(metrics) {
     `).join("");
   }
 
+  // 1b. Income Table (Cycle Incomes)
+  const incomesBody = document.getElementById("cms-incomes-table-body");
+  if (incomesBody) {
+    incomesBody.innerHTML = (state.incomes || []).length ? (state.incomes || []).map(inc => {
+      const member = (state.members || []).find(m => m.id === inc.memberId);
+      return `
+        <tr>
+          <td><strong>${inc.source}</strong></td>
+          <td>${member ? `<span class="avatar" style="background:${member.color||'var(--primary)'}; width:22px; height:22px; font-size:0.7rem; display:inline-flex;">${member.name[0]}</span> ${member.name}` : '<span style="color:var(--text-muted)">Unassigned</span>'}</td>
+          <td><strong style="color: var(--primary-light);">${fmt(inc.amount)}</strong></td>
+          <td style="color: var(--text-muted);">${inc.date}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-table-edit" onclick="openIncomeModal(state.incomes.find(x => x.id === '${inc.id}'))">✏️ Edit</button>
+              <button class="btn-table-delete" onclick="deleteIncome('${inc.id}')">🗑️ Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("") : `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:1rem;">No income entries yet. Click "➕ Add Income" to log this cycle's salaries.</td></tr>`;
+  }
+
   // 2. Categories Table
+
   const catBody = document.getElementById("cms-categories-table-body");
   if (catBody) {
     catBody.innerHTML = (state.categories || []).map(c => `
@@ -2173,7 +2383,314 @@ function renderAnalyticsDashboard() {
   }
 }
 
+// ============================================================
+// SUPABASE CLOUD TAB — Live connection test (fixes black screen)
+// ============================================================
+async function testSupabaseConnection() {
+  const outputEl = document.getElementById("supabase-test-output");
+  const indicator = document.getElementById("supabase-sync-indicator");
+  if (!outputEl) return;
+  outputEl.innerHTML = `<em style="color:var(--text-muted);">⏳ Testing Supabase connection...</em>`;
+  if (indicator) indicator.textContent = "⏳ Testing...";
+  try {
+    if (typeof loadFromSupabase !== "function") {
+      outputEl.innerHTML = `<span style="color:var(--danger);">❌ supabase_sync.js not loaded. Check console for errors.</span>`;
+      return;
+    }
+    const data = await loadFromSupabase();
+    const hasData = data && Object.keys(data).length > 0;
+    const memberCount = data?.members?.length || 0;
+    const lastUpdated = data?.updatedAt || "Unknown";
+    outputEl.innerHTML = hasData
+      ? `<span style="color:var(--success);">✅ Supabase connected and responding!</span><br>
+         <small style="color:var(--text-muted);">
+           Cloud record found • ${memberCount} member(s) in cloud<br>
+           Project: <code>bwavzxjyrrbfhuhtwjpt.supabase.co</code>
+         </small>`
+      : `<span style="color:var(--warning);">⚠️ Connected but cloud is empty (no household state found).</span><br>
+         <small style="color:var(--text-muted);">This is normal on a fresh start. Push your local data to cloud using "Force Push to Cloud" below.</small>`;
+    if (indicator) indicator.textContent = hasData ? "✅ Cloud sync active" : "⚠️ Cloud empty";
+  } catch (err) {
+    if (outputEl) outputEl.innerHTML = `<span style="color:var(--danger);">❌ Connection failed: ${err.message}</span>`;
+    if (indicator) indicator.textContent = "❌ Sync error";
+  }
+}
+
+// ============================================================
+// SPEND CALENDAR — Monthly grid with clickable day cells
+// ============================================================
+let calendarViewDate = new Date();
+
+function renderCalendarView(date) {
+  if (date) calendarViewDate = date;
+  const container = document.getElementById("calendar-container");
+  const labelEl = document.getElementById("cal-month-label");
+  if (!container) return;
+
+  const metrics = calculateMetrics();
+  const dailyBudget = Math.round(metrics.remainingBalance / Math.max(1, state.activeCycle?.daysRemaining || 26));
+  const year = calendarViewDate.getFullYear();
+  const month = calendarViewDate.getMonth();
+  const today = new Date();
+
+  if (labelEl) labelEl.textContent = calendarViewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Build spend map: { "2026-08-25": 6802, ... }
+  const spendMap = {};
+  (state.dailySpends || []).forEach(s => {
+    if (!spendMap[s.date]) spendMap[s.date] = 0;
+    spendMap[s.date] += s.amount;
+  });
+
+  // Calendar grid
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cycleStart = state.household?.cycleStartDay || 25;
+
+  const dayLabels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let html = `
+    <div style="display:grid; grid-template-columns: repeat(7,1fr); gap:4px; margin-bottom:0.5rem;">
+      ${dayLabels.map(d => `<div style="text-align:center;font-size:0.72rem;color:var(--text-muted);font-weight:600;padding:0.25rem;">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(7,1fr); gap:4px;">
+      ${Array(firstDay).fill('<div></div>').join('')}
+  `;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const daySpend = spendMap[dateStr] || 0;
+    const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
+    const isCycleDay = d === cycleStart;
+    const pct = dailyBudget > 0 ? (daySpend / dailyBudget) * 100 : 0;
+    const dotColor = daySpend === 0 ? "transparent" : pct < 70 ? "#10B981" : pct < 100 ? "#F59E0B" : "#EF4444";
+    const bgColor = isToday ? "rgba(99,102,241,0.25)" : isCycleDay ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.04)";
+    const border = isToday ? "1px solid #6366F1" : isCycleDay ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(255,255,255,0.06)";
+
+    html += `
+      <div onclick="showCalendarDayDetail('${dateStr}')" style="
+        background:${bgColor}; border:${border}; border-radius:8px;
+        padding:0.4rem 0.3rem; cursor:pointer; min-height:56px;
+        transition:background 0.15s ease; position:relative;
+        display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      " onmouseover="this.style.background='rgba(99,102,241,0.15)'" onmouseout="this.style.background='${bgColor}'">
+        <span style="font-size:0.75rem; font-weight:${isToday?'800':'500'}; color:${isToday?'#818CF8':'#E5E7EB'};">${d}</span>
+        ${daySpend > 0 ? `
+          <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};margin-top:3px;display:block;"></span>
+          <span style="font-size:0.62rem;color:${dotColor};margin-top:2px;font-weight:600;">${Math.round(daySpend/1000)}k</span>
+        ` : ''}
+        ${isCycleDay ? `<span style="font-size:0.55rem;color:#10B981;font-weight:700;margin-top:auto;">CYCLE</span>` : ''}
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function changeCalendarMonth(delta) {
+  calendarViewDate.setMonth(calendarViewDate.getMonth() + delta);
+  renderCalendarView();
+  // Hide day detail when month changes
+  const detail = document.getElementById("calendar-day-detail");
+  if (detail) detail.style.display = "none";
+}
+
+function showCalendarDayDetail(dateStr) {
+  const detail = document.getElementById("calendar-day-detail");
+  if (!detail) return;
+  const daySpends = (state.dailySpends || []).filter(s => s.date === dateStr);
+  const total = daySpends.reduce((sum,s) => sum+s.amount, 0);
+  const dateDisplay = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  detail.style.display = "block";
+  detail.innerHTML = `
+    <div class="section-card">
+      <div class="card-header-flex">
+        <div>
+          <h3>📅 ${dateDisplay}</h3>
+          <p class="text-muted">${daySpends.length} transaction(s) — Total: <strong style="color:var(--primary-light);">${fmt(total)}</strong></p>
+        </div>
+        <button onclick="this.closest('#calendar-day-detail').style.display='none'" class="btn btn-secondary btn-sm">✕ Close</button>
+      </div>
+      ${daySpends.length ? `
+        <div class="spends-list" style="margin-top:0.75rem;">
+          ${daySpends.map(s => `
+            <div class="spend-row" style="padding:0.5rem 0.75rem;">
+              <div class="spend-info">
+                <strong>${s.title}</strong>
+                <small>${s.cat} • ${s.method}${s.memberName ? ' • ' + s.memberName : ''}</small>
+              </div>
+              <strong style="color:var(--primary-light);">${fmt(s.amount)}</strong>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<p style="color:var(--text-muted);padding:1rem;text-align:center;">No spends logged on this date.</p>`}
+    </div>
+  `;
+  detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ============================================================
+// DAILY SPEND ALERT — Smart notification when over budget
+// ============================================================
+function checkDailySpendAlert() {
+  const metrics = calculateMetrics();
+  const dailyBudget = Math.round(metrics.remainingBalance / Math.max(1, state.activeCycle?.daysRemaining || 26));
+  const today = new Date().toISOString().split("T")[0];
+  const todaySpend = (state.dailySpends || [])
+    .filter(s => s.date === today)
+    .reduce((sum, s) => sum + s.amount, 0);
+
+  const pct = dailyBudget > 0 ? (todaySpend / dailyBudget) * 100 : 0;
+  const banner = document.getElementById("spend-alert-banner");
+  const badge = document.getElementById("ai-chat-badge");
+
+  if (pct >= 100 && dailyBudget > 0) {
+    const overBy = todaySpend - dailyBudget;
+    if (banner) {
+      banner.style.display = "block";
+      banner.innerHTML = `⚠️ <strong>Over daily budget!</strong> You've spent ${fmt(todaySpend)} today (limit: ${fmt(dailyBudget)}). That's ${fmt(overBy)} over your safe daily limit.`;
+    }
+    if (badge) { badge.style.display = "flex"; }
+  } else if (pct >= 70 && dailyBudget > 0) {
+    if (banner) {
+      banner.style.display = "block";
+      banner.innerHTML = `🟡 <strong>Near daily limit.</strong> You've spent ${fmt(todaySpend)} of your ${fmt(dailyBudget)} daily budget (${Math.round(pct)}%). Spend carefully!`;
+      banner.style.background = "rgba(245,158,11,0.1)";
+      banner.style.color = "#FCD34D";
+      banner.style.borderBottomColor = "rgba(245,158,11,0.3)";
+    }
+    if (badge) { badge.style.display = "flex"; }
+  } else {
+    if (banner) banner.style.display = "none";
+    if (badge) badge.style.display = "none";
+  }
+}
+
+// ============================================================
+// AI CHAT WIDGET — Floating financial advisor chatbot
+// ============================================================
+let aiChatOpen = false;
+
+function toggleAiChat() {
+  aiChatOpen = !aiChatOpen;
+  const panel = document.getElementById("ai-chat-panel");
+  if (panel) {
+    panel.style.display = aiChatOpen ? "flex" : "none";
+    panel.style.flexDirection = "column";
+  }
+  if (aiChatOpen) {
+    checkDailySpendAlert();
+    const statusEl = document.getElementById("ai-chat-status");
+    if (statusEl) {
+      const hasKey = !!(state.aiSettings?.geminiKey || state.aiSettings?.openaiKey);
+      statusEl.textContent = hasKey ? `Powered by ${state.aiSettings.provider === "openai" ? "OpenAI" : "Gemini"}` : "Rule-based (set key in Admin → AI Studio)";
+    }
+    const input = document.getElementById("ai-chat-input");
+    if (input) setTimeout(() => input.focus(), 100);
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById("ai-chat-input");
+  const question = input?.value.trim();
+  if (!question) return;
+  input.value = "";
+  appendChatMessage(question, "user");
+  await processChatQuestion(question);
+}
+
+async function askQuickQuestion(question) {
+  if (!aiChatOpen) toggleAiChat();
+  appendChatMessage(question, "user");
+  await processChatQuestion(question);
+}
+
+function appendChatMessage(text, role) {
+  const container = document.getElementById("ai-chat-messages");
+  if (!container) return;
+  const isUser = role === "user";
+  const div = document.createElement("div");
+  div.style.cssText = `
+    ${isUser
+      ? "background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);border-radius:12px 12px 0 12px;margin-left:auto;max-width:85%;"
+      : "background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px 12px 12px 0;max-width:95%;"}
+    padding:0.65rem 0.9rem; font-size:0.83rem; color:#E5E7EB; line-height:1.5;
+  `;
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendChatThinking() {
+  const container = document.getElementById("ai-chat-messages");
+  if (!container) return null;
+  const div = document.createElement("div");
+  div.id = "chat-thinking-bubble";
+  div.style.cssText = "background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px 12px 12px 0;padding:0.65rem 0.9rem;font-size:0.83rem;color:var(--text-muted);";
+  div.innerHTML = "⏳ <em>Thinking...</em>";
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function processChatQuestion(question) {
+  const thinkingEl = appendChatThinking();
+  const metrics = calculateMetrics();
+  let responseText = "";
+
+  try {
+    if (state.aiSettings?.geminiKey || state.aiSettings?.openaiKey) {
+      // Real AI response
+      const prompt = buildAiPrompt(question, metrics);
+      const activeKey = state.aiSettings?.provider === "openai" ? state.aiSettings?.openaiKey : state.aiSettings?.geminiKey;
+      if (state.aiSettings?.provider === "openai") {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+          body: JSON.stringify({ model: state.aiSettings?.model || "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
+        });
+        const data = await res.json();
+        responseText = data.choices?.[0]?.message?.content || "Unable to get response.";
+      } else {
+        const model = state.aiSettings?.model || "gemini-2.0-flash";
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await res.json();
+        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to get response.";
+      }
+    } else {
+      // Rule-based fallback
+      const lower = question.toLowerCase();
+      const dailyBudget = Math.round(metrics.remainingBalance / Math.max(1, state.activeCycle?.daysRemaining || 26));
+      if (lower.includes("today") || lower.includes("spend today")) {
+        const today = new Date().toISOString().split("T")[0];
+        const todaySpend = (state.dailySpends || []).filter(s => s.date === today).reduce((sum,s)=>sum+s.amount,0);
+        responseText = `Your safe daily budget is ${fmt(dailyBudget)}. You've spent ${fmt(todaySpend)} today (${Math.round((todaySpend/Math.max(1,dailyBudget))*100)}% used). ${todaySpend > dailyBudget ? "⚠️ You're over today's safe limit!" : "✅ You're within budget!"}`;
+      } else if (lower.includes("balance") || lower.includes("remaining")) {
+        responseText = `Your remaining spendable balance is ${fmt(metrics.remainingBalance)}. Projected savings at cycle end: ${fmt(metrics.projectedSavings)}.`;
+      } else if (lower.includes("bnpl") || lower.includes("koko") || lower.includes("installment")) {
+        const pending = (state.installments || []).filter(i => !i.isPaid);
+        responseText = pending.length ? `You have ${pending.length} pending BNPL installment(s) totalling ${fmt(pending.reduce((s,i)=>s+i.monthly,0))} this cycle.` : `No pending BNPL installments this cycle! ✅`;
+      } else if (lower.includes("buy") || lower.includes("purchase")) {
+        responseText = metrics.remainingBalance > 10000 ? `With ${fmt(metrics.remainingBalance)} remaining and ${state.activeCycle?.daysRemaining || 26} days left, you can afford moderate purchases. Consider your daily safe limit of ${fmt(dailyBudget)}/day first.` : `⚠️ Your remaining balance (${fmt(metrics.remainingBalance)}) is getting low. I'd wait before making any large purchases.`;
+      } else {
+        responseText = `I can see your household currently has ${fmt(metrics.remainingBalance)} remaining balance with ${state.activeCycle?.daysRemaining || 26} days left. Your daily safe spend limit is ${fmt(dailyBudget)}. ${metrics.hasShortfall ? "⚠️ Next month looks tight." : "✅ Next month looks healthy."}\n\n💡 Tip: Add your Gemini API key in Admin CMS → AI Advisor Studio for intelligent personalized advice!`;
+      }
+    }
+  } catch (err) {
+    responseText = `❌ Error: ${err.message}. Check your API key in Admin → AI Advisor Studio.`;
+  }
+
+  if (thinkingEl) thinkingEl.remove();
+  appendChatMessage(responseText, "ai");
+}
+
 // Global DOM Bootstrap — loads from Supabase cloud on startup
+
 document.addEventListener("DOMContentLoaded", async () => {
   // First render with local data for instant startup
   renderApp();
@@ -2201,6 +2718,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       showToast("☁️ Synced from cloud", "info");
     }
   }
+
+  // Show first-run onboarding wizard if no members have been added yet
+  // (delayed slightly so the render and cloud sync complete first)
+  setTimeout(() => {
+    if (isFirstRun()) {
+      showFirstRunOnboarding();
+    } else {
+      checkDailySpendAlert(); // Check spend alert for returning users
+    }
+  }, 800);
 
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
