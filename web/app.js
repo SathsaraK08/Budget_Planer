@@ -2689,11 +2689,269 @@ async function processChatQuestion(question) {
   appendChatMessage(responseText, "ai");
 }
 
+// ============================================================
+// 3D INTERACTIVE THREE.JS HERO ANIMATION
+// ============================================================
+let threeScene, threeCamera, threeRenderer, threeAnimationId;
+let threeObjects = [];
+
+function initThreeHeroScene() {
+  const canvas = document.getElementById("three-hero-canvas");
+  if (!canvas || typeof THREE === "undefined") return;
+
+  const container = canvas.parentElement;
+  const width = container.clientWidth || 800;
+  const height = container.clientHeight || 220;
+
+  // Scene & Camera
+  threeScene = new THREE.Scene();
+  threeCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+  threeCamera.position.z = 18;
+
+  // Renderer
+  threeRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  threeRenderer.setSize(width, height);
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  threeScene.add(ambientLight);
+
+  const pointLight1 = new THREE.PointLight(0x10B981, 2, 50); // Emerald light
+  pointLight1.position.set(10, 10, 10);
+  threeScene.add(pointLight1);
+
+  const pointLight2 = new THREE.PointLight(0x6366F1, 2, 50); // Indigo light
+  pointLight2.position.set(-10, -10, 10);
+  threeScene.add(pointLight2);
+
+  const pointLightGold = new THREE.PointLight(0xF59E0B, 2.5, 40); // Gold light
+  pointLightGold.position.set(0, 5, 8);
+  threeScene.add(pointLightGold);
+
+  threeObjects = [];
+
+  // 1. Central 3D Golden Coin Mesh
+  const coinGeo = new THREE.CylinderGeometry(2.4, 2.4, 0.45, 32);
+  const coinMat = new THREE.MeshStandardMaterial({
+    color: 0xF59E0B,
+    metalness: 0.85,
+    roughness: 0.25,
+    emissive: 0x78350F,
+    emissiveIntensity: 0.2
+  });
+  const coinMesh = new THREE.Mesh(coinGeo, coinMat);
+  coinMesh.rotation.x = Math.PI / 3;
+  coinMesh.rotation.z = Math.PI / 6;
+  coinMesh.position.set(6, 0.5, 0);
+  threeScene.add(coinMesh);
+  threeObjects.push({ mesh: coinMesh, rotSpeedX: 0.008, rotSpeedY: 0.015, floatSpeed: 0.002, basePos: { x: 6, y: 0.5, z: 0 } });
+
+  // 2. Glowing Emerald Crystal Node (Wealth Buffer)
+  const crystalGeo1 = new THREE.IcosahedronGeometry(1.4, 0);
+  const crystalMat1 = new THREE.MeshStandardMaterial({
+    color: 0x10B981,
+    metalness: 0.6,
+    roughness: 0.2,
+    wireframe: false,
+    emissive: 0x064E3B,
+    emissiveIntensity: 0.4
+  });
+  const crystal1 = new THREE.Mesh(crystalGeo1, crystalMat1);
+  crystal1.position.set(11, -1.5, -2);
+  threeScene.add(crystal1);
+  threeObjects.push({ mesh: crystal1, rotSpeedX: 0.012, rotSpeedY: 0.009, floatSpeed: 0.003, basePos: { x: 11, y: -1.5, z: -2 } });
+
+  // 3. Indigo Polyhedron Node (Forecast AI)
+  const crystalGeo2 = new THREE.OctahedronGeometry(1.2, 0);
+  const crystalMat2 = new THREE.MeshStandardMaterial({
+    color: 0x818CF8,
+    metalness: 0.5,
+    roughness: 0.3,
+    emissive: 0x312E81,
+    emissiveIntensity: 0.35
+  });
+  const crystal2 = new THREE.Mesh(crystalGeo2, crystalMat2);
+  crystal2.position.set(2, 2.2, -3);
+  threeScene.add(crystal2);
+  threeObjects.push({ mesh: crystal2, rotSpeedX: 0.007, rotSpeedY: 0.018, floatSpeed: 0.0025, basePos: { x: 2, y: 2.2, z: -3 } });
+
+  // 4. Particle Constellation Wave (250+ floating nodes)
+  const particleCount = 280;
+  const particleGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+
+  const col1 = new THREE.Color(0x10B981);
+  const col2 = new THREE.Color(0x6366F1);
+  const col3 = new THREE.Color(0xF59E0B);
+
+  for (let i = 0; i < particleCount * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 45;
+    positions[i + 1] = (Math.random() - 0.5) * 20;
+    positions[i + 2] = (Math.random() - 0.5) * 25;
+
+    const chosenCol = Math.random() < 0.4 ? col1 : Math.random() < 0.7 ? col2 : col3;
+    colors[i] = chosenCol.r;
+    colors[i + 1] = chosenCol.g;
+    colors[i + 2] = chosenCol.b;
+  }
+
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const particleMat = new THREE.PointsMaterial({
+    size: 0.18,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.85
+  });
+
+  const particleSystem = new THREE.Points(particleGeo, particleMat);
+  threeScene.add(particleSystem);
+
+  // Mouse Parallax
+  let mouseX = 0, mouseY = 0;
+  let targetX = 0, targetY = 0;
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  // Animation Loop
+  let clock = new THREE.Clock();
+
+  function animate() {
+    threeAnimationId = requestAnimationFrame(animate);
+    const elapsedTime = clock.getElapsedTime();
+
+    // Smooth camera mouse parallax
+    targetX += (mouseX * 2.5 - targetX) * 0.05;
+    targetY += (-mouseY * 1.5 - targetY) * 0.05;
+    threeCamera.position.x = targetX;
+    threeCamera.position.y = targetY;
+    threeCamera.lookAt(threeScene.position);
+
+    // Rotate and float meshes
+    threeObjects.forEach((obj, idx) => {
+      obj.mesh.rotation.x += obj.rotSpeedX;
+      obj.mesh.rotation.y += obj.rotSpeedY;
+      obj.mesh.position.y = obj.basePos.y + Math.sin(elapsedTime * 1.5 + idx * 2) * 0.4;
+    });
+
+    // Particle wave drift
+    particleSystem.rotation.y = elapsedTime * 0.03;
+    particleSystem.rotation.x = Math.sin(elapsedTime * 0.02) * 0.1;
+
+    threeRenderer.render(threeScene, threeCamera);
+  }
+
+  animate();
+
+  // Resize listener
+  window.addEventListener('resize', () => {
+    if (!canvas || !container) return;
+    const newW = container.clientWidth || 800;
+    const newH = container.clientHeight || 220;
+    threeCamera.aspect = newW / newH;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(newW, newH);
+  });
+}
+
+// ============================================================
+// DRAGGABLE & RESIZABLE AI CHATBOT WIDGET
+// ============================================================
+let aiChatScale = 1.0;
+
+function resizeAiChat(delta) {
+  aiChatScale = Math.max(0.8, Math.min(1.4, aiChatScale + delta * 0.1));
+  const panel = document.getElementById("ai-chat-panel");
+  if (panel) {
+    panel.style.transform = `scale(${aiChatScale})`;
+    panel.style.transformOrigin = "bottom right";
+  }
+}
+
+function initDraggableAiChat() {
+  const widget = document.getElementById("ai-chat-widget");
+  const dragBar = document.getElementById("ai-chat-drag-bar");
+  const fab = document.getElementById("ai-chat-fab");
+  if (!widget) return;
+
+  let isDragging = false;
+  let startX, startY, initialLeft, initialTop;
+
+  const onDragStart = (e) => {
+    // Only drag if on drag bar or fab button
+    const target = e.target;
+    if (target.closest('.ai-chat-scale-btn') || target.tagName === 'INPUT' || target.tagName === 'BUTTON') {
+      if (target !== fab && !target.closest('#ai-chat-fab')) return;
+    }
+    isDragging = true;
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+    const rect = widget.getBoundingClientRect();
+    startX = clientX;
+    startY = clientY;
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    widget.style.bottom = 'auto';
+    widget.style.right = 'auto';
+    widget.style.left = `${initialLeft}px`;
+    widget.style.top = `${initialTop}px`;
+  };
+
+  const onDragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+
+    const newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, initialLeft + dx));
+    const newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, initialTop + dy));
+
+    widget.style.left = `${newLeft}px`;
+    widget.style.top = `${newTop}px`;
+  };
+
+  const onDragEnd = () => {
+    isDragging = false;
+  };
+
+  if (dragBar) {
+    dragBar.addEventListener('mousedown', onDragStart);
+    dragBar.addEventListener('touchstart', onDragStart, { passive: false });
+  }
+
+  if (fab) {
+    fab.addEventListener('mousedown', onDragStart);
+    fab.addEventListener('touchstart', onDragStart, { passive: false });
+  }
+
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('mouseup', onDragEnd);
+  window.addEventListener('touchend', onDragEnd);
+}
+
 // Global DOM Bootstrap — loads from Supabase cloud on startup
 
 document.addEventListener("DOMContentLoaded", async () => {
   // First render with local data for instant startup
   renderApp();
+
+  // Initialize Three.js 3D Animated Hero Scene
+  setTimeout(() => initThreeHeroScene(), 100);
+
+  // Initialize Draggable AI Chatbot Widget
+  initDraggableAiChat();
 
   // Then try to load from Supabase cloud (non-blocking)
   if (typeof loadFromSupabase === "function") {
@@ -2736,3 +2994,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 });
+

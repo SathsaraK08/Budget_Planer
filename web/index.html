@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="html-head-title">HomeBudget | 25th Cycle Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- Three.js 3D WebGL Library for Animated Interactive Hero -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body class="theme-emerald">
 
@@ -18,7 +21,7 @@
         <span class="app-logo-icon">💰</span> <strong class="sidebar-app-name">HomeBudget</strong>
       </span>
       <span class="wp-bar-item">|</span>
-      <a href="/admin" class="wp-bar-item" style="color: var(--accent); font-weight: 700;">
+      <a href="admin.html" class="wp-bar-item" style="color: var(--accent); font-weight: 700;">
         <span>👑</span> <strong>Admin CMS Portal</strong>
       </a>
       <button class="wp-bar-item wp-bar-btn-primary" onclick="openSpendModal()">
@@ -38,7 +41,7 @@
       <button class="btn-help-pill" onclick="openHelpGuide('cycle')">
         <span>📖</span> User Guide & Help
       </button>
-      <a href="/admin" class="wp-bar-item">
+      <a href="admin.html" class="wp-bar-item">
         <span>⚙️</span> Customize Site
       </a>
     </div>
@@ -92,7 +95,7 @@
         <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0;"></div>
 
         <!-- Dedicated Link to WordPress Admin CMS -->
-        <a href="/admin" class="nav-item nav-admin-link">
+        <a href="admin.html" class="nav-item nav-admin-link">
           <span class="icon">👑</span> <strong>Admin CMS Portal</strong>
         </a>
       </nav>
@@ -109,7 +112,7 @@
             <div class="member-name">Sathsara (Admin)</div>
             <div class="member-role">admin@homebudget.lk</div>
           </div>
-          <a href="/admin" class="btn-icon" title="Open Admin CMS">⚙️</a>
+          <a href="admin.html" class="btn-icon" title="Open Admin CMS">⚙️</a>
         </div>
       </div>
     </aside>
@@ -128,7 +131,7 @@
           <p class="cycle-subtitle" id="cycle-range-text">Aug 25 – Sep 25, 2026 • <strong>26 Days Remaining</strong></p>
         </div>
         <div class="header-actions">
-          <a href="/admin" class="btn btn-admin">
+          <a href="admin.html" class="btn btn-admin">
             <span>👑</span> <span data-label-key="btn.admin_cms">Admin CMS</span>
           </a>
           <button class="btn btn-primary" onclick="openSpendModal()">
@@ -140,6 +143,31 @@
       <!-- TAB 1: DASHBOARD -->
       <section id="tab-dashboard" class="tab-pane active">
         
+        <!-- 3D Interactive WebGL Financial Hero / Landing Section -->
+        <div class="hero-3d-wrapper" id="hero-3d-wrapper">
+          <div class="hero-3d-canvas-container">
+            <canvas id="three-hero-canvas"></canvas>
+          </div>
+          <div class="hero-3d-overlay">
+            <div class="hero-3d-badge">
+              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine
+            </div>
+            <h2 class="hero-3d-title">Deterministic Household Financial Intelligence</h2>
+            <p class="hero-3d-subtitle">Real-time spendable cashflow, dynamic forward survival buffers, and multi-member commitments.</p>
+            <div class="hero-3d-actions">
+              <button class="btn btn-primary" onclick="openSpendModal()">
+                <span>⚡</span> Quick Log Spend
+              </button>
+              <button class="btn btn-secondary" onclick="toggleAiChat()">
+                <span>🤖</span> Ask AI Advisor
+              </button>
+              <a href="admin.html" class="btn btn-secondary">
+                <span>👑</span> Admin CMS Portal
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- Realtime Remaining Spendable Balance Banner -->
         <div class="balance-card" id="frontend-balance-card">
           <div class="balance-card-header">
@@ -643,32 +671,24 @@
     </div>
   </div>
 
-  <!-- AI Advisor Chat Widget -->
-  <div id="ai-chat-widget" style="
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9000;
-    display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem;
-  ">
+  <!-- AI Advisor Chat Widget (Draggable & Resizable) -->
+  <div id="ai-chat-widget">
     <!-- Chat Panel (hidden by default) -->
-    <div id="ai-chat-panel" style="
-      display: none;
-      width: 360px; max-height: 520px;
-      background: var(--surface-2, #1a1f2e);
-      border: 1px solid rgba(99,102,241,0.3);
-      border-radius: 16px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-      overflow: hidden;
-      flex-direction: column;
-    ">
-      <!-- Chat Header -->
-      <div style="background: linear-gradient(135deg,#4f46e5,#7c3aed); padding: 1rem 1.25rem; display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:0.6rem;">
+    <div id="ai-chat-panel">
+      <!-- Chat Header (Drag handle & Scale controls) -->
+      <div class="ai-chat-drag-handle" id="ai-chat-drag-bar">
+        <div style="display:flex;align-items:center;gap:0.6rem; pointer-events:none;">
           <span style="font-size:1.4rem;">🤖</span>
           <div>
             <div style="font-weight:700; color:#fff; font-size:0.9rem;">Budget AI Advisor</div>
-            <div style="font-size:0.72rem; color:rgba(255,255,255,0.7);" id="ai-chat-status">Powered by Gemini</div>
+            <div style="font-size:0.72rem; color:rgba(255,255,255,0.75);" id="ai-chat-status">Powered by Gemini</div>
           </div>
         </div>
-        <button onclick="toggleAiChat()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.9rem;">✕</button>
+        <div style="display:flex; align-items:center; gap:0.35rem;">
+          <button class="ai-chat-scale-btn" onclick="resizeAiChat(-1)" title="Zoom Out">🔍−</button>
+          <button class="ai-chat-scale-btn" onclick="resizeAiChat(1)" title="Zoom In">🔍+</button>
+          <button class="ai-chat-scale-btn" onclick="toggleAiChat()" title="Close">✕</button>
+        </div>
       </div>
 
       <!-- Daily Spend Alert Banner (shows only when over budget) -->
@@ -677,7 +697,7 @@
       <!-- Chat Messages -->
       <div id="ai-chat-messages" style="
         flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.75rem;
-        min-height: 280px; max-height: 320px;
+        min-height: 200px;
         background: var(--surface, #131929);
       ">
         <div class="ai-chat-msg ai-msg" style="
@@ -685,7 +705,7 @@
           border: 1px solid rgba(99,102,241,0.2);
           border-radius: 12px 12px 12px 0; padding: 0.75rem; font-size:0.84rem; color:#E5E7EB;
         ">
-          👋 Hi! I'm your Budget AI Advisor. I have access to your real financial data — ask me anything about your spending, balance, or BNPL plans!
+          👋 Hi! I'm your Budget AI Advisor. I have real-time access to your financial metrics — ask me anything about today's safe spend limit, balance, or BNPL commitments!
         </div>
       </div>
 
@@ -709,15 +729,8 @@
       </div>
     </div>
 
-    <!-- Floating Chat Button -->
-    <button onclick="toggleAiChat()" id="ai-chat-fab" style="
-      width: 58px; height: 58px; border-radius: 50%;
-      background: linear-gradient(135deg,#4f46e5,#7c3aed);
-      border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(99,102,241,0.5);
-      font-size: 1.6rem; display:flex; align-items:center; justify-content:center;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    <!-- Floating Draggable Chat FAB Button -->
+    <button onclick="toggleAiChat()" id="ai-chat-fab" title="AI Budget Advisor (Drag to Move)">
       🤖
       <span id="ai-chat-badge" style="
         display:none; position:absolute; top:2px; right:2px;
