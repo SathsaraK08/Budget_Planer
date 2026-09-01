@@ -1345,28 +1345,34 @@ function resetToSampleData() {
 // ============================================================
 // SHARED-ACCOUNT IDENTITY & SESSION MEMBER MANAGEMENT
 // ============================================================
+// ============================================================
+// SHARED-ACCOUNT IDENTITY & SESSION MEMBER MANAGEMENT
+// ============================================================
 function getActiveSessionMember() {
   const id = sessionStorage.getItem("activeSessionMemberId");
-  if (id && state.members) {
+  const storedName = sessionStorage.getItem("activeSessionMemberName");
+  if (id && state.members && state.members.length) {
     const found = state.members.find(m => m.id === id);
     if (found) return found;
   }
-  return (state.members && state.members[0]) ? state.members[0] : { id: "m_default", name: "You", role: "primary", color: "#10B981" };
+  if (storedName) {
+    return { id: id || "m_default_1", name: storedName, role: "admin", color: "#10B981" };
+  }
+  return (state.members && state.members[0]) ? state.members[0] : { id: "m_default_1", name: "Primary Member", role: "admin", color: "#10B981" };
 }
 
-function setActiveSessionMember(memberId) {
+function setActiveSessionMember(memberId, memberName) {
   const member = (state.members || []).find(m => m.id === memberId);
-  if (member) {
-    sessionStorage.setItem("activeSessionMemberId", member.id);
-    sessionStorage.setItem("activeSessionMemberName", member.name);
-    updateSessionMemberUI();
-    showToast(`👤 Active identity: ${member.name}`, "info");
-  }
+  const name = member ? member.name : (memberName || "Primary Member");
+  sessionStorage.setItem("activeSessionMemberId", memberId);
+  sessionStorage.setItem("activeSessionMemberName", name);
+  updateSessionMemberUI();
+  showToast(`👤 Active identity: ${name}`, "info");
 }
 
 function updateSessionMemberUI() {
   const active = getActiveSessionMember();
-  const name = active ? active.name : "Select User";
+  const name = active ? active.name : "Primary Member";
   document.querySelectorAll("#top-session-member-name, #header-active-member-label").forEach(el => {
     if (el) el.textContent = `👤 ${name}`;
   });
@@ -1376,15 +1382,15 @@ function updateSessionMemberUI() {
   if (sidebarUserAvatar) sidebarUserAvatar.textContent = (name || 'U')[0].toUpperCase();
   const sidebarUserRole = document.getElementById("sidebar-user-role");
   if (sidebarUserRole && active) {
-    sidebarUserRole.textContent = active.role === 'admin' ? '👑 Admin (Tap to switch)' : '👤 Member (Tap to switch)';
+    sidebarUserRole.textContent = (active.role === 'admin' || active.role === 'primary') ? '👑 Admin (Tap to switch)' : '👤 Member (Tap to switch)';
   }
 }
 
 function openSessionMemberModal() {
-  const members = state.members || [];
-  if (!members.length) {
-    return showToast("No household members configured yet. Add members in Financial Modules.", "info");
-  }
+  const members = (state.members && state.members.length) ? state.members : [
+    { id: "m_default_1", name: "Primary Member", role: "admin", color: "#10B981" },
+    { id: "m_default_2", name: "Partner", role: "partner", color: "#EC4899" }
+  ];
   const active = getActiveSessionMember();
   const html = `
     <div style="text-align:center; margin-bottom:1.25rem;">
@@ -1394,9 +1400,9 @@ function openSessionMemberModal() {
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem; margin-bottom:1rem;">
       ${members.map(m => {
-        const isSelected = active && active.id === m.id;
+        const isSelected = active && (active.id === m.id || active.name === m.name);
         return `
-          <button class="member-select-card" onclick="setActiveSessionMember('${m.id}'); closeModal();" style="
+          <button type="button" class="member-select-card" onclick="setActiveSessionMember('${m.id}', '${m.name}'); closeModal();" style="
             background: ${isSelected ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)'};
             border: 1.5px solid ${isSelected ? '#10B981' : 'rgba(255,255,255,0.1)'};
             border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; text-align: center; color: #F3F4F6; transition: all 0.2s; width: 100%;
@@ -1405,7 +1411,7 @@ function openSessionMemberModal() {
               ${(m.name || 'M')[0].toUpperCase()}
             </div>
             <strong style="display:block; font-size:0.95rem; margin-bottom:0.2rem;">${m.name}</strong>
-            <small style="color:${isSelected ? 'var(--primary)' : 'var(--text-muted)'}; font-size:0.75rem;">${m.role === 'admin' || m.role === 'primary' ? '👑 Admin' : '👤 Partner'}${isSelected ? ' • Active' : ''}</small>
+            <small style="color:${isSelected ? 'var(--primary)' : 'var(--text-muted)'}; font-size:0.75rem;">${(m.role === 'admin' || m.role === 'primary') ? '👑 Admin' : '👤 Partner'}${isSelected ? ' • Active' : ''}</small>
           </button>
         `;
       }).join('')}
