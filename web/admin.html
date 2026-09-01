@@ -930,6 +930,44 @@ CREATE TABLE household_state_history (
         </div>
       </section>
 
+      <!-- Admin CMS Compact User-Friendly Footer -->
+      <footer class="admin-footer">
+        <div class="admin-footer-top">
+          <div class="admin-footer-left">
+            <div class="admin-footer-brand">
+              <span style="font-size: 1.15rem;">⚙️</span>
+              <strong>HomeBudget Admin CMS</strong>
+              <span class="badge badge-admin" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">v3.5 Control Center</span>
+            </div>
+            <p class="admin-footer-desc">
+              Deterministic 25th-to-25th household control center. Zero-redeploy UI customization, instant member attribution, and automated cloud sync.
+            </p>
+          </div>
+          <div class="admin-footer-actions">
+            <a href="index.html" class="btn btn-secondary btn-sm" title="Go to live customer dashboard">
+              <span>🏠</span> Live Site
+            </a>
+            <button class="btn btn-secondary btn-sm" onclick="openHelpGuide('cms')" title="View CMS keyboard shortcuts and user guide">
+              <span>📖</span> Guide
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="exportDatabaseJson()" title="Download full JSON database backup">
+              <span>💾</span> Backup
+            </button>
+          </div>
+        </div>
+        <div class="admin-footer-bottom">
+          <div class="admin-footer-copyright">
+            © 2026 HomeBudget Admin CMS. Developed with ❤️ by <strong style="color: var(--primary-light);">Sathsara Karunarathne</strong>
+          </div>
+          <div class="admin-footer-status">
+            <span class="session-dot" style="background:#10B981;"></span>
+            <span>Encrypted Cloud Sync Active</span>
+            <span>•</span>
+            <span>Super Admin Session</span>
+          </div>
+        </div>
+      </footer>
+
     </main>
   </div>
 
