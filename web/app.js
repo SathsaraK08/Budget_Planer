@@ -640,10 +640,47 @@ function deleteIncome(id) {
   });
 }
 
-// 2. Fixed Bills
+// Helpers for Attribution Dropdowns
+const SRI_LANKAN_BANKS = [
+  "Commercial Bank (COMBANK)",
+  "Bank of Ceylon (BOC)",
+  "Sampath Bank",
+  "Hatton National Bank (HNB)",
+  "National Savings Bank (NSB)",
+  "Seylan Bank",
+  "Nations Trust Bank (NTB)",
+  "DFCC Bank",
+  "Standard Chartered",
+  "HSBC Sri Lanka",
+  "Pan Asia Bank",
+  "Union Bank",
+  "Other"
+];
 
+function getMemberOptionsHtml(selectedName) {
+  const members = (state.members && state.members.length) ? state.members : [
+    { id: "m_default_1", name: "Primary Member", role: "admin" },
+    { id: "m_default_2", name: "Partner", role: "partner" }
+  ];
+  return members.map(m => `
+    <option value="${m.name}" ${selectedName === m.name ? 'selected' : ''}>👤 ${m.name} (${m.role === 'admin' || m.role === 'primary' ? 'Primary' : 'Partner'})</option>
+  `).join('');
+}
+
+function getBankOptionsHtml(selectedBank) {
+  return SRI_LANKAN_BANKS.map(b => `
+    <option value="${b}" ${(selectedBank && b.toLowerCase().includes(selectedBank.toLowerCase())) ? 'selected' : ''}>${b}</option>
+  `).join('');
+}
+
+// 2. Fixed Bills
 function openBillModal(bill = null) {
   const isEdit = bill !== null;
+  const active = getActiveSessionMember();
+  const currentPaidBy = isEdit ? (bill.paidBy || bill.member) : (active ? active.name : "Primary Member");
+  const currentMethod = isEdit ? (bill.paymentMethod || "Bank Transfer") : "Bank Transfer";
+  const currentBank = isEdit ? (bill.bank || bill.dest || "Commercial Bank (COMBANK)") : "Commercial Bank (COMBANK)";
+
   const html = `
     <div class="form-group">
       <label>Bill Name / Purpose</label>
@@ -660,12 +697,29 @@ function openBillModal(bill = null) {
       </select>
     </div>
     <div class="form-group">
-      <label>Due Day of Month (e.g. 25th)</label>
-      <input type="number" id="b-due" class="form-control" value="${isEdit ? bill.dueDay : '25'}">
+      <label>Paid By (Member Attribution)</label>
+      <select id="b-paid-by" class="form-control">
+        ${getMemberOptionsHtml(currentPaidBy)}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="b-method" class="form-control">
+        <option value="Bank Transfer" ${currentMethod === "Bank Transfer" ? 'selected' : ''}>🏦 Bank Transfer</option>
+        <option value="Debit Card" ${currentMethod === "Debit Card" ? 'selected' : ''}>💳 Debit Card</option>
+        <option value="Credit Card" ${currentMethod === "Credit Card" ? 'selected' : ''}>💳 Credit Card</option>
+        <option value="Cash" ${currentMethod === "Cash" ? 'selected' : ''}>💵 Cash</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Destination Account / Bank</label>
-      <input type="text" id="b-dest" class="form-control" value="${isEdit ? (bill.dest || '') : 'BOC Account'}">
+      <select id="b-bank" class="form-control">
+        ${getBankOptionsHtml(currentBank)}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Due Day of Month (e.g. 25th)</label>
+      <input type="number" id="b-due" class="form-control" value="${isEdit ? bill.dueDay : '25'}">
     </div>
   `;
   openModal(isEdit ? "Edit Fixed Bill" : "Add Fixed Bill", html, () => {
@@ -673,14 +727,19 @@ function openBillModal(bill = null) {
     const amount = parseFloat(document.getElementById("b-amount").value) || 0;
     const category = document.getElementById("b-cat").value;
     const dueDay = parseInt(document.getElementById("b-due").value) || 25;
-    const dest = document.getElementById("b-dest").value.trim();
+    const paidBy = document.getElementById("b-paid-by").value;
+    const paymentMethod = document.getElementById("b-method").value;
+    const bank = document.getElementById("b-bank").value;
 
     if (!name || amount <= 0) return showToast("Please provide valid name and amount", "danger");
 
     if (isEdit) {
-      bill.name = name; bill.amount = amount; bill.category = category; bill.dueDay = dueDay; bill.dest = dest;
+      bill.name = name; bill.amount = amount; bill.category = category; bill.dueDay = dueDay; 
+      bill.dest = bank; bill.bank = bank; bill.paidBy = paidBy; bill.paymentMethod = paymentMethod;
     } else {
-      state.fixedPayments.push({ id: "f_" + Date.now(), name, amount, category, dueDay, dest, isPaid: false, paidDate: null });
+      state.fixedPayments.push({ 
+        id: "f_" + Date.now(), name, amount, category, dueDay, dest: bank, bank, paidBy, paymentMethod, isPaid: false, paidDate: null 
+      });
     }
     closeModal();
     persistState();
@@ -701,6 +760,11 @@ function deleteBill(id) {
 // 3. BNPL
 function openBnplModal(inst = null) {
   const isEdit = inst !== null;
+  const active = getActiveSessionMember();
+  const currentMember = isEdit ? (inst.member || inst.paidBy) : (active ? active.name : "Primary Member");
+  const currentMethod = isEdit ? (inst.paymentMethod || "Debit Card") : "Debit Card";
+  const currentBank = isEdit ? (inst.bank || "Commercial Bank (COMBANK)") : "Commercial Bank (COMBANK)";
+
   const html = `
     <div class="form-group">
       <label>Item Name / Purchase Description</label>
@@ -715,7 +779,22 @@ function openBnplModal(inst = null) {
     <div class="form-group">
       <label>Purchased By Member</label>
       <select id="i-mem" class="form-control">
-        ${(state.members || []).map(m => `<option value="${m.name}" ${isEdit && inst.member === m.name ? 'selected' : ''}>${m.name}</option>`).join('')}
+        ${getMemberOptionsHtml(currentMember)}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="i-method" class="form-control">
+        <option value="Debit Card" ${currentMethod === "Debit Card" ? 'selected' : ''}>💳 Debit Card</option>
+        <option value="Credit Card" ${currentMethod === "Credit Card" ? 'selected' : ''}>💳 Credit Card</option>
+        <option value="Bank Transfer" ${currentMethod === "Bank Transfer" ? 'selected' : ''}>🏦 Bank Transfer</option>
+        <option value="Cash" ${currentMethod === "Cash" ? 'selected' : ''}>💵 Cash</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Linked Bank / Card Issuer</label>
+      <select id="i-bank" class="form-control">
+        ${getBankOptionsHtml(currentBank)}
       </select>
     </div>
     <div class="form-group">
@@ -735,6 +814,8 @@ function openBnplModal(inst = null) {
     const item = document.getElementById("i-name").value.trim();
     const platform = document.getElementById("i-plat").value;
     const member = document.getElementById("i-mem").value;
+    const paymentMethod = document.getElementById("i-method").value;
+    const bank = document.getElementById("i-bank").value;
     const monthly = parseFloat(document.getElementById("i-month").value) || 0;
     const remaining = parseFloat(document.getElementById("i-rem").value) || 0;
     const total = parseFloat(document.getElementById("i-tot").value) || (monthly * 3);
@@ -742,9 +823,12 @@ function openBnplModal(inst = null) {
     if (!item || monthly <= 0) return showToast("Please provide valid item and monthly amount", "danger");
 
     if (isEdit) {
-      inst.item = item; inst.platform = platform; inst.member = member; inst.monthly = monthly; inst.remaining = remaining; inst.total = total;
+      inst.item = item; inst.platform = platform; inst.member = member; inst.paidBy = member;
+      inst.paymentMethod = paymentMethod; inst.bank = bank; inst.monthly = monthly; inst.remaining = remaining; inst.total = total;
     } else {
-      state.installments.push({ id: "inst_" + Date.now(), item, platform, member, monthly, remaining, total, isPaid: false, paidDate: null });
+      state.installments.push({ 
+        id: "inst_" + Date.now(), item, platform, member, paidBy: member, paymentMethod, bank, monthly, remaining, total, isPaid: false, paidDate: null 
+      });
     }
     closeModal();
     persistState();
@@ -765,6 +849,11 @@ function deleteBnpl(id) {
 // 4. Subscriptions
 function openSubModal(sub = null) {
   const isEdit = sub !== null;
+  const active = getActiveSessionMember();
+  const currentPaidBy = isEdit ? (sub.paidBy || sub.member) : (active ? active.name : "Primary Member");
+  const currentMethod = isEdit ? (sub.paymentMethod || "Credit Card") : "Credit Card";
+  const currentBank = isEdit ? (sub.bank || "Commercial Bank (COMBANK)") : "Commercial Bank (COMBANK)";
+
   const html = `
     <div class="form-group">
       <label>Subscription Name</label>
@@ -775,6 +864,27 @@ function openSubModal(sub = null) {
       <input type="number" id="s-amt" class="form-control" value="${isEdit ? sub.amountLkr : '1500'}">
     </div>
     <div class="form-group">
+      <label>Paid By (Member Attribution)</label>
+      <select id="s-paid-by" class="form-control">
+        ${getMemberOptionsHtml(currentPaidBy)}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="s-method" class="form-control">
+        <option value="Credit Card" ${currentMethod === "Credit Card" ? 'selected' : ''}>💳 Credit Card</option>
+        <option value="Debit Card" ${currentMethod === "Debit Card" ? 'selected' : ''}>💳 Debit Card</option>
+        <option value="Bank Transfer" ${currentMethod === "Bank Transfer" ? 'selected' : ''}>🏦 Bank Transfer</option>
+        <option value="Cash" ${currentMethod === "Cash" ? 'selected' : ''}>💵 Cash</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Card / Bank Issuer</label>
+      <select id="s-bank" class="form-control">
+        ${getBankOptionsHtml(currentBank)}
+      </select>
+    </div>
+    <div class="form-group">
       <label>Billing Day of Month</label>
       <input type="number" id="s-day" class="form-control" value="${isEdit ? sub.billingDay : '24'}">
     </div>
@@ -783,13 +893,19 @@ function openSubModal(sub = null) {
     const name = document.getElementById("s-name").value.trim();
     const amountLkr = parseFloat(document.getElementById("s-amt").value) || 0;
     const billingDay = parseInt(document.getElementById("s-day").value) || 24;
+    const paidBy = document.getElementById("s-paid-by").value;
+    const paymentMethod = document.getElementById("s-method").value;
+    const bank = document.getElementById("s-bank").value;
 
     if (!name || amountLkr <= 0) return showToast("Please enter valid subscription details", "danger");
 
     if (isEdit) {
       sub.name = name; sub.amountLkr = amountLkr; sub.billingDay = billingDay;
+      sub.paidBy = paidBy; sub.paymentMethod = paymentMethod; sub.bank = bank;
     } else {
-      state.subscriptions.push({ id: "s_" + Date.now(), name, amountLkr, billingDay, isPaid: false, paidDate: null });
+      state.subscriptions.push({ 
+        id: "s_" + Date.now(), name, amountLkr, billingDay, paidBy, paymentMethod, bank, isPaid: false, paidDate: null 
+      });
     }
     closeModal();
     persistState();
@@ -1068,6 +1184,12 @@ async function switchTab(tabId) {
       window.location.href = "auth.html";
       return;
     }
+  }
+
+  // Toggle top header: hidden on public landing page, visible on app modules
+  const topHeader = document.querySelector(".top-header");
+  if (topHeader) {
+    topHeader.style.display = (tabId === "landing") ? "none" : "flex";
   }
 
   document.querySelectorAll(".nav-item").forEach(btn => {
@@ -1674,7 +1796,13 @@ function renderAllTables(metrics) {
           ${b.isPaid ? '✅ Paid' : '⭕ Mark Paid'}
         </button>
       </td>
-      <td><strong>${b.name}</strong></td>
+      <td>
+        <strong>${b.name}</strong>
+        <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.3rem;">
+          <span class="badge-attribution-payer">👤 ${b.paidBy || 'Alex'}</span>
+          <span class="badge-attribution-method">💳 ${b.paymentMethod || 'Bank Transfer'}${b.bank ? ` (${b.bank.split(' ')[0]})` : ''}</span>
+        </div>
+      </td>
       <td><span class="badge">${b.category}</span></td>
       <td>${b.dueDay}th of month</td>
       <td><strong style="color: ${b.isPaid ? 'var(--primary-light)' : '#FFF'};">${fmt(b.amount)}</strong></td>
@@ -1710,9 +1838,15 @@ function renderAllTables(metrics) {
           ${i.isPaid ? '✅ Paid' : '⭕ Mark Paid'}
         </button>
       </td>
-      <td><strong>${i.item}</strong></td>
+      <td>
+        <strong>${i.item}</strong>
+        <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.3rem;">
+          <span class="badge-attribution-payer">👤 ${i.member || i.paidBy || 'Alex'}</span>
+          <span class="badge-attribution-method">💳 ${i.paymentMethod || 'Debit Card'}${i.bank ? ` (${i.bank.split(' ')[0]})` : ''}</span>
+        </div>
+      </td>
       <td><span class="badge badge-admin">${i.platform}</span></td>
-      <td>${i.member || 'Shared'}</td>
+      <td><span class="badge-attribution-payer">👤 ${i.member || i.paidBy || 'Alex'}</span></td>
       <td><strong>${fmt(i.monthly)}</strong></td>
       <td>${fmt(i.remaining)} / ${fmt(i.total)}</td>
       <td>
@@ -1747,7 +1881,13 @@ function renderAllTables(metrics) {
           ${s.isPaid ? '✅ Paid' : '⭕ Mark Paid'}
         </button>
       </td>
-      <td><strong>${s.name}</strong></td>
+      <td>
+        <strong>${s.name}</strong>
+        <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.3rem;">
+          <span class="badge-attribution-payer">👤 ${s.paidBy || 'Alex'}</span>
+          <span class="badge-attribution-method">💳 ${s.paymentMethod || 'Credit Card'}${s.bank ? ` (${s.bank.split(' ')[0]})` : ''}</span>
+        </div>
+      </td>
       <td>${s.billingDay}th of month</td>
       <td><strong>${fmt(s.amountLkr)}</strong></td>
       <td>
@@ -1930,6 +2070,10 @@ function renderCompletedPaymentsPage(metrics) {
             <div class="spend-row paid-row">
               <div class="spend-info">
                 <strong class="item-title">${f.name}</strong>
+                <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem;">
+                  <span class="badge-attribution-payer">👤 ${f.paidBy || 'Alex'}</span>
+                  <span class="badge-attribution-method">💳 ${f.paymentMethod || 'Bank Transfer'}${f.bank ? ` (${f.bank.split(' ')[0]})` : ''}</span>
+                </div>
                 <small>${f.category} • Due: ${f.dueDay}th</small>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1952,7 +2096,11 @@ function renderCompletedPaymentsPage(metrics) {
             <div class="spend-row paid-row">
               <div class="spend-info">
                 <strong class="item-title">${i.item}</strong>
-                <small>${i.platform} • ${i.member}</small>
+                <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem;">
+                  <span class="badge-attribution-payer">👤 ${i.member || i.paidBy || 'Alex'}</span>
+                  <span class="badge-attribution-method">💳 ${i.paymentMethod || 'Debit Card'}${i.bank ? ` (${i.bank.split(' ')[0]})` : ''}</span>
+                </div>
+                <small>${i.platform}</small>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <strong>${fmt(i.monthly)}</strong>
@@ -1974,6 +2122,10 @@ function renderCompletedPaymentsPage(metrics) {
             <div class="spend-row paid-row">
               <div class="spend-info">
                 <strong class="item-title">${s.name}</strong>
+                <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem;">
+                  <span class="badge-attribution-payer">👤 ${s.paidBy || 'Alex'}</span>
+                  <span class="badge-attribution-method">💳 ${s.paymentMethod || 'Credit Card'}${s.bank ? ` (${s.bank.split(' ')[0]})` : ''}</span>
+                </div>
                 <small>Billing: ${s.billingDay}th</small>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -3075,6 +3227,13 @@ function initDraggableAiChat() {
 document.addEventListener("DOMContentLoaded", async () => {
   // First render with local data for instant startup
   renderApp();
+
+  // Set initial top-header visibility: hidden if starting on landing page
+  const initialActive = document.querySelector(".tab-pane.active");
+  const topHeader = document.querySelector(".top-header");
+  if (topHeader && initialActive && initialActive.id === "tab-landing") {
+    topHeader.style.display = "none";
+  }
 
   // Initialize Three.js 3D Animated Hero Scene
   setTimeout(() => initThreeHeroScene(), 100);

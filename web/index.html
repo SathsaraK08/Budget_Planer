@@ -165,6 +165,26 @@
       <!-- TAB 0: 3D FULL INTERACTIVE LANDING PAGE -->
       <section id="tab-landing" class="tab-pane active">
         
+        <!-- Dedicated Landing Page Navigation Bar -->
+        <nav class="landing-navbar">
+          <div class="landing-nav-brand">
+            <span style="font-size:1.5rem;">💰</span>
+            <strong style="font-size:1.15rem; color:#fff; letter-spacing:-0.02em;">HomeBudget</strong>
+          </div>
+          <div class="landing-nav-links">
+            <a href="#landing-ticker-section" class="landing-nav-link">Overview</a>
+            <a href="#landing-features" class="landing-nav-link">Features</a>
+            <a href="#landing-explainer" class="landing-nav-link">Why 25th Cycle?</a>
+            <a href="admin.html" class="landing-nav-link" style="color:var(--accent);">👑 Admin CMS</a>
+            <a href="auth.html" class="landing-nav-link">Sign In</a>
+          </div>
+          <div class="landing-nav-cta">
+            <button class="btn btn-primary btn-sm" onclick="switchTab('dashboard')">
+              <span>🚀</span> Launch App
+            </button>
+          </div>
+        </nav>
+
         <!-- Full 3D Interactive WebGL Hero -->
         <div class="landing-hero-3d">
           <div class="landing-canvas-container">
@@ -172,7 +192,7 @@
           </div>
           <div class="landing-hero-overlay">
             <div class="hero-3d-badge">
-              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine • Powered by Gemini AI
+              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine • Autonomous AI Advisor
             </div>
             <h1 class="landing-hero-title">
               Take 100% Control of Your <span>Household Financial Rhythm</span>
@@ -198,7 +218,7 @@
         </div>
 
         <!-- Live Metrics & Value Ticker -->
-        <div class="landing-ticker">
+        <div class="landing-ticker" id="landing-ticker-section">
           <div class="ticker-card">
             <div class="ticker-icon">📅</div>
             <div class="ticker-info">
@@ -223,14 +243,14 @@
           <div class="ticker-card">
             <div class="ticker-icon">🤖</div>
             <div class="ticker-info">
-              <strong>Gemini 2.0 AI</strong>
-              <small>Data-aware financial coach</small>
+              <strong>Smart AI Advisor</strong>
+              <small>Multi-LLM Financial Copilot</small>
             </div>
           </div>
         </div>
 
         <!-- Section Header: Explore App Modules -->
-        <div class="landing-section-header">
+        <div class="landing-section-header" id="landing-features">
           <h2>⚡ Complete Financial Command Center</h2>
           <p>Click any module below to instantly jump to that live interactive section in the app.</p>
         </div>
@@ -296,7 +316,7 @@
 
           <div class="landing-card">
             <div class="landing-card-icon">🤖</div>
-            <h3>Data-Aware Gemini AI Advisor</h3>
+            <h3>Data-Aware Smart AI Advisor</h3>
             <p>Intelligent floating AI advisor with live access to your household figures for deterministic personalized coaching.</p>
             <button class="btn btn-secondary" onclick="toggleAiChat()">🤖 Ask AI Advisor</button>
           </div>
@@ -311,7 +331,7 @@
         </div>
 
         <!-- 25th-to-25th Cycle Explainer Card -->
-        <div class="landing-explainer-card">
+        <div class="landing-explainer-card" id="landing-explainer">
           <div class="landing-explainer-grid">
             <div class="landing-explainer-content">
               <h3>📅 Why 25th-to-25th Cycle Sync Matters</h3>
@@ -352,6 +372,71 @@
             </a>
           </div>
         </div>
+
+        <!-- Landing Page Modern Footer -->
+        <footer class="landing-footer">
+          <div class="landing-footer-grid">
+            <div class="landing-footer-brand">
+              <div class="brand-logo-text" style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:1.8rem;">💰</span>
+                <strong style="font-size:1.35rem; color:#fff; letter-spacing:-0.02em;">HomeBudget</strong>
+              </div>
+              <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.6; margin-top:0.75rem; max-width:320px;">
+                Deterministic 25th-to-25th household budget planner built for modern families. Real-time multi-device sync, smart BNPL installment tracking, and intelligent AI coaching.
+              </p>
+              <div style="margin-top:1rem; display:inline-flex; align-items:center; gap:0.5rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:0.35rem 0.75rem; border-radius:999px; font-size:0.75rem; color:#6EE7B7;">
+                <span class="session-dot" style="background:#10B981;"></span> Cloud Sync Active &amp; Operational
+              </div>
+            </div>
+
+            <div class="landing-footer-col">
+              <h4>Quick Navigation</h4>
+              <ul>
+                <li><a href="#" onclick="switchTab('dashboard'); return false;">📊 Dashboard</a></li>
+                <li><a href="#" onclick="switchTab('daily-spends'); return false;">⚡ Daily Spends</a></li>
+                <li><a href="#" onclick="switchTab('installments'); return false;">🛍️ BNPL &amp; Koko</a></li>
+                <li><a href="#" onclick="switchTab('fixed-bills'); return false;">🏠 Fixed Bills &amp; Loans</a></li>
+                <li><a href="#" onclick="switchTab('forecast'); return false;">🔮 Survival Forecast</a></li>
+              </ul>
+            </div>
+
+            <div class="landing-footer-col">
+              <h4>Account &amp; Management</h4>
+              <ul>
+                <li><a href="admin.html">👑 Admin CMS Portal</a></li>
+                <li><a href="auth.html">🔐 Sign In / Register</a></li>
+                <li><a href="#" onclick="openSessionMemberModal(); return false;">👥 Switch Active User</a></li>
+                <li><a href="#" onclick="openHelpGuide('cycle'); return false;">📖 Budgeting Guide</a></li>
+                <li><a href="#" onclick="toggleAiChat(); return false;">🤖 AI Budget Advisor</a></li>
+              </ul>
+            </div>
+
+            <div class="landing-footer-col">
+              <h4>About &amp; Security</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">
+                Built with local-first offline resilience, Supabase cloud encryption, and responsive multi-device layouts for iPhone, iPad, and desktop.
+              </p>
+              <div style="margin-top:1rem;">
+                <button class="btn btn-primary btn-sm" onclick="switchTab('dashboard')" style="font-size:0.82rem; padding:0.45rem 0.9rem;">
+                  <span>🚀</span> Launch App
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="landing-footer-bottom">
+            <div class="copyright-text">
+              © 2026 HomeBudget. All rights reserved. Developed with ❤️ by <strong style="color:var(--primary-light);">Sathsara Karunarathne</strong>
+            </div>
+            <div class="footer-links-inline">
+              <span>Private &amp; Secure</span>
+              <span>•</span>
+              <span>25th Salary Cycle</span>
+              <span>•</span>
+              <span>v3.5 Production</span>
+            </div>
+          </div>
+        </footer>
 
       </section>
 

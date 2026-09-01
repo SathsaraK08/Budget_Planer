@@ -2106,28 +2106,157 @@ input:checked + .slider:before {
 /* ============================================================
    ATTRIBUTION BADGES (WHO PAID & HOW)
    ============================================================ */
-.badge-payer {
+.badge-payer,
+.badge-attribution-payer {
   display: inline-flex;
   align-items: center;
-  background: rgba(99, 102, 241, 0.15);
+  gap: 0.3rem;
+  background: rgba(16, 185, 129, 0.14);
+  color: #6EE7B7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.badge-method,
+.badge-attribution-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(99, 102, 241, 0.14);
   color: #A5B4FC;
   border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 999px;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  vertical-align: middle;
 }
 
-.badge-method {
-  display: inline-flex;
+/* ============================================================
+   LANDING PAGE DEDICATED NAVBAR & FOOTER
+   ============================================================ */
+.landing-navbar {
+  display: flex;
   align-items: center;
-  background: rgba(245, 158, 11, 0.12);
-  color: #FCD34D;
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 999px;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 500;
+  justify-content: space-between;
+  padding: 0.85rem 1.5rem;
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+
+.landing-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.landing-nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.landing-nav-link:hover {
+  color: #FFFFFF;
+}
+
+.landing-footer {
+  margin-top: 4rem;
+  padding: 3.5rem 2rem 2rem;
+  background: rgba(11, 15, 25, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  backdrop-filter: blur(16px);
+}
+
+.landing-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.landing-footer-col h4 {
+  font-size: 0.95rem;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.landing-footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.landing-footer-col ul a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+}
+
+.landing-footer-col ul a:hover {
+  color: var(--primary-light);
+}
+
+.landing-footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.footer-links-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .landing-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .landing-nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+  .landing-footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+  .landing-footer {
+    padding: 2.5rem 1rem 1.5rem;
+  }
 }
 
 /* ============================================================
