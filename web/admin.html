@@ -17,33 +17,37 @@
   <!-- WordPress Top Admin Bar -->
   <header class="wp-admin-bar">
     <div class="wp-bar-left">
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+        <span>☰</span>
+      </button>
       <a href="index.html" class="wp-bar-item brand-indicator" title="Go to Live Customer App">
         <span>🏠</span> <strong>Visit Live Site</strong>
       </a>
-      <span class="wp-bar-item">|</span>
+      <span class="wp-bar-item hide-mobile">|</span>
       <button class="wp-bar-item wp-bar-btn-primary" onclick="openMemberModal()">
-        <span>➕</span> New Member
+        <span>➕</span> Member
       </button>
-      <button class="wp-bar-item" onclick="openBillModal()">
-        <span>➕</span> Fixed Bill
+      <button class="wp-bar-item hide-mobile" onclick="openBillModal()">
+        <span>➕</span> Bill
       </button>
-      <button class="wp-bar-item" onclick="openBnplModal()">
-        <span>➕</span> BNPL Plan
+      <button class="wp-bar-item hide-mobile" onclick="openBnplModal()">
+        <span>➕</span> BNPL
       </button>
-      <button class="wp-bar-item" onclick="openCategoryModal()">
+      <button class="wp-bar-item hide-mobile" onclick="openCategoryModal()">
         <span>➕</span> Category
       </button>
     </div>
     <div class="wp-bar-right">
-      <button class="btn-help-pill" onclick="openHelpGuide('cms')">
-        <span>📖</span> CMS Guide & Help
+      <button class="btn-help-pill hide-mobile" onclick="openHelpGuide('cms')">
+        <span>📖</span> Guide
       </button>
-      <span class="badge badge-admin">👑 Super Admin</span>
+      <span class="badge badge-admin hide-mobile">👑 Super Admin</span>
       <button class="wp-bar-item btn-logout" onclick="logoutHousehold()" title="Sign out of household">
-        <span>🚪</span> Logout
+        <span>🚪</span> <span class="hide-mobile">Logout</span>
       </button>
     </div>
   </header>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <!-- WordPress Admin App Shell -->
   <div class="app-shell">
@@ -51,11 +55,14 @@
     <!-- Left WP Admin Sidebar -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-icon">⚙️</div>
-        <div>
-          <h2>Admin CMS</h2>
-          <span class="cycle-tag">Control Center v3.5</span>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div class="brand-icon">⚙️</div>
+          <div>
+            <h2>Admin CMS</h2>
+            <span class="cycle-tag">Control Center v3.5</span>
+          </div>
         </div>
+        <button class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Close menu">✕</button>
       </div>
 
       <div class="nav-section-title">Core Management</div>

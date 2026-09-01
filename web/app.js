@@ -2997,34 +2997,35 @@ function resizeAiChat(delta) {
 }
 
 function initDraggableAiChat() {
-  const widget = document.getElementById("ai-chat-widget");
+  const panel = document.getElementById("ai-chat-panel");
   const dragBar = document.getElementById("ai-chat-drag-bar");
-  const fab = document.getElementById("ai-chat-fab");
-  if (!widget) return;
+  if (!panel || !dragBar) return;
 
   let isDragging = false;
   let startX, startY, initialLeft, initialTop;
 
   const onDragStart = (e) => {
-    // Only drag if on drag bar or fab button
+    // Only drag on desktop/larger screens; mobile is anchored
+    if (window.innerWidth <= 768) return;
+    
+    // Do not drag if clicking scale buttons or close button
     const target = e.target;
-    if (target.closest('.ai-chat-scale-btn') || target.tagName === 'INPUT' || target.tagName === 'BUTTON') {
-      if (target !== fab && !target.closest('#ai-chat-fab')) return;
-    }
+    if (target.closest('.ai-chat-scale-btn') || target.tagName === 'BUTTON') return;
+
     isDragging = true;
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
 
-    const rect = widget.getBoundingClientRect();
+    const rect = panel.getBoundingClientRect();
     startX = clientX;
     startY = clientY;
     initialLeft = rect.left;
     initialTop = rect.top;
 
-    widget.style.bottom = 'auto';
-    widget.style.right = 'auto';
-    widget.style.left = `${initialLeft}px`;
-    widget.style.top = `${initialTop}px`;
+    panel.style.bottom = 'auto';
+    panel.style.right = 'auto';
+    panel.style.left = `${initialLeft}px`;
+    panel.style.top = `${initialTop}px`;
   };
 
   const onDragMove = (e) => {
@@ -3036,31 +3037,37 @@ function initDraggableAiChat() {
     const dx = clientX - startX;
     const dy = clientY - startY;
 
-    const newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, initialLeft + dx));
-    const newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, initialTop + dy));
+    const panelW = panel.offsetWidth || 380;
+    const panelH = panel.offsetHeight || 520;
 
-    widget.style.left = `${newLeft}px`;
-    widget.style.top = `${newTop}px`;
+    const newLeft = Math.max(10, Math.min(window.innerWidth - panelW - 10, initialLeft + dx));
+    const newTop = Math.max(10, Math.min(window.innerHeight - panelH - 10, initialTop + dy));
+
+    panel.style.left = `${newLeft}px`;
+    panel.style.top = `${newTop}px`;
   };
 
   const onDragEnd = () => {
     isDragging = false;
   };
 
-  if (dragBar) {
-    dragBar.addEventListener('mousedown', onDragStart);
-    dragBar.addEventListener('touchstart', onDragStart, { passive: false });
-  }
-
-  if (fab) {
-    fab.addEventListener('mousedown', onDragStart);
-    fab.addEventListener('touchstart', onDragStart, { passive: false });
-  }
+  dragBar.addEventListener('mousedown', onDragStart);
+  dragBar.addEventListener('touchstart', onDragStart, { passive: false });
 
   window.addEventListener('mousemove', onDragMove);
   window.addEventListener('touchmove', onDragMove, { passive: false });
   window.addEventListener('mouseup', onDragEnd);
   window.addEventListener('touchend', onDragEnd);
+
+  // Reset panel position if window resizes to mobile width
+  window.addEventListener('resize', () => {
+    if (window.innerWidth <= 768 && panel) {
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.bottom = '';
+      panel.style.right = '';
+    }
+  });
 }
 
 // Global DOM Bootstrap — loads from Supabase cloud on startup

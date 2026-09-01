@@ -64,11 +64,14 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-icon app-logo-icon" id="app-logo-icon">💰</div>
-        <div>
-          <h2 id="sidebar-app-name">HomeBudget</h2>
-          <span class="cycle-tag" id="sidebar-cycle-tag">25th-to-25th Cycle</span>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div class="brand-icon app-logo-icon" id="app-logo-icon">💰</div>
+          <div>
+            <h2 id="sidebar-app-name">HomeBudget</h2>
+            <span class="cycle-tag" id="sidebar-cycle-tag">25th-to-25th Cycle</span>
+          </div>
         </div>
+        <button class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Close menu">✕</button>
       </div>
 
       <nav class="nav-links">
