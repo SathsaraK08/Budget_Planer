@@ -1,12 +1,60 @@
-﻿// supabase_sync.js - Cloud persistence layer using anon public key only
+// supabase_sync.js - Cloud persistence layer with Auth integration
 const SUPABASE_URL  = "https://bwavzxjyrrbfhuhtwjpt.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3YXZ6eGp5cnJiZmh1aHR3anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTQ2MzYsImV4cCI6MjEwMzU3MDYzNn0.PSrmU84hKH-eF-73DcnB0oZaP6Bt3iwoMCSoRLiUpp0";
-const HOUSEHOLD_ID  = "default";
 const REST_BASE     = SUPABASE_URL + "/rest/v1";
 
-function sbHeaders(extra) {
+// Supabase client instance
+const _sb = (typeof supabase !== "undefined" && supabase.createClient)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+  : null;
+
+let cachedSession = null;
+
+async function getCurrentSession() {
+  if (sessionStorage.getItem("demo_auth") === "true") {
+    return {
+      user: { id: "demo_user", email: "demo@homebudget.lk" },
+      access_token: SUPABASE_ANON
+    };
+  }
+  if (!_sb) return null;
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    cachedSession = session;
+    return session;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getActiveHouseholdId() {
+  const session = await getCurrentSession();
+  if (session && session.user && session.user.id) {
+    return session.user.id;
+  }
+  return "default";
+}
+
+async function sbHeaders(extra) {
   extra = extra || {};
-  return Object.assign({ "Content-Type": "application/json", "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON, "Prefer": "return=minimal" }, extra);
+  const session = await getCurrentSession();
+  const token = session?.access_token || SUPABASE_ANON;
+  return Object.assign({
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON,
+    "Authorization": "Bearer " + token,
+    "Prefer": "return=minimal"
+  }, extra);
+}
+
+async function logoutHousehold() {
+  sessionStorage.removeItem("activeSessionMemberId");
+  sessionStorage.removeItem("activeSessionMemberName");
+  sessionStorage.removeItem("demo_auth");
+  if (_sb) {
+    await _sb.auth.signOut();
+  }
+  window.location.href = "auth.html";
 }
 
 let syncStatus = "idle";
@@ -25,13 +73,13 @@ function setSyncStatus(status, message) {
 async function loadFromSupabase() {
   try {
     setSyncStatus("syncing", "loading...");
-    const res = await fetch(REST_BASE + "/household_state?household_id=eq." + HOUSEHOLD_ID + "&select=state_json,updated_at&limit=1", { headers: sbHeaders({ "Prefer": "return=representation" }) });
+    const householdId = await getActiveHouseholdId();
+    const headers = await sbHeaders({ "Prefer": "return=representation" });
+    const res = await fetch(REST_BASE + "/household_state?household_id=eq." + householdId + "&select=state_json,updated_at&limit=1", { headers });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const rows = await res.json();
     if (!rows.length || !rows[0].state_json || Object.keys(rows[0].state_json).length === 0) {
-      setSyncStatus("online", "seeding...");
-      await saveToSupabase();
-      setSyncStatus("online", "seeded");
+      setSyncStatus("online", "ready");
       return null;
     }
     const cloudTs = new Date(rows[0].updated_at).getTime();
@@ -55,10 +103,12 @@ async function saveToSupabase(stateOverride) {
   try {
     const stateToSave = stateOverride || state;
     if (!stateToSave) return;
+    const householdId = await getActiveHouseholdId();
+    const headers = await sbHeaders({ "Prefer": "resolution=merge-duplicates,return=minimal" });
     const res = await fetch(REST_BASE + "/household_state", {
       method: "POST",
-      headers: sbHeaders({ "Prefer": "resolution=merge-duplicates,return=minimal" }),
-      body: JSON.stringify({ household_id: HOUSEHOLD_ID, state_json: stateToSave, app_version: "5" })
+      headers: headers,
+      body: JSON.stringify({ household_id: householdId, state_json: stateToSave, app_version: "6" })
     });
     if (!res.ok) throw new Error("HTTP " + res.status + ": " + await res.text());
     localStorage.setItem(STORAGE_KEY + "_timestamp", Date.now().toString());
@@ -78,21 +128,25 @@ function debouncedSaveToSupabase() {
 async function saveStateSnapshot(note) {
   note = note || "Manual save";
   try {
-    await fetch(REST_BASE + "/household_state_history", { method: "POST", headers: sbHeaders(), body: JSON.stringify({ household_id: HOUSEHOLD_ID, state_json: state, note: note }) });
+    const householdId = await getActiveHouseholdId();
+    await fetch(REST_BASE + "/household_state_history", { method: "POST", headers: await sbHeaders(), body: JSON.stringify({ household_id: householdId, state_json: state, note: note }) });
     showToast("Snapshot saved: " + note, "success");
   } catch (err) { showToast("Could not save snapshot: " + err.message, "danger"); }
 }
 
 async function listStateSnapshots() {
   try {
-    const res = await fetch(REST_BASE + "/household_state_history?household_id=eq." + HOUSEHOLD_ID + "&select=id,note,saved_at&order=saved_at.desc&limit=20", { headers: sbHeaders({ "Prefer": "return=representation" }) });
+    const householdId = await getActiveHouseholdId();
+    const headers = await sbHeaders({ "Prefer": "return=representation" });
+    const res = await fetch(REST_BASE + "/household_state_history?household_id=eq." + householdId + "&select=id,note,saved_at&order=saved_at.desc&limit=20", { headers });
     return await res.json();
   } catch (err) { return []; }
 }
 
 async function restoreStateSnapshot(snapshotId) {
   try {
-    const res = await fetch(REST_BASE + "/household_state_history?id=eq." + snapshotId + "&select=state_json", { headers: sbHeaders({ "Prefer": "return=representation" }) });
+    const headers = await sbHeaders({ "Prefer": "return=representation" });
+    const res = await fetch(REST_BASE + "/household_state_history?id=eq." + snapshotId + "&select=state_json", { headers });
     const rows = await res.json();
     if (!rows.length) return showToast("Snapshot not found", "danger");
     const parsed = rows[0].state_json;
@@ -115,10 +169,12 @@ async function testSupabaseConnection() {
   if (el) el.innerHTML = "<em>Testing connection to Supabase...</em>";
   try {
     const start = Date.now();
-    const res = await fetch(REST_BASE + "/household_state?household_id=eq." + HOUSEHOLD_ID + "&select=household_id,updated_at&limit=1", { headers: sbHeaders({ "Prefer": "return=representation" }) });
+    const householdId = await getActiveHouseholdId();
+    const headers = await sbHeaders({ "Prefer": "return=representation" });
+    const res = await fetch(REST_BASE + "/household_state?household_id=eq." + householdId + "&select=household_id,updated_at&limit=1", { headers });
     const latency = Date.now() - start;
     const rows = await res.json();
-    const rowInfo = rows.length > 0 ? ("Yes — last updated: " + rows[0].updated_at) : "No rows yet — run the SQL schema first!";
+    const rowInfo = rows.length > 0 ? ("Yes — last updated: " + rows[0].updated_at) : "No rows yet — ready to save!";
     if (el) el.innerHTML = '<span style="color:var(--success);">Connected to Supabase (' + latency + 'ms)</span><br><small>Row found: ' + rowInfo + '</small>';
     setSyncStatus("online", latency + "ms");
   } catch (err) {

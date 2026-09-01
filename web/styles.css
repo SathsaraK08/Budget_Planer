@@ -1933,4 +1933,207 @@ input:checked + .slider:before {
   box-shadow: 0 12px 30px rgba(99, 102, 241, 0.65), 0 0 25px rgba(124, 58, 237, 0.5);
 }
 
+/* ============================================================
+   SESSION USER IDENTITY & AUTH BAR STYLES
+   ============================================================ */
+.session-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #6EE7B7 !important;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-user-chip:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+
+.session-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  display: inline-block;
+}
+
+.btn-logout {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #FCA5A5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  border-radius: 8px;
+  padding: 0.25rem 0.65rem !important;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+}
+
+/* ============================================================
+   ATTRIBUTION BADGES (WHO PAID & HOW)
+   ============================================================ */
+.badge-payer {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(99, 102, 241, 0.15);
+  color: #A5B4FC;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-method {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(245, 158, 11, 0.12);
+  color: #FCD34D;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+/* ============================================================
+   HISTORICAL SPEND LEVEL BADGES
+   ============================================================ */
+.badge-spend-low {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #6EE7B7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.badge-spend-normal {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #FCD34D !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.badge-spend-high {
+  background: rgba(249, 115, 22, 0.18) !important;
+  color: #FDBA74 !important;
+  border: 1px solid rgba(249, 115, 22, 0.35) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.badge-spend-max {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #FCA5A5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  animation: pulseAlert 2s infinite;
+}
+
+@keyframes pulseAlert {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.badge-spend-nodata {
+  background: rgba(156, 163, 175, 0.12) !important;
+  color: #9CA3AF !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+/* ============================================================
+   MOBILE HAMBURGER & RESPONSIVE DRAWER
+   ============================================================ */
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #F3F4F6;
+  font-size: 1.25rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+@media (max-width: 900px) {
+  .mobile-nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 36px;
+    left: -280px;
+    bottom: 0;
+    width: 270px;
+    z-index: 999;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
+  }
+
+  body.sidebar-open .sidebar {
+    left: 0;
+  }
+
+  body.sidebar-open .sidebar-overlay {
+    display: block;
+    opacity: 1;
+  }
+
+  .landing-hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .landing-hero-actions .btn {
+    width: 100%;
+  }
+
+  .landing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 

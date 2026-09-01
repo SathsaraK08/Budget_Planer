@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <!-- Three.js 3D WebGL Library for Animated Interactive Hero -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -17,35 +19,45 @@
   <!-- WordPress Top Admin Bar -->
   <header class="wp-admin-bar">
     <div class="wp-bar-left">
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+        <span>☰</span>
+      </button>
       <span class="wp-bar-item brand-indicator">
         <span class="app-logo-icon">💰</span> <strong class="sidebar-app-name">HomeBudget</strong>
       </span>
       <span class="wp-bar-item">|</span>
       <a href="admin.html" class="wp-bar-item" style="color: var(--accent); font-weight: 700;">
-        <span>👑</span> <strong>Admin CMS Portal</strong>
+        <span>👑</span> <strong>Admin CMS</strong>
       </a>
       <button class="wp-bar-item wp-bar-btn-primary" onclick="openSpendModal()">
         <span>➕</span> Log Spend
       </button>
-      <button class="wp-bar-item" onclick="openBillModal()">
+      <button class="wp-bar-item hide-mobile" onclick="openBillModal()">
         <span>➕</span> Fixed Bill
       </button>
-      <button class="wp-bar-item" onclick="openBnplModal()">
+      <button class="wp-bar-item hide-mobile" onclick="openBnplModal()">
         <span>➕</span> BNPL Plan
       </button>
-      <button class="wp-bar-item" onclick="openWishlistModal()">
+      <button class="wp-bar-item hide-mobile" onclick="openWishlistModal()">
         <span>➕</span> Wishlist
       </button>
     </div>
     <div class="wp-bar-right">
-      <button class="btn-help-pill" onclick="openHelpGuide('cycle')">
-        <span>📖</span> User Guide & Help
+      <!-- Session Member Identity Selector -->
+      <button class="wp-bar-item session-user-chip" id="top-session-member-btn" onclick="openSessionMemberModal()" title="Switch active user identity">
+        <span class="session-dot"></span>
+        <span id="top-session-member-name">👤 Select User</span>
+        <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
       </button>
-      <a href="admin.html" class="wp-bar-item">
-        <span>⚙️</span> Customize Site
-      </a>
+      <button class="btn-help-pill hide-mobile" onclick="openHelpGuide('cycle')">
+        <span>📖</span> Help
+      </button>
+      <button class="wp-bar-item btn-logout" onclick="logoutHousehold()" title="Sign out of household">
+        <span>🚪</span> <span class="hide-mobile">Logout</span>
+      </button>
     </div>
   </header>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <div class="app-shell">
     
@@ -109,13 +121,13 @@
           <span id="supabase-sync-indicator" style="font-size: 0.72rem; color: #9CA3AF;">☁️ Supabase connecting...</span>
           <button class="btn-help-pill" title="Cloud Snapshots & History" onclick="openSnapshotsModal()" style="font-size: 0.7rem;">📸 History</button>
         </div>
-        <div class="member-chip">
-          <span class="avatar">S</span>
+        <div class="member-chip" onclick="openSessionMemberModal()" style="cursor: pointer;" title="Switch Active Identity">
+          <span class="avatar" id="sidebar-user-avatar">👤</span>
           <div class="user-info-text">
-            <div class="member-name">Sathsara (Admin)</div>
-            <div class="member-role">admin@homebudget.lk</div>
+            <div class="member-name" id="sidebar-user-name">Active User</div>
+            <div class="member-role" id="sidebar-user-role">Tap to switch identity</div>
           </div>
-          <a href="admin.html" class="btn-icon" title="Open Admin CMS">⚙️</a>
+          <button class="btn-icon" title="Switch User Identity">👥</button>
         </div>
       </div>
     </aside>
@@ -129,11 +141,15 @@
           <div class="header-title-flex">
             <h1 id="page-title" data-label-key="page.dashboard.title">Cycle Overview</h1>
             <span class="badge badge-admin" data-label-key="page.dashboard.cycle_badge">25th-to-25th Cycle</span>
+            <div id="spend-level-badge-container" style="display:inline-block;"></div>
             <button class="btn-help-pill" onclick="openHelpGuide('cycle')" data-label-key="btn.how_it_works">❓ How It Works</button>
           </div>
           <p class="cycle-subtitle" id="cycle-range-text">Aug 25 – Sep 25, 2026 • <strong>26 Days Remaining</strong></p>
         </div>
         <div class="header-actions">
+          <button class="btn btn-secondary" onclick="openSessionMemberModal()" title="Switch active user identity">
+            <span>👤</span> <span id="header-active-member-label">Active User</span>
+          </button>
           <a href="admin.html" class="btn btn-admin">
             <span>👑</span> <span data-label-key="btn.admin_cms">Admin CMS</span>
           </a>

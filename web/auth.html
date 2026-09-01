@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeBudget — Sign In</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0B0F1A; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+      --primary: #10B981; --primary-dark: #059669; --primary-glow: rgba(16,185,129,0.18);
+      --accent: #F59E0B; --text: #F3F4F6; --text-muted: #9CA3AF;
+      --danger: #EF4444; --input-bg: rgba(255,255,255,0.05); --input-border: rgba(255,255,255,0.1);
+    }
+    body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    .bg-canvas { position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse at 20% 50%, rgba(16,185,129,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(99,102,241,0.08) 0%, transparent 50%), #0B0F1A; }
+    .bg-orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15; animation: orbFloat 8s ease-in-out infinite; z-index: 0; }
+    .bg-orb-1 { width: 400px; height: 400px; background: #10B981; top: -100px; left: -100px; }
+    .bg-orb-2 { width: 350px; height: 350px; background: #6366F1; bottom: -80px; right: -80px; animation-delay: -3s; }
+    @keyframes orbFloat { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,-15px) scale(1.05); } }
+    .auth-shell { position: relative; z-index: 10; display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; width: 100%; }
+    .auth-brand { display: flex; flex-direction: column; justify-content: center; padding: 3rem 4rem; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); }
+    .brand-logo { font-size: 3rem; margin-bottom: 1rem; }
+    .brand-title { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #10B981, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+    .brand-tagline { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .brand-features { display: flex; flex-direction: column; gap: 1rem; }
+    .brand-feature { display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; color: #D1FAE5; }
+    .brand-feature-icon { width: 36px; height: 36px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .brand-divider { height: 1px; background: var(--border); margin: 2rem 0; }
+    .brand-tagline-bottom { font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; }
+    .auth-panel { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; overflow-y: auto; }
+    .auth-card { width: 100%; max-width: 420px; background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; }
+    .auth-header { text-align: center; margin-bottom: 1.75rem; }
+    .auth-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .auth-header p { font-size: 0.85rem; color: var(--text-muted); }
+    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 3px; margin-bottom: 1.5rem; }
+    .auth-tab { padding: 0.5rem; border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .auth-tab.active { background: var(--primary); color: #fff; box-shadow: 0 2px 12px rgba(16,185,129,0.3); }
+    .auth-form { display: none; flex-direction: column; gap: 1rem; }
+    .auth-form.active { display: flex; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input { width: 100%; background: var(--input-bg); border: 1.5px solid var(--input-border); border-radius: 10px; padding: 0.65rem 0.9rem; color: var(--text); font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .form-input::placeholder { color: rgba(156,163,175,0.5); }
+    .partner-toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); border: 1.5px solid var(--input-border); border-radius: 10px; padding: 0.65rem 0.9rem; cursor: pointer; user-select: none; }
+    .partner-toggle-row span { font-size: 0.875rem; font-weight: 500; }
+    .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: rgba(156,163,175,0.3); border-radius: 24px; transition: 0.3s; cursor: pointer; }
+    .toggle-slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+    input:checked + .toggle-slider { background: var(--primary); }
+    input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .partner-fields { display: none; flex-direction: column; gap: 1rem; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 1rem; }
+    .partner-fields.visible { display: flex; }
+    .partner-fields-header { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+    .reg-steps { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+    .reg-step { height: 3px; flex: 1; background: rgba(255,255,255,0.1); border-radius: 3px; transition: 0.3s; }
+    .reg-step.done { background: var(--primary); }
+    .reg-step.active { background: rgba(16,185,129,0.5); }
+    .reg-section { display: none; flex-direction: column; gap: 1rem; }
+    .reg-section.active { display: flex; }
+    .reg-section-title { font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; }
+    .btn-auth { width: 100%; padding: 0.75rem; border: none; border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .btn-auth-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 20px rgba(16,185,129,0.3); }
+    .btn-auth-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(16,185,129,0.4); }
+    .btn-auth-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-auth-secondary { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-auth-secondary:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .step-nav { display: flex; gap: 0.75rem; }
+    .step-nav .btn-auth { flex: 1; }
+    .auth-alert { display: none; padding: 0.65rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 500; align-items: center; gap: 0.5rem; }
+    .auth-alert.visible { display: flex; }
+    .auth-alert-error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #FCA5A5; }
+    .auth-alert-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #6EE7B7; }
+    .auth-footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); }
+    .auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .info-box { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); border-radius: 8px; padding: 0.65rem 0.9rem; font-size: 0.78rem; color: #A5B4FC; line-height: 1.5; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 768px) { .auth-shell { grid-template-columns: 1fr; } .auth-brand { display: none; } .auth-panel { padding: 1.5rem 1rem; } .auth-card { padding: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <div class="bg-canvas"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="auth-shell">
+    <div class="auth-brand">
+      <div class="brand-logo">💰</div>
+      <div class="brand-title">HomeBudget</div>
+      <div class="brand-tagline">25th-to-25th Cycle Tracker</div>
+      <div class="brand-features">
+        <div class="brand-feature"><div class="brand-feature-icon">📊</div><span>Real-time spendable cashflow after every transaction</span></div>
+        <div class="brand-feature"><div class="brand-feature-icon">🛍️</div><span>BNPL & Koko installment tracking with auto-payoff</span></div>
+        <div class="brand-feature"><div class="brand-feature-icon">🔮</div><span>Forward survival forecast before next payday</span></div>
+        <div class="brand-feature"><div class="brand-feature-icon">🤝</div><span>Shared household account — track who paid and how</span></div>
+        <div class="brand-feature"><div class="brand-feature-icon">🤖</div><span>Gemini AI financial coach with live data access</span></div>
+      </div>
+      <div class="brand-divider"></div>
+      <div class="brand-tagline-bottom">💡 Both you and your partner share one account. Every expense entry is attributed to who paid it and by which payment method.</div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2>Welcome to HomeBudget</h2>
+          <p>One account per household. Your partner shares it.</p>
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-btn-login" onclick="showAuthTab('login')">🔑 Sign In</button>
+          <button class="auth-tab" id="tab-btn-register" onclick="showAuthTab('register')">🏠 Register</button>
+        </div>
+        <!-- LOGIN -->
+        <form class="auth-form active" id="form-login" onsubmit="handleLogin(event)">
+          <div id="login-alert" class="auth-alert auth-alert-error"></div>
+          <div><label class="form-label">Email Address</label><input type="email" id="login-email" class="form-input" placeholder="you@email.com" autocomplete="email" required></div>
+          <div><label class="form-label">Password</label><input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required></div>
+          <button type="submit" class="btn-auth btn-auth-primary" id="btn-login"><span>🔑</span> Sign In to HomeBudget</button>
+          <div class="auth-footer"><a href="#" onclick="showAuthTab('register');return false;">New household? Register here →</a></div>
+        </form>
+        <!-- REGISTER -->
+        <div class="auth-form" id="form-register">
+          <div class="reg-steps"><div class="reg-step active" id="step-bar-1"></div><div class="reg-step" id="step-bar-2"></div><div class="reg-step" id="step-bar-3"></div></div>
+          <div id="reg-alert" class="auth-alert auth-alert-error"></div>
+          <!-- Step 1 -->
+          <div class="reg-section active" id="reg-step-1">
+            <div class="reg-section-title">Step 1 of 3 — Account Login</div>
+            <div><label class="form-label">Email Address</label><input type="email" id="reg-email" class="form-input" placeholder="your@email.com" autocomplete="email"></div>
+            <div><label class="form-label">Password</label><input type="password" id="reg-password" class="form-input" placeholder="Min. 8 characters" autocomplete="new-password"></div>
+            <div><label class="form-label">Confirm Password</label><input type="password" id="reg-confirm" class="form-input" placeholder="Repeat password"></div>
+            <div class="info-box">ℹ️ One login per household. Both you and your partner use this same email/password. You choose <strong>"who's using now"</strong> each session.</div>
+            <button type="button" class="btn-auth btn-auth-primary" onclick="regNext(1)">Next →</button>
+          </div>
+          <!-- Step 2 -->
+          <div class="reg-section" id="reg-step-2">
+            <div class="reg-section-title">Step 2 of 3 — Household Members</div>
+            <div><label class="form-label">Your Name (Primary Member)</label><input type="text" id="reg-name1" class="form-input" placeholder="e.g. Alex"></div>
+            <div class="partner-toggle-row" onclick="togglePartner()">
+              <span>Does a partner also use this account?</span>
+              <label class="toggle-switch" onclick="event.stopPropagation()"><input type="checkbox" id="partner-toggle" onchange="togglePartner()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="partner-fields" id="partner-fields">
+              <div class="partner-fields-header">🤝 Partner Details</div>
+              <div><label class="form-label">Partner Name</label><input type="text" id="reg-name2" class="form-input" placeholder="e.g. Sam"></div>
+            </div>
+            <div class="info-box">💡 Salary details are added <strong>after registration</strong> inside the app — set it in Financial Modules once logged in.</div>
+            <div class="step-nav">
+              <button type="button" class="btn-auth btn-auth-secondary" onclick="regBack(2)">← Back</button>
+              <button type="button" class="btn-auth btn-auth-primary" onclick="regNext(2)">Next →</button>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="reg-section" id="reg-step-3">
+            <div class="reg-section-title">Step 3 of 3 — Your Household</div>
+            <div><label class="form-label">Household Name</label><input type="text" id="reg-hname" class="form-input" placeholder="e.g. Our Home" value="HomeBudget"></div>
+            <div class="info-box">🏠 This name appears in the app sidebar. Change it anytime from Admin CMS.</div>
+            <div class="step-nav">
+              <button type="button" class="btn-auth btn-auth-secondary" onclick="regBack(3)">← Back</button>
+              <button type="button" class="btn-auth btn-auth-primary" id="btn-register" onclick="handleRegister()"><span>🚀</span> Create Account</button>
+            </div>
+          </div>
+          <div class="auth-footer"><a href="#" onclick="showAuthTab('login');return false;">Already registered? Sign in →</a></div>
+        </div>
+        
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center;">
+          <button type="button" class="btn-auth btn-auth-secondary" onclick="enterLocalMode()" style="font-size: 0.82rem; padding: 0.5rem 0.75rem;">
+            <span>⚡</span> Test / Offline Mode (No Email Required)
+          </button>
+        </div>
+      </div>
+      <div style="margin-top:1.25rem;text-align:center;"><a href="index.html" style="color:var(--text-muted);font-size:0.8rem;text-decoration:none;">← Back to Public Home</a></div>
+    </div>
+  </div>
+  <script>
+    const SUPABASE_URL  = "https://bwavzxjyrrbfhuhtwjpt.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3YXZ6eGp5cnJiZmh1aHR3anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTQ2MzYsImV4cCI6MjEwMzU3MDYzNn0.PSrmU84hKH-eF-73DcnB0oZaP6Bt3iwoMCSoRLiUpp0";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    (async()=>{ 
+      if(sessionStorage.getItem("demo_auth") === "true") { window.location.href="index.html"; return; }
+      const {data:{session}} = await _supabase.auth.getSession(); 
+      if(session) window.location.href="index.html"; 
+    })();
+
+    function enterLocalMode() {
+      sessionStorage.setItem("demo_auth", "true");
+      sessionStorage.setItem("activeSessionMemberId", "m_default");
+      sessionStorage.setItem("activeSessionMemberName", "Alex");
+      window.location.href = "index.html";
+    }
+
+    function showAuthTab(tab) {
+      document.getElementById("form-login").classList.toggle("active", tab==="login");
+      document.getElementById("form-register").classList.toggle("active", tab==="register");
+      document.getElementById("tab-btn-login").classList.toggle("active", tab==="login");
+      document.getElementById("tab-btn-register").classList.toggle("active", tab==="register");
+      clearAlerts();
+    }
+    function clearAlerts() { ["login-alert","reg-alert"].forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove("visible");el.textContent="";}});}
+    function showAlert(id,msg,type="error"){const el=document.getElementById(id);if(!el)return;el.className="auth-alert auth-alert-"+type+" visible";el.textContent=(type==="error"?"⚠️ ":"✅ ")+msg;}
+    function updateStepBars(s){[1,2,3].forEach(i=>{const b=document.getElementById("step-bar-"+i);b.className="reg-step"+(i<s?" done":i===s?" active":"");}); }
+    function showRegStep(s){[1,2,3].forEach(i=>document.getElementById("reg-step-"+i).classList.toggle("active",i===s));updateStepBars(s);}
+    function regNext(f){
+      clearAlerts();
+      if(f===1){const e=document.getElementById("reg-email").value.trim(),p=document.getElementById("reg-password").value,c=document.getElementById("reg-confirm").value;if(!e||!p)return showAlert("reg-alert","Email and password are required.");if(p.length<8)return showAlert("reg-alert","Password must be at least 8 characters.");if(p!==c)return showAlert("reg-alert","Passwords do not match.");showRegStep(2);}
+      else if(f===2){const n=document.getElementById("reg-name1").value.trim();if(!n)return showAlert("reg-alert","Please enter your name.");if(document.getElementById("partner-toggle").checked&&!document.getElementById("reg-name2").value.trim())return showAlert("reg-alert","Please enter your partner's name.");showRegStep(3);}
+    }
+    function regBack(f){if(f===2)showRegStep(1);else if(f===3)showRegStep(2);}
+    function togglePartner(){const cb=document.getElementById("partner-toggle");document.getElementById("partner-fields").classList.toggle("visible",cb.checked);}
+    async function handleLogin(e){
+      e.preventDefault();
+      const btn=document.getElementById("btn-login"),email=document.getElementById("login-email").value.trim(),pw=document.getElementById("login-password").value;
+      clearAlerts();btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Signing in...';
+      try{
+        const {data,error}=await _supabase.auth.signInWithPassword({email,password:pw});
+        if(error)throw error;
+        window.location.href="index.html";
+      }
+      catch(err){
+        showAlert("login-alert",err.message==="Invalid login credentials"?"Wrong email or password. Please try again.":err.message);
+        btn.disabled=false;btn.innerHTML='<span>🔑</span> Sign In to HomeBudget';
+      }
+    }
+    async function handleRegister(){
+      const btn=document.getElementById("btn-register");
+      const email=document.getElementById("reg-email").value.trim(),pw=document.getElementById("reg-password").value;
+      const name1=document.getElementById("reg-name1").value.trim()||"Alex",hname=document.getElementById("reg-hname").value.trim()||"HomeBudget";
+      const hasPartner=document.getElementById("partner-toggle").checked,name2=hasPartner?(document.getElementById("reg-name2").value.trim()||"Sam"):null;
+      clearAlerts();btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Creating account...';
+      
+      const members=[{id:"m_"+Date.now(),name:name1,role:"admin",salary:0,color:"#10B981"}];
+      if(name2)members.push({id:"m_"+(Date.now()+1),name:name2,role:"member",salary:0,color:"#EC4899"});
+      
+      // Save local session immediately
+      sessionStorage.setItem("activeSessionMemberId", members[0].id);
+      sessionStorage.setItem("activeSessionMemberName", members[0].name);
+
+      try{
+        const {data:au,error:ae}=await _supabase.auth.signUp({email,password:pw});
+        if(ae)throw ae;
+        
+        let uid=au.user?.id;
+        let session=au.session;
+
+        if(!session) {
+          const {data:si}=await _supabase.auth.signInWithPassword({email,password:pw});
+          if(si&&si.session){session=si.session; uid=si.user.id;}
+        }
+
+        if(session && uid) {
+          try {
+            await _supabase.from("household_members_meta").upsert({user_id:uid,household_name:hname,primary_member_name:name1,partner_name:name2||null,setup_completed:false});
+            await _supabase.from("household_state").upsert({household_id:uid,state_json:{members,household:{name:hname},incomes:[],fixedBills:[],installments:[],dailySpends:[],subscriptions:[],wishlist:[]},app_version:"6"});
+          } catch(dbErr){ console.warn("Supabase upsert:", dbErr); }
+          showAlert("reg-alert","Account created and signed in! Welcome 🎉","success");
+          setTimeout(()=>{window.location.href="index.html";},1000);
+        } else {
+          showAlert("reg-alert","Account registered! Entering dashboard...","success");
+          sessionStorage.setItem("demo_auth", "true");
+          setTimeout(()=>{window.location.href="index.html";},1200);
+        }
+      }catch(err){
+        if(err.message && err.message.includes("already registered")){
+          showAlert("reg-alert","Email already registered. Try signing in or click 'Test/Offline Mode' below.","error");
+        } else {
+          showAlert("reg-alert",err.message,"error");
+        }
+        btn.disabled=false;btn.innerHTML='<span>🚀</span> Create Account';
+      }
+    }
+  </script>
+</body>
+</html>

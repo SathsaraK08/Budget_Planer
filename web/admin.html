@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body class="theme-emerald">
 
@@ -37,10 +39,9 @@
         <span>📖</span> CMS Guide & Help
       </button>
       <span class="badge badge-admin">👑 Super Admin</span>
-      <div class="wp-bar-item" style="gap: 0.5rem;">
-        <span class="avatar" style="width: 24px; height: 24px; font-size: 0.75rem;">S</span>
-        <span>Sathsara (Admin)</span>
-      </div>
+      <button class="wp-bar-item btn-logout" onclick="logoutHousehold()" title="Sign out of household">
+        <span>🚪</span> Logout
+      </button>
     </div>
   </header>
 
@@ -103,9 +104,9 @@
 
       <div class="sidebar-footer">
         <div class="member-chip">
-          <span class="avatar">S</span>
+          <span class="avatar" id="admin-sidebar-avatar">A</span>
           <div class="user-info-text">
-            <div class="member-name">Sathsara (Admin)</div>
+            <div class="member-name" id="admin-sidebar-user">Admin User</div>
             <div class="member-role">Full CMS Privileges</div>
           </div>
         </div>
@@ -138,8 +139,8 @@
               <span>Active Household Members</span>
               <span class="metric-icon">👥</span>
             </div>
-            <div class="metric-value" id="admin-stat-members">2</div>
-            <div class="metric-sub">Sathsara, Dhiyan</div>
+            <div class="metric-value" id="admin-stat-members">1</div>
+            <div class="metric-sub" id="admin-stat-members-sub">Configured Household Members</div>
           </div>
 
           <div class="metric-card">

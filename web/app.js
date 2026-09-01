@@ -533,7 +533,7 @@ function openMemberModal(member = null) {
   const html = `
     <div class="form-group">
       <label>Member Name</label>
-      <input type="text" id="m-name" class="form-control" value="${isEdit ? member.name : ''}" placeholder="e.g. Sathsara, Dhiyan">
+      <input type="text" id="m-name" class="form-control" value="${isEdit ? member.name : ''}" placeholder="e.g. Alex, Sam">
     </div>
     <div class="form-group">
       <label>Role</label>
@@ -917,16 +917,34 @@ function deleteWishlist(id) {
   });
 }
 
-// 7. Daily Spends — with member tracking
+// SRI LANKAN & GLOBAL BANKS LOOKUP
+const SRI_LANKA_BANKS = [
+  "Commercial Bank", "Bank of Ceylon (BOC)", "Sampath Bank", "Hatton National Bank (HNB)",
+  "National Savings Bank (NSB)", "Seylan Bank", "NDB Bank", "DFCC Bank",
+  "Nations Trust Bank (NTB)", "Standard Chartered", "HSBC", "Other Bank"
+];
+
+function onSpendMethodChange() {
+  const method = document.getElementById("qs-method")?.value;
+  const bankGroup = document.getElementById("qs-bank-group");
+  if (bankGroup) {
+    bankGroup.style.display = (method === "Cash") ? "none" : "block";
+  }
+}
+
+// 7. Daily Spends — with member attribution & bank tracking
 function openSpendModal() {
+  const activeMember = getActiveSessionMember();
   const categoryOptions = (state.categories || defaultState.categories).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-  const paymentOptions = (state.paymentMethods || defaultState.paymentMethods).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const paymentMethods = ["Cash", "Debit Card", "Credit Card", "Bank Transfer"];
+  const paymentOptions = paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
+  const bankOptions = SRI_LANKA_BANKS.map(b => `<option value="${b}">${b}</option>`).join('');
+  
   const memberOptions = (state.members || []).length
     ? `<div class="form-group">
-        <label>Who is spending this?</label>
+        <label>Paid By (Attribution)</label>
         <select id="qs-member" class="form-control">
-          <option value="">-- Household (shared) --</option>
-          ${(state.members || []).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+          ${(state.members || []).map(m => `<option value="${m.id}" ${m.id === activeMember.id ? 'selected' : ''}>👤 ${m.name}${m.role === 'admin' ? ' (Admin)' : ''}</option>`).join('')}
         </select>
        </div>`
     : '';
@@ -938,25 +956,30 @@ function openSpendModal() {
     </div>
     <div class="form-group">
       <label>Description / Item</label>
-      <input type="text" id="qs-title" class="form-control" placeholder="e.g. Food City Groceries, PickMe Tuk, Gym Water">
-    </div>
-    <div class="form-group">
-      <label>Payment Method</label>
-      <select id="qs-method" class="form-control">${paymentOptions}</select>
+      <input type="text" id="qs-title" class="form-control" placeholder="e.g. Keells Super, PickMe Ride, Electricity Bill">
     </div>
     <div class="form-group">
       <label>Category</label>
       <select id="qs-cat" class="form-control">${categoryOptions}</select>
     </div>
     ${memberOptions}
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="qs-method" class="form-control" onchange="onSpendMethodChange()">${paymentOptions}</select>
+    </div>
+    <div class="form-group" id="qs-bank-group" style="display:none;">
+      <label>Bank / Card Issuer</label>
+      <select id="qs-bank" class="form-control">${bankOptions}</select>
+    </div>
   `;
-  openModal("Quick Log Daily Expense", html, () => {
+  openModal("⚡ Quick Log Daily Spend", html, () => {
     const amount = parseFloat(document.getElementById("qs-amt").value) || 0;
     const title = document.getElementById("qs-title").value.trim();
-    const method = document.getElementById("qs-method").value;
     const cat = document.getElementById("qs-cat").value;
-    const memberId = document.getElementById("qs-member")?.value || "";
-    const member = (state.members || []).find(m => m.id === memberId);
+    const method = document.getElementById("qs-method").value;
+    const bank = (method !== "Cash") ? document.getElementById("qs-bank").value : null;
+    const memberId = document.getElementById("qs-member")?.value || activeMember?.id || "";
+    const member = (state.members || []).find(m => m.id === memberId) || activeMember;
 
     if (amount <= 0 || !title) return showToast("Please enter amount and description", "danger");
 
@@ -965,17 +988,20 @@ function openSpendModal() {
       date: new Date().toISOString().split("T")[0],
       amount,
       title,
-      method,
       cat,
+      method,
+      payment_method: method,
+      payment_bank: bank,
       memberId: memberId || null,
+      paid_by_member_id: memberId || null,
       memberName: member ? member.name : null,
+      paid_by_name: member ? member.name : null,
       isPaid: true
     });
     closeModal();
     persistState();
     renderApp();
-    checkDailySpendAlert();
-    showToast(`Logged expense: ${fmt(amount)} for ${title}${member ? ' (' + member.name + ')' : ''}`, "success");
+    showToast(`✅ Logged ${fmt(amount)} for ${title} (${member ? member.name : 'Shared'} • ${method}${bank ? ' - ' + bank : ''})`, "success");
   });
 }
 
@@ -1034,13 +1060,25 @@ function deleteCategory(id) {
 }
 
 // Tab Switching
-function switchTab(tabId) {
+async function switchTab(tabId) {
+  // If leaving public landing page to any functional page, enforce auth session
+  if (tabId !== "landing") {
+    const session = typeof getCurrentSession === "function" ? await getCurrentSession() : null;
+    if (!session) {
+      window.location.href = "auth.html";
+      return;
+    }
+  }
+
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
   });
   document.querySelectorAll(".tab-pane").forEach(pane => {
     pane.classList.toggle("active", pane.id === `tab-${tabId}`);
   });
+  // Close mobile sidebar on tab change
+  document.body.classList.remove("sidebar-open");
+
   if (tabId === "landing") {
     setTimeout(() => initThreeHeroScene(), 50);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1304,90 +1342,140 @@ function resetToSampleData() {
   });
 }
 
-// First-run check — true if no members have been added yet
-function isFirstRun() {
-  return !state.members || state.members.length === 0;
+// ============================================================
+// SHARED-ACCOUNT IDENTITY & SESSION MEMBER MANAGEMENT
+// ============================================================
+function getActiveSessionMember() {
+  const id = sessionStorage.getItem("activeSessionMemberId");
+  if (id && state.members) {
+    const found = state.members.find(m => m.id === id);
+    if (found) return found;
+  }
+  return (state.members && state.members[0]) ? state.members[0] : { id: "m_default", name: "You", role: "primary", color: "#10B981" };
 }
 
-// First-run onboarding wizard — shown on fresh installations
-function showFirstRunOnboarding() {
-  // Calculate current cycle name from today's date
-  const now = new Date();
-  const cycleDay = state.household?.cycleStartDay || 25;
-  let cycleStart = new Date(now.getFullYear(), now.getMonth(), cycleDay);
-  if (now.getDate() < cycleDay) {
-    cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, cycleDay);
+function setActiveSessionMember(memberId) {
+  const member = (state.members || []).find(m => m.id === memberId);
+  if (member) {
+    sessionStorage.setItem("activeSessionMemberId", member.id);
+    sessionStorage.setItem("activeSessionMemberName", member.name);
+    updateSessionMemberUI();
+    showToast(`👤 Active identity: ${member.name}`, "info");
   }
-  let cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleDay);
-  const daysLeft = Math.max(0, Math.ceil((cycleEnd - now) / (1000 * 60 * 60 * 24)));
-  const cycleName = cycleStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + cycleEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
+function updateSessionMemberUI() {
+  const active = getActiveSessionMember();
+  const name = active ? active.name : "Select User";
+  document.querySelectorAll("#top-session-member-name, #header-active-member-label").forEach(el => {
+    if (el) el.textContent = `👤 ${name}`;
+  });
+  const sidebarUserName = document.getElementById("sidebar-user-name");
+  if (sidebarUserName) sidebarUserName.textContent = name;
+  const sidebarUserAvatar = document.getElementById("sidebar-user-avatar");
+  if (sidebarUserAvatar) sidebarUserAvatar.textContent = (name || 'U')[0].toUpperCase();
+  const sidebarUserRole = document.getElementById("sidebar-user-role");
+  if (sidebarUserRole && active) {
+    sidebarUserRole.textContent = active.role === 'admin' ? '👑 Admin (Tap to switch)' : '👤 Member (Tap to switch)';
+  }
+}
+
+function openSessionMemberModal() {
+  const members = state.members || [];
+  if (!members.length) {
+    return showToast("No household members configured yet. Add members in Financial Modules.", "info");
+  }
+  const active = getActiveSessionMember();
   const html = `
-    <div style="text-align: center; padding: 0.5rem 0 1rem;">
-      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏠</div>
-      <h2 style="font-size: 1.4rem; color: #F3F4F6; margin-bottom: 0.5rem;">Welcome to HomeBudget!</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Let's set up your household in 3 quick steps.</p>
+    <div style="text-align:center; margin-bottom:1.25rem;">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">👥</div>
+      <h3 style="font-size:1.15rem; color:#F3F4F6; font-weight:700;">Who's using HomeBudget right now?</h3>
+      <p style="color:var(--text-muted); font-size:0.85rem;">Select your identity to attribute today's spend logs and bill settlements.</p>
     </div>
-
-    <div class="explainer-box" style="margin-bottom: 1.25rem;">
-      <strong>📅 Detected Cycle:</strong> ${cycleName} &nbsp;|&nbsp; <strong>${daysLeft} days remaining</strong>
-    </div>
-
-    <div class="form-group">
-      <label>Step 1 — Your Name (Primary Member)</label>
-      <input type="text" id="ob-name1" class="form-control" placeholder="e.g. Sathsara" autofocus>
-    </div>
-    <div class="form-group">
-      <label>Monthly Salary (${state.household.currency})</label>
-      <input type="number" id="ob-salary1" class="form-control" placeholder="e.g. 250000">
-    </div>
-    <hr style="border-color: rgba(255,255,255,0.08); margin: 1rem 0;">
-    <div class="form-group">
-      <label>Step 2 — Partner / Second Member Name <small style="color: var(--text-muted);">(optional)</small></label>
-      <input type="text" id="ob-name2" class="form-control" placeholder="e.g. Dhiyan">
-    </div>
-    <div class="form-group">
-      <label>Partner Monthly Salary (${state.household.currency}) <small style="color: var(--text-muted);">(optional)</small></label>
-      <input type="number" id="ob-salary2" class="form-control" placeholder="e.g. 150000">
-    </div>
-    <hr style="border-color: rgba(255,255,255,0.08); margin: 1rem 0;">
-    <div class="form-group">
-      <label>Step 3 — Household Name <small style="color: var(--text-muted);">(appears in sidebar)</small></label>
-      <input type="text" id="ob-hname" class="form-control" value="${state.household.name}" placeholder="e.g. HomeBudget">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem; margin-bottom:1rem;">
+      ${members.map(m => {
+        const isSelected = active && active.id === m.id;
+        return `
+          <button class="member-select-card" onclick="setActiveSessionMember('${m.id}'); closeModal();" style="
+            background: ${isSelected ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)'};
+            border: 1.5px solid ${isSelected ? '#10B981' : 'rgba(255,255,255,0.1)'};
+            border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; text-align: center; color: #F3F4F6; transition: all 0.2s; width: 100%;
+          ">
+            <div style="width:44px; height:44px; border-radius:50%; background:${m.color || '#10B981'}33; border:2px solid ${m.color || '#10B981'}; color:${m.color || '#10B981'}; font-weight:700; font-size:1.2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
+              ${(m.name || 'M')[0].toUpperCase()}
+            </div>
+            <strong style="display:block; font-size:0.95rem; margin-bottom:0.2rem;">${m.name}</strong>
+            <small style="color:${isSelected ? 'var(--primary)' : 'var(--text-muted)'}; font-size:0.75rem;">${m.role === 'admin' || m.role === 'primary' ? '👑 Admin' : '👤 Partner'}${isSelected ? ' • Active' : ''}</small>
+          </button>
+        `;
+      }).join('')}
     </div>
   `;
+  openModal("👥 Select Active Identity", html, null);
+}
 
-  openModal("🚀 First-Time Setup", html, () => {
-    const name1 = document.getElementById("ob-name1").value.trim();
-    const salary1 = parseFloat(document.getElementById("ob-salary1").value) || 0;
-    const name2 = document.getElementById("ob-name2").value.trim();
-    const salary2 = parseFloat(document.getElementById("ob-salary2").value) || 0;
-    const hname = document.getElementById("ob-hname").value.trim();
+// Mobile sidebar toggle
+function toggleMobileSidebar() {
+  document.body.classList.toggle("sidebar-open");
+}
 
-    if (!name1 || salary1 <= 0) return showToast("Please enter at least your name and salary to continue.", "danger");
+// ============================================================
+// DETERMINISTIC HISTORICAL SPEND PERCENTILE ENGINE
+// ============================================================
+function calculateSpendLevels() {
+  const spends = state.dailySpends || [];
+  if (spends.length < 3) {
+    return {
+      level: "nodata",
+      label: "📊 Gathering spend patterns",
+      badgeClass: "badge-spend-nodata",
+      detail: "Log at least 3 expenses to calculate historical spend percentiles."
+    };
+  }
 
-    // Add primary member
-    state.members = [{ id: "m_" + Date.now(), name: name1, role: "primary", salary: salary1, color: "#10B981" }];
-    // Add incomes for this cycle
-    const today = new Date().toISOString().split("T")[0];
-    state.incomes = [{ id: "inc_" + Date.now(), memberId: state.members[0].id, source: name1 + " Salary", amount: salary1, date: today }];
-
-    // Optionally add partner
-    if (name2 && salary2 > 0) {
-      const m2id = "m_" + (Date.now() + 1);
-      state.members.push({ id: m2id, name: name2, role: "partner", salary: salary2, color: "#EC4899" });
-      state.incomes.push({ id: "inc_" + (Date.now() + 1), memberId: m2id, source: name2 + " Salary", amount: salary2, date: today });
-    }
-
-    // Update household name and active cycle
-    if (hname) state.household.name = hname;
-    state.activeCycle = { name: cycleName, daysRemaining: daysLeft };
-
-    closeModal();
-    persistState();
-    renderApp();
-    showToast(`✅ Welcome ${name1}! Your household is set up. Now add your fixed bills and BNPL plans from the top bar.`, "success");
+  // Calculate daily totals map
+  const dailyTotals = {};
+  spends.forEach(s => {
+    dailyTotals[s.date] = (dailyTotals[s.date] || 0) + (Number(s.amount) || 0);
   });
+  const historicalDays = Object.values(dailyTotals).sort((a, b) => a - b);
+
+  const p25 = historicalDays[Math.floor(historicalDays.length * 0.25)] || 0;
+  const p75 = historicalDays[Math.floor(historicalDays.length * 0.75)] || 0;
+  const p90 = historicalDays[Math.floor(historicalDays.length * 0.90)] || 0;
+
+  const today = new Date().toISOString().split("T")[0];
+  const todayTotal = dailyTotals[today] || 0;
+
+  if (todayTotal <= p25) {
+    return {
+      level: "low",
+      label: "🟢 Low Spend Day",
+      badgeClass: "badge-spend-low",
+      detail: `Today's spend (${fmt(todayTotal)}) is below your 25th percentile (${fmt(p25)}).`
+    };
+  } else if (todayTotal <= p75) {
+    return {
+      level: "normal",
+      label: "🟡 Normal Spend Day",
+      badgeClass: "badge-spend-normal",
+      detail: `Today's spend (${fmt(todayTotal)}) is within your typical range (${fmt(p25)} – ${fmt(p75)}).`
+    };
+  } else if (todayTotal <= p90) {
+    return {
+      level: "high",
+      label: "🟠 High Spend Day",
+      badgeClass: "badge-spend-high",
+      detail: `Today's spend (${fmt(todayTotal)}) is above your 75th percentile (${fmt(p75)}).`
+    };
+  } else {
+    return {
+      level: "max",
+      label: "🔴 Peak Spend Alert (90th+ percentile)",
+      badgeClass: "badge-spend-max",
+      detail: `Today's spend (${fmt(todayTotal)}) exceeds your 90th percentile (${fmt(p90)}). 20%+ above normal!`
+    };
+  }
 }
 
 // --- MASTER RENDERER ---
@@ -1396,6 +1484,14 @@ function renderApp() {
     document.body.className = state.household.themePreset;
   }
   applyCustomCss();
+  updateSessionMemberUI();
+
+  // Spend Level Badge Injection
+  const spendBadgeContainer = document.getElementById("spend-level-badge-container");
+  if (spendBadgeContainer) {
+    const spendLevels = calculateSpendLevels();
+    spendBadgeContainer.innerHTML = `<span class="badge ${spendLevels.badgeClass}" title="${spendLevels.detail}" style="cursor:pointer;" onclick="showToast('${spendLevels.detail}', 'info')">${spendLevels.label}</span>`;
+  }
 
   // Dynamic UI Labels Injection into all matching [data-label-key] elements
   document.querySelectorAll("[data-label-key]").forEach(el => {
@@ -1610,7 +1706,7 @@ function renderAllTables(metrics) {
       </td>
       <td><strong>${i.item}</strong></td>
       <td><span class="badge badge-admin">${i.platform}</span></td>
-      <td>${i.member || 'Dhiyan'}</td>
+      <td>${i.member || 'Shared'}</td>
       <td><strong>${fmt(i.monthly)}</strong></td>
       <td>${fmt(i.remaining)} / ${fmt(i.total)}</td>
       <td>
@@ -1734,34 +1830,50 @@ function renderAllTables(metrics) {
   // 8. Spends
   const recentSpends = document.getElementById("dashboard-recent-spends");
   if (recentSpends) {
-    recentSpends.innerHTML = (state.dailySpends || []).slice(0, 5).map(s => `
-      <div class="spend-row">
-        <div class="spend-info">
-          <strong>${s.title}</strong>
-          <small>${s.date} • ${s.cat} • ${s.method}</small>
+    recentSpends.innerHTML = (state.dailySpends || []).slice(0, 6).map(s => {
+      const payer = s.paid_by_name || s.memberName || 'Shared';
+      const methodStr = (s.payment_method || s.method || 'Cash') + (s.payment_bank ? ` (${s.payment_bank})` : '');
+      return `
+        <div class="spend-row">
+          <div class="spend-info">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.2rem;">
+              <strong>${s.title}</strong>
+              <span class="badge-payer">👤 ${payer}</span>
+              <span class="badge-method">💳 ${methodStr}</span>
+            </div>
+            <small>${s.date} • ${s.cat || 'General'}</small>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
+            <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️</button>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
-          <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   const allSpends = document.getElementById("dashboard-recent-spends-full");
   if (allSpends) {
-    allSpends.innerHTML = (state.dailySpends || []).map(s => `
-      <div class="spend-row">
-        <div class="spend-info">
-          <strong>${s.title}</strong>
-          <small>${s.date} • ${s.cat} • ${s.method}</small>
+    allSpends.innerHTML = (state.dailySpends || []).map(s => {
+      const payer = s.paid_by_name || s.memberName || 'Shared';
+      const methodStr = (s.payment_method || s.method || 'Cash') + (s.payment_bank ? ` (${s.payment_bank})` : '');
+      return `
+        <div class="spend-row">
+          <div class="spend-info">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.2rem;">
+              <strong>${s.title}</strong>
+              <span class="badge-payer">👤 ${payer}</span>
+              <span class="badge-method">💳 ${methodStr}</span>
+            </div>
+            <small>${s.date} • ${s.cat || 'General'}</small>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
+            <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️ Delete</button>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
-          <button class="btn-table-delete" onclick="deleteSpend('${s.id}')" title="Delete Spend">🗑️ Delete</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   // 9. Completed Payments Page
@@ -2977,19 +3089,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       renderApp(); // Re-render with cloud data
-      showToast("☁️ Synced from cloud", "info");
     }
   }
 
-  // Show first-run onboarding wizard if no members have been added yet
-  // (delayed slightly so the render and cloud sync complete first)
-  setTimeout(() => {
-    if (isFirstRun()) {
-      showFirstRunOnboarding();
-    } else {
-      checkDailySpendAlert(); // Check spend alert for returning users
+  // Check auth session & prompt identity if 2+ members and none selected yet
+  const session = typeof getCurrentSession === "function" ? await getCurrentSession() : null;
+  if (session) {
+    updateSessionMemberUI();
+    if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
+      setTimeout(() => openSessionMemberModal(), 600);
     }
-  }, 800);
+  }
 
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
