@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -443,7 +443,78 @@
       <!-- TAB 1: DASHBOARD -->
       <section id="tab-dashboard" class="tab-pane">
         
-        <!-- 3D Interactive WebGL Financial Hero / Landing Section -->
+        <!-- STITCH LUMINAL FINANCE MOBILE APP HEADER -->
+        <div class="stitch-mobile-header">
+          <div class="stitch-header-left">
+            <div class="stitch-avatar-badge" id="mobile-header-avatar" onclick="openSessionMemberModal()" title="Switch Household Identity">
+              SP
+            </div>
+            <div>
+              <h2 class="stitch-app-title" id="mobile-header-household-name">HomeBudget</h2>
+              <p class="stitch-app-subtitle" id="mobile-header-active-member">Sathsara &amp; Partner</p>
+            </div>
+          </div>
+          <div class="stitch-cycle-chip" id="mobile-cycle-badge">
+            🗓️ <span id="mobile-cycle-days-left">18 Days Left</span>
+          </div>
+        </div>
+
+        <!-- STITCH SAFE TO SPEND HERO CARD (CENTRAL DAILY ENGINE) -->
+        <section class="stitch-hero-card">
+          <div class="stitch-hero-header">
+            <span class="stitch-hero-label">Safe to Spend Today</span>
+            <span class="stitch-cycle-chip" style="font-size:0.68rem; padding:0.2rem 0.6rem;" id="mobile-status-pill">🟢 Healthy Flow</span>
+          </div>
+          <div class="stitch-currency-display" id="mobile-safe-daily-spend">Rs. 0</div>
+          <!-- Progress Bar -->
+          <div class="stitch-progress-track">
+            <div class="stitch-progress-fill" id="mobile-spend-progress-fill" style="width: 100%;"></div>
+          </div>
+          <div class="stitch-hero-footer">
+            <span>Remaining This Cycle: <strong id="mobile-remaining-cycle-spend">Rs. 0</strong></span>
+            <span id="mobile-percent-label">100% available</span>
+          </div>
+        </section>
+
+        <!-- STITCH QUICK ACTIONS BAR -->
+        <section class="stitch-quick-actions">
+          <button class="stitch-action-btn" onclick="openSpendModal()">
+            <span style="font-size: 1.3rem;">⚡</span>
+            <span>Quick Add</span>
+          </button>
+          <button class="stitch-action-primary" onclick="openSpendModal()">
+            <span style="font-size: 1.25rem;">➕</span>
+            <span>Log Expense</span>
+          </button>
+          <button class="stitch-action-btn" onclick="switchTab('fixed-bills')">
+            <span style="font-size: 1.3rem;">📅</span>
+            <span>Upcoming</span>
+          </button>
+        </section>
+
+        <!-- STITCH UPCOMING BILLS & BNPL STRIP -->
+        <section class="stitch-section">
+          <div class="stitch-section-header">
+            <h3>Upcoming Bills &amp; BNPL</h3>
+            <button class="stitch-link-btn" onclick="switchTab('fixed-bills')">See All ›</button>
+          </div>
+          <div class="stitch-cards-strip" id="mobile-upcoming-strip">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- STITCH RECENT HOUSEHOLD TRANSACTIONS FEED -->
+        <section class="stitch-section">
+          <div class="stitch-section-header">
+            <h3>Recent Expenses</h3>
+            <button class="stitch-link-btn" onclick="switchTab('daily-spends')">View History ›</button>
+          </div>
+          <div class="stitch-transaction-feed" id="mobile-recent-spends-feed">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+        
+        <!-- 3D Interactive WebGL Financial Hero / Landing Section (Desktop Only) -->
         <div class="hero-3d-wrapper" id="hero-3d-wrapper">
           <div class="hero-3d-canvas-container">
             <canvas id="three-hero-canvas"></canvas>
@@ -1039,6 +1110,92 @@
       ">!</span>
     </button>
   </div>
+
+  <!-- STITCH LUMINAL FINANCE iOS EXPENSE LOGGING BOTTOM SHEET -->
+  <div class="mobile-bottom-sheet-overlay" id="spend-sheet-overlay" onclick="closeSpendSheet(event)">
+    <div class="mobile-bottom-sheet" id="spend-bottom-sheet">
+      <div class="sheet-handle-bar">
+        <div class="sheet-drag-handle"></div>
+      </div>
+      
+      <div class="sheet-header">
+        <h3>Quick Log Expense</h3>
+        <button class="sheet-close-btn" onclick="closeSpendSheet()">&times;</button>
+      </div>
+
+      <!-- Large Display Amount -->
+      <div class="sheet-amount-container">
+        <span class="sheet-currency-symbol">Rs.</span>
+        <input type="number" id="qs-sheet-amt" class="sheet-amount-input" placeholder="0" inputmode="decimal" autofocus>
+      </div>
+
+      <!-- Description / Merchant Input -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Description</label>
+        <input type="text" id="qs-sheet-title" class="sheet-text-input" placeholder="e.g. Keells Super, Dinner, Uber ride">
+      </div>
+
+      <!-- 1-Tap Category Chips (Eliminates iOS Safari wheel pickers!) -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Category (1-Tap Selection)</label>
+        <div class="category-chips-scroll" id="qs-category-chips">
+          <!-- Dynamically populated chips -->
+        </div>
+      </div>
+
+      <!-- Paid By Member Selector (Segmented Cards) -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Who Paid?</label>
+        <div class="member-toggle-grid" id="qs-member-chips">
+          <!-- Dynamically populated cards -->
+        </div>
+      </div>
+
+      <!-- Payment Method Chips -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Payment Method</label>
+        <div class="method-chips-row" id="qs-method-chips">
+          <!-- Cash, Card, Bank Transfer -->
+        </div>
+        <div id="qs-sheet-bank-wrap" style="display:none; margin-top:0.6rem;">
+          <label class="sheet-field-label" style="font-size:0.7rem;">Linked Bank / Card Issuer</label>
+          <div class="bank-chips-scroll" id="qs-bank-chips">
+            <!-- Commercial Bank, BOC, Sampath, HNB, etc. -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Action Button -->
+      <div class="sheet-actions" style="margin-top: 1.25rem;">
+        <button class="btn btn-primary btn-sheet-submit" onclick="submitSpendFromSheet()">
+          <span>⚡ Save Expense</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NATIVE iOS BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <span class="mobile-nav-icon">🏠</span>
+      <span class="mobile-nav-text">Home</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="daily-spends" onclick="switchTab('daily-spends')">
+      <span class="mobile-nav-icon">🧾</span>
+      <span class="mobile-nav-text">Spends</span>
+    </button>
+    <button class="mobile-fab-center" onclick="openSpendModal()" aria-label="Quick Log Expense">
+      <span class="fab-icon">➕</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="fixed-bills" onclick="switchTab('fixed-bills')">
+      <span class="mobile-nav-icon">📅</span>
+      <span class="mobile-nav-text">Bills</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="openSessionMemberModal()">
+      <span class="mobile-nav-icon">👥</span>
+      <span class="mobile-nav-text">Members</span>
+    </button>
+  </nav>
 
   <!-- Chart.js CDN for Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>

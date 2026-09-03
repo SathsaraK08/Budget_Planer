@@ -2481,4 +2481,757 @@ input:checked + .slider:before {
   }
 }
 
+/* ============================================================
+   GOOGLE STITCH — LUMINAL FINANCE DESIGN SYSTEM & MOBILE OVERHAUL
+   ============================================================ */
+
+/* Hide desktop WP Admin Bar and heavy 3D canvas on mobile devices */
+@media (max-width: 900px) {
+  .wp-admin-bar {
+    display: none !important;
+  }
+  .app-shell {
+    margin-top: 0 !important;
+    padding-bottom: 85px !important; /* Space for native bottom nav */
+  }
+  .main-content {
+    padding: 1rem 1rem 6rem !important;
+  }
+  .hero-3d-wrapper {
+    display: none !important; /* Hide 3D canvas on mobile to eliminate lag and confusion */
+  }
+  .top-header {
+    display: none !important; /* Mobile uses dedicated Stitch App Bar */
+  }
+}
+
+/* Base Fintech Tokens */
+body {
+  font-family: 'Hanken Grotesk', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+  background-color: #000000 !important;
+  color: #E2E2E2 !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Stitch Mobile App Header */
+.stitch-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.stitch-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stitch-avatar-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(79, 70, 229, 0.4));
+  border: 1.5px solid rgba(195, 192, 255, 0.4);
+  color: #C3C0FF;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.stitch-avatar-badge:active {
+  transform: scale(0.92);
+}
+
+.stitch-app-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.stitch-app-subtitle {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.stitch-cycle-chip {
+  background: rgba(28, 28, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #C3C0FF;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  backdrop-filter: blur(12px);
+}
+
+/* Stitch Safe-to-Spend Hero Card */
+.stitch-hero-card {
+  background: linear-gradient(180deg, rgba(28, 28, 30, 0.7) 0%, rgba(18, 18, 20, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.6);
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(20px);
+}
+
+.stitch-hero-card::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.stitch-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.stitch-hero-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #9CA3AF;
+  letter-spacing: 0.01em;
+}
+
+.stitch-currency-display {
+  font-size: 2.35rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.stitch-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 0.85rem;
+}
+
+.stitch-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.stitch-hero-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #9CA3AF;
+}
+
+.stitch-hero-footer strong {
+  color: #FFFFFF;
+}
+
+/* Stitch Quick Actions Bar */
+.stitch-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.stitch-action-btn {
+  flex: 1;
+  background: rgba(28, 28, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  color: #E2E2E2;
+  font-size: 0.78rem;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+}
+
+.stitch-action-btn:active {
+  transform: scale(0.96);
+  background: rgba(45, 45, 50, 0.7);
+}
+
+.stitch-action-primary {
+  flex: 1.4;
+  background: linear-gradient(135deg, #4F46E5, #6366F1);
+  border: none;
+  border-radius: 14px;
+  padding: 0.85rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #FFFFFF;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4);
+  transition: all 0.2s ease;
+}
+
+.stitch-action-primary:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* Horizontal Strip for Upcoming Commitments */
+.stitch-section {
+  margin-bottom: 1.5rem;
+}
+
+.stitch-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.stitch-section-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.stitch-link-btn {
+  background: transparent;
+  border: none;
+  color: #818CF8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stitch-cards-strip {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin: 0 -0.25rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stitch-cards-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.stitch-bill-chip {
+  min-width: 150px;
+  flex-shrink: 0;
+  background: rgba(28, 28, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  backdrop-filter: blur(16px);
+}
+
+.stitch-bill-chip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stitch-bill-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+.stitch-bill-check-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #10B981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stitch-bill-check-btn:active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+}
+
+.stitch-bill-name {
+  font-size: 0.78rem;
+  color: #9CA3AF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.stitch-bill-amt {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+/* Stitch Recent Transaction Feed */
+.stitch-transaction-feed {
+  background: rgba(28, 28, 30, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  padding: 0.25rem 0.85rem;
+  backdrop-filter: blur(16px);
+}
+
+.stitch-tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stitch-tx-item:last-child {
+  border-bottom: none;
+}
+
+.stitch-tx-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stitch-tx-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stitch-tx-avatar.primary-member {
+  background: rgba(79, 70, 229, 0.18);
+  color: #A5B4FC;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.stitch-tx-avatar.partner-member {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6EE7B7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stitch-tx-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 0.2rem;
+}
+
+.stitch-tx-meta {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stitch-tx-amt {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #F87171;
+  text-align: right;
+}
+
+/* ============================================================
+   NATIVE iOS BOTTOM NAVIGATION BAR
+   ============================================================ */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(18, 18, 20, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 990;
+  padding: 0 0.5rem env(safe-area-inset-bottom, 12px);
+  align-items: center;
+  justify-content: space-around;
+}
+
+@media (max-width: 900px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+}
+
+.mobile-nav-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-btn.active {
+  color: #C3C0FF;
+}
+
+.mobile-nav-icon {
+  font-size: 1.25rem;
+}
+
+.mobile-fab-center {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4F46E5, #6366F1);
+  border: none;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.5);
+  cursor: pointer;
+  margin-top: -16px;
+  transition: transform 0.2s ease;
+}
+
+.mobile-fab-center:active {
+  transform: scale(0.92);
+}
+
+/* ============================================================
+   STITCH iOS QUICK LOG EXPENSE BOTTOM SHEET
+   ============================================================ */
+.mobile-bottom-sheet-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1050;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-bottom-sheet-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.mobile-bottom-sheet {
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 0.75rem 1.25rem env(safe-area-inset-bottom, 24px);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-bottom-sheet-overlay.active .mobile-bottom-sheet {
+  transform: translateY(0);
+}
+
+.sheet-handle-bar {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0 0.85rem;
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.sheet-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.sheet-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #9CA3AF;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sheet Amount Input */
+.sheet-amount-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 1.25rem;
+  padding: 0.5rem;
+}
+
+.sheet-currency-symbol {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #818CF8;
+}
+
+.sheet-amount-input {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #4F46E5;
+  width: 180px;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+}
+
+.sheet-field {
+  margin-bottom: 1.1rem;
+}
+
+.sheet-field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sheet-text-input {
+  width: 100%;
+  background: rgba(28, 28, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  color: #FFFFFF;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sheet-text-input:focus {
+  border-color: #6366F1;
+}
+
+/* Category Chips Scroll (NO IOS SELECT OVERLAY) */
+.category-chips-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scrollbar-width: none;
+}
+
+.category-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-pill-chip {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #D1D5DB;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.cat-pill-chip.active {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: #818CF8;
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+/* Member Toggle Cards */
+.member-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.member-chip-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #E2E2E2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.member-chip-card.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10B981;
+  color: #FFFFFF;
+}
+
+/* Payment Method Chips */
+.method-chips-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.method-pill-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #D1D5DB;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.method-pill-chip.active {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: #818CF8;
+  color: #FFFFFF;
+}
+
+.bank-chips-scroll {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+
+.bank-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.bank-pill-chip {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  cursor: pointer;
+}
+
+.bank-pill-chip.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+  color: #FFFFFF;
+}
+
+/* Sheet Submit Button */
+.btn-sheet-submit {
+  width: 100%;
+  padding: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+}
+
 

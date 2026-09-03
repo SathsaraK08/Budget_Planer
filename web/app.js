@@ -1048,77 +1048,349 @@ function onSpendMethodChange() {
   }
 }
 
-// 7. Daily Spends — with member attribution & bank tracking
-function openSpendModal() {
-  const activeMember = getActiveSessionMember();
-  const categoryOptions = (state.categories || defaultState.categories).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-  const paymentMethods = ["Cash", "Debit Card", "Credit Card", "Bank Transfer"];
-  const paymentOptions = paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
-  const bankOptions = SRI_LANKA_BANKS.map(b => `<option value="${b}">${b}</option>`).join('');
+// ============================================================
+// GOOGLE STITCH — LUMINAL FINANCE MOBILE DASHBOARD ENGINE
+// ============================================================
+function getDaysRemainingInCycle() {
+  const now = new Date();
+  const currentDay = now.getDate();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  let targetDate;
+  if (currentDay < 25) {
+    targetDate = new Date(currentYear, currentMonth, 25);
+  } else {
+    targetDate = new Date(currentYear, currentMonth + 1, 25);
+  }
+  const diffTime = targetDate - now;
+  const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  return diffDays;
+}
+
+function renderStitchMobileDashboard(metrics) {
+  const daysLeft = getDaysRemainingInCycle();
+  const safeDailySpend = Math.max(0, Math.round(metrics.remainingBalance / daysLeft));
   
-  const memberOptions = (state.members || []).length
-    ? `<div class="form-group">
-        <label>Paid By (Attribution)</label>
-        <select id="qs-member" class="form-control">
-          ${(state.members || []).map(m => `<option value="${m.id}" ${m.id === activeMember.id ? 'selected' : ''}>👤 ${m.name}${m.role === 'admin' ? ' (Admin)' : ''}</option>`).join('')}
-        </select>
-       </div>`
-    : '';
+  // Safe Daily Spend & Cycle Metrics
+  const dailyEl = document.getElementById("mobile-safe-daily-spend");
+  if (dailyEl) dailyEl.textContent = fmt(safeDailySpend);
 
-  const html = `
-    <div class="form-group">
-      <label>Amount (${state.household.currency})</label>
-      <input type="number" id="qs-amt" class="form-control form-control-lg" placeholder="0.00" autofocus>
-    </div>
-    <div class="form-group">
-      <label>Description / Item</label>
-      <input type="text" id="qs-title" class="form-control" placeholder="e.g. Keells Super, PickMe Ride, Electricity Bill">
-    </div>
-    <div class="form-group">
-      <label>Category</label>
-      <select id="qs-cat" class="form-control">${categoryOptions}</select>
-    </div>
-    ${memberOptions}
-    <div class="form-group">
-      <label>Payment Method</label>
-      <select id="qs-method" class="form-control" onchange="onSpendMethodChange()">${paymentOptions}</select>
-    </div>
-    <div class="form-group" id="qs-bank-group" style="display:none;">
-      <label>Bank / Card Issuer</label>
-      <select id="qs-bank" class="form-control">${bankOptions}</select>
-    </div>
-  `;
-  openModal("⚡ Quick Log Daily Spend", html, () => {
-    const amount = parseFloat(document.getElementById("qs-amt").value) || 0;
-    const title = document.getElementById("qs-title").value.trim();
-    const cat = document.getElementById("qs-cat").value;
-    const method = document.getElementById("qs-method").value;
-    const bank = (method !== "Cash") ? document.getElementById("qs-bank").value : null;
-    const memberId = document.getElementById("qs-member")?.value || activeMember?.id || "";
-    const member = (state.members || []).find(m => m.id === memberId) || activeMember;
+  const remainEl = document.getElementById("mobile-remaining-cycle-spend");
+  if (remainEl) remainEl.textContent = fmt(metrics.remainingBalance);
 
-    if (amount <= 0 || !title) return showToast("Please enter amount and description", "danger");
+  const daysEl = document.getElementById("mobile-cycle-days-left");
+  if (daysEl) daysEl.textContent = `${daysLeft} Days Left`;
 
-    state.dailySpends.unshift({
-      id: "d_" + Date.now(),
-      date: new Date().toISOString().split("T")[0],
-      amount,
-      title,
-      cat,
-      method,
-      payment_method: method,
-      payment_bank: bank,
-      memberId: memberId || null,
-      paid_by_member_id: memberId || null,
-      memberName: member ? member.name : null,
-      paid_by_name: member ? member.name : null,
-      isPaid: true
-    });
-    closeModal();
-    persistState();
-    renderApp();
-    showToast(`✅ Logged ${fmt(amount)} for ${title} (${member ? member.name : 'Shared'} • ${method}${bank ? ' - ' + bank : ''})`, "success");
+  // Status Pill & Progress Bar
+  const statusPill = document.getElementById("mobile-status-pill");
+  const progressFill = document.getElementById("mobile-spend-progress-fill");
+  const percentLabel = document.getElementById("mobile-percent-label");
+
+  const spendablePool = Math.max(1, metrics.totalIncome - metrics.totalCommitted);
+  const remainingPct = Math.min(100, Math.max(0, Math.round((metrics.remainingBalance / spendablePool) * 100)));
+
+  if (progressFill) progressFill.style.width = `${remainingPct}%`;
+  if (percentLabel) percentLabel.textContent = `${remainingPct}% remaining`;
+
+  if (statusPill) {
+    if (metrics.remainingBalance < 0) {
+      statusPill.textContent = "🔴 Cycle Deficit";
+      statusPill.style.color = "#F87171";
+      if (progressFill) progressFill.style.background = "#EF4444";
+    } else if (safeDailySpend > 3000) {
+      statusPill.textContent = "🟢 Healthy Flow";
+      statusPill.style.color = "#34D399";
+      if (progressFill) progressFill.style.background = "linear-gradient(90deg, #10B981, #34D399)";
+    } else if (safeDailySpend > 1200) {
+      statusPill.textContent = "🟡 Steady Pace";
+      statusPill.style.color = "#FBBF24";
+      if (progressFill) progressFill.style.background = "linear-gradient(90deg, #F59E0B, #FBBF24)";
+    } else {
+      statusPill.textContent = "🟠 Tight Runway";
+      statusPill.style.color = "#F97316";
+      if (progressFill) progressFill.style.background = "linear-gradient(90deg, #EA580C, #F97316)";
+    }
+  }
+
+  // Active Member Header
+  const activeMember = getActiveSessionMember();
+  const mobileNameEl = document.getElementById("mobile-header-active-member");
+  if (mobileNameEl) {
+    const partnerName = (state.members || []).find(m => m.id !== activeMember.id)?.name;
+    mobileNameEl.textContent = partnerName ? `${activeMember.name} & ${partnerName}` : activeMember.name;
+  }
+  const mobileAvatarEl = document.getElementById("mobile-header-avatar");
+  if (mobileAvatarEl) {
+    mobileAvatarEl.textContent = (activeMember.name || 'U')[0].toUpperCase();
+  }
+
+  // Render Upcoming Bills & BNPL Strip
+  const stripEl = document.getElementById("mobile-upcoming-strip");
+  if (stripEl) {
+    const pendingBills = (state.fixedPayments || []).filter(f => !f.isPaid).slice(0, 3).map(f => ({
+      type: "fixed",
+      id: f.id,
+      name: f.name,
+      amount: f.amount,
+      icon: "💡"
+    }));
+    const pendingBnpl = (state.installments || []).filter(i => !i.isPaid).slice(0, 3).map(i => ({
+      type: "bnpl",
+      id: i.id,
+      name: i.item,
+      amount: i.monthly,
+      icon: "🛍️"
+    }));
+    const pendingSubs = (state.subscriptions || []).filter(s => !s.isPaid).slice(0, 2).map(s => ({
+      type: "sub",
+      id: s.id,
+      name: s.name,
+      amount: s.amountLkr,
+      icon: "📱"
+    }));
+
+    const upcomingList = [...pendingBills, ...pendingBnpl, ...pendingSubs];
+    if (upcomingList.length === 0) {
+      stripEl.innerHTML = `<div style="padding:1rem; color:#9CA3AF; font-size:0.82rem;">🎉 All commitments settled for this cycle!</div>`;
+    } else {
+      stripEl.innerHTML = upcomingList.map(item => `
+        <div class="stitch-bill-chip">
+          <div class="stitch-bill-chip-top">
+            <div class="stitch-bill-icon">${item.icon}</div>
+            <button class="stitch-bill-check-btn" onclick="togglePaymentStatus('${item.type}', '${item.id}')" title="Mark Paid">
+              ✓
+            </button>
+          </div>
+          <div>
+            <div class="stitch-bill-name">${item.name}</div>
+            <div class="stitch-bill-amt">${fmt(item.amount)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+
+  // Render Recent Household Transactions Feed
+  const feedEl = document.getElementById("mobile-recent-spends-feed");
+  if (feedEl) {
+    const recent = (state.dailySpends || []).slice(0, 5);
+    if (recent.length === 0) {
+      feedEl.innerHTML = `<div style="padding:1.5rem 0.5rem; text-align:center; color:#9CA3AF; font-size:0.85rem;">No expenses logged yet this cycle. Tap <strong>➕ Log Expense</strong> above!</div>`;
+    } else {
+      feedEl.innerHTML = recent.map(s => {
+        const isPrimary = !s.memberName || s.memberName.toLowerCase().includes("sathsara") || s.memberName.toLowerCase().includes("primary");
+        const initial = (s.memberName || "U")[0].toUpperCase();
+        const methodTag = s.payment_bank ? `${s.payment_method || 'Card'} (${s.payment_bank})` : (s.payment_method || s.method || 'Cash');
+        return `
+          <div class="stitch-tx-item">
+            <div class="stitch-tx-left">
+              <div class="stitch-tx-avatar ${isPrimary ? 'primary-member' : 'partner-member'}">
+                ${initial}
+              </div>
+              <div>
+                <div class="stitch-tx-title">${s.title}</div>
+                <div class="stitch-tx-meta">
+                  <span>${s.memberName || 'Shared'}</span>
+                  <span>•</span>
+                  <span>${methodTag}</span>
+                  <span>•</span>
+                  <span>${s.cat || 'General'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="stitch-tx-amt">
+              -${fmt(s.amount)}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+}
+
+// ============================================================
+// STITCH iOS EXPENSE LOGGING BOTTOM SHEET CONTROLLER
+// ============================================================
+let selectedSpendCategory = "Groceries";
+let selectedSpendMemberId = "";
+let selectedSpendMethod = "Cash";
+let selectedSpendBank = "Commercial Bank";
+
+const STITCH_DEFAULT_CATEGORIES = [
+  { name: "Groceries", icon: "🛒" },
+  { name: "Food & Dining", icon: "🍽️" },
+  { name: "Transport", icon: "🚗" },
+  { name: "Utilities", icon: "💡" },
+  { name: "Shopping", icon: "🛍️" },
+  { name: "Health & Care", icon: "💊" },
+  { name: "Entertainment", icon: "🍿" },
+  { name: "Other", icon: "📦" }
+];
+
+function selectSpendCategory(name) {
+  selectedSpendCategory = name;
+  document.querySelectorAll(".cat-pill-chip").forEach(el => {
+    el.classList.toggle("active", el.dataset.cat === name);
   });
+}
+
+function selectSpendMember(id) {
+  selectedSpendMemberId = id;
+  document.querySelectorAll(".member-chip-card").forEach(el => {
+    el.classList.toggle("active", el.dataset.memberId === id);
+  });
+}
+
+function selectSpendMethod(method) {
+  selectedSpendMethod = method;
+  document.querySelectorAll(".method-pill-chip").forEach(el => {
+    el.classList.toggle("active", el.dataset.method === method);
+  });
+  const bankWrap = document.getElementById("qs-sheet-bank-wrap");
+  if (bankWrap) {
+    bankWrap.style.display = (method !== "Cash") ? "block" : "none";
+  }
+}
+
+function selectSpendBank(bank) {
+  selectedSpendBank = bank;
+  document.querySelectorAll(".bank-pill-chip").forEach(el => {
+    el.classList.toggle("active", el.dataset.bank === bank);
+  });
+}
+
+function closeSpendSheet(event) {
+  if (event && event.target && event.target.id !== "spend-sheet-overlay") return;
+  const overlay = document.getElementById("spend-sheet-overlay");
+  if (overlay) overlay.classList.remove("active");
+}
+
+function openSpendModal() {
+  const overlay = document.getElementById("spend-sheet-overlay");
+  if (!overlay) {
+    return;
+  }
+
+  // Reset inputs
+  const amtInput = document.getElementById("qs-sheet-amt");
+  const titleInput = document.getElementById("qs-sheet-title");
+  if (amtInput) amtInput.value = "";
+  if (titleInput) titleInput.value = "";
+
+  // Populate category chips (1-tap, no iOS select wheel)
+  const catContainer = document.getElementById("qs-category-chips");
+  if (catContainer) {
+    const cats = (state.categories && state.categories.length)
+      ? state.categories.map(c => ({ name: c.name, icon: c.name.toLowerCase().includes("groc") ? "🛒" : c.name.toLowerCase().includes("food") ? "🍽️" : c.name.toLowerCase().includes("trans") ? "🚗" : c.name.toLowerCase().includes("health") ? "💊" : "🏷️" }))
+      : STITCH_DEFAULT_CATEGORIES;
+    selectedSpendCategory = cats[0].name;
+    catContainer.innerHTML = cats.map((c, i) => `
+      <button type="button" class="cat-pill-chip ${i === 0 ? 'active' : ''}" data-cat="${c.name}" onclick="selectSpendCategory('${c.name}')">
+        <span>${c.icon}</span>
+        <span>${c.name}</span>
+      </button>
+    `).join("");
+  }
+
+  // Populate member cards (Who paid)
+  const memberContainer = document.getElementById("qs-member-chips");
+  const activeMember = getActiveSessionMember();
+  selectedSpendMemberId = activeMember.id;
+  if (memberContainer) {
+    const members = (state.members && state.members.length) ? state.members : [
+      { id: "m_default_1", name: "Primary Member", role: "admin" },
+      { id: "m_default_2", name: "Partner", role: "partner" }
+    ];
+    memberContainer.innerHTML = members.map(m => {
+      const isSelected = m.id === activeMember.id;
+      return `
+        <button type="button" class="member-chip-card ${isSelected ? 'active' : ''}" data-member-id="${m.id}" onclick="selectSpendMember('${m.id}')">
+          <span style="font-size: 1.1rem;">👤</span>
+          <div style="text-align: left;">
+            <div>${m.name}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">${m.role === 'admin' ? '👑 Admin' : 'Member'}</small>
+          </div>
+        </button>
+      `;
+    }).join("");
+  }
+
+  // Populate payment method chips
+  const methodContainer = document.getElementById("qs-method-chips");
+  selectedSpendMethod = "Cash";
+  if (methodContainer) {
+    const methods = ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
+    methodContainer.innerHTML = methods.map((m, i) => `
+      <button type="button" class="method-pill-chip ${i === 0 ? 'active' : ''}" data-method="${m}" onclick="selectSpendMethod('${m}')">
+        ${m === 'Cash' ? '💵 Cash' : m.includes('Credit') ? '💳 Credit Card' : m.includes('Debit') ? '💳 Debit Card' : '🏦 Bank Transfer'}
+      </button>
+    `).join("");
+  }
+
+  // Populate bank chips
+  const bankContainer = document.getElementById("qs-bank-chips");
+  selectedSpendBank = "Commercial Bank";
+  if (bankContainer) {
+    const banks = ["Commercial Bank", "Bank of Ceylon", "Sampath Bank", "Hatton National Bank", "Nations Trust Bank", "DFCC Bank", "Other"];
+    bankContainer.innerHTML = banks.map((b, i) => `
+      <button type="button" class="bank-pill-chip ${i === 0 ? 'active' : ''}" data-bank="${b}" onclick="selectSpendBank('${b}')">
+        ${b}
+      </button>
+    `).join("");
+  }
+
+  const bankWrap = document.getElementById("qs-sheet-bank-wrap");
+  if (bankWrap) bankWrap.style.display = "none";
+
+  // Open Sheet
+  overlay.classList.add("active");
+  setTimeout(() => {
+    if (amtInput) amtInput.focus();
+  }, 200);
+}
+
+function submitSpendFromSheet() {
+  const amtInput = document.getElementById("qs-sheet-amt");
+  const titleInput = document.getElementById("qs-sheet-title");
+  const amount = parseFloat(amtInput?.value) || 0;
+  const title = (titleInput?.value || "").trim();
+
+  if (amount <= 0) {
+    showToast("⚠️ Please enter a valid expense amount", "danger");
+    if (amtInput) amtInput.focus();
+    return;
+  }
+  if (!title) {
+    showToast("⚠️ Please enter what this was for (e.g. Groceries)", "danger");
+    if (titleInput) titleInput.focus();
+    return;
+  }
+
+  const member = (state.members || []).find(m => m.id === selectedSpendMemberId) || getActiveSessionMember();
+  const bank = (selectedSpendMethod !== "Cash") ? selectedSpendBank : null;
+
+  state.dailySpends = state.dailySpends || [];
+  state.dailySpends.unshift({
+    id: "d_" + Date.now(),
+    date: new Date().toISOString().split("T")[0],
+    amount,
+    title,
+    cat: selectedSpendCategory,
+    method: selectedSpendMethod,
+    payment_method: selectedSpendMethod,
+    payment_bank: bank,
+    memberId: selectedSpendMemberId || null,
+    paid_by_member_id: selectedSpendMemberId || null,
+    memberName: member ? member.name : null,
+    paid_by_name: member ? member.name : null,
+    isPaid: true
+  });
+
+  closeSpendSheet();
+  persistState();
+  renderApp();
+  showToast(`✅ Saved ${fmt(amount)} for ${title} (${member ? member.name : 'Shared'} • ${selectedSpendMethod})`, "success");
 }
 
 function deleteSpend(id) {
@@ -1193,6 +1465,9 @@ async function switchTab(tabId) {
   }
 
   document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".mobile-nav-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
   });
   document.querySelectorAll(".tab-pane").forEach(pane => {
@@ -1717,6 +1992,9 @@ function renderApp() {
 
   // Update Math Sandbox
   updateMathSandbox();
+
+  // Render Google Stitch Luminal Finance Mobile Dashboard
+  renderStitchMobileDashboard(metrics);
 }
 
 function renderAllTables(metrics) {
@@ -3268,6 +3546,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const session = typeof getCurrentSession === "function" ? await getCurrentSession() : null;
   if (session) {
     updateSessionMemberUI();
+    // Default directly to live dashboard so user sees budget immediately
+    switchTab("dashboard");
     if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
       setTimeout(() => openSessionMemberModal(), 600);
     }
