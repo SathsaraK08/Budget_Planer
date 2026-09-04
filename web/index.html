@@ -752,22 +752,17 @@
           <span style="font-size:1.4rem;">🤖</span>
           <div>
             <div style="font-weight:700; color:#fff; font-size:0.9rem;">Budget AI Advisor</div>
-            <div style="font-size:0.72rem; color:rgba(255,255,255,0.75);" id="ai-chat-status">Powered by Gemini</div>
+            <div style="font-size:0.72rem; color:#10B981; display:flex; align-items:center; gap:4px;" id="ai-chat-status">
+              <span style="width:6px; height:6px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+              <span>Financial Assistant</span>
+            </div>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:0.35rem;">
-          <button class="ai-chat-scale-btn" onclick="toggleChatApiKeyBar()" title="Configure API Key">🔑</button>
           <button class="ai-chat-scale-btn" onclick="resizeAiChat(-1)" title="Zoom Out">🔍−</button>
           <button class="ai-chat-scale-btn" onclick="resizeAiChat(1)" title="Zoom In">🔍+</button>
           <button class="ai-chat-scale-btn" onclick="toggleAiChat()" title="Close">✕</button>
         </div>
-      </div>
-
-      <!-- Quick API Key Configuration Bar -->
-      <div id="chat-api-key-bar" style="display:none; background:rgba(16,185,129,0.1); border-bottom:1px solid rgba(16,185,129,0.25); padding:0.5rem 0.75rem; align-items:center; gap:0.5rem;">
-        <span style="font-size:0.78rem; color:#34D399; white-space:nowrap;">🔑 Gemini Key:</span>
-        <input type="password" id="chat-quick-key-input" placeholder="Paste AIzaSy..." style="flex:1; min-width:0; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:0.3rem 0.5rem; font-size:0.78rem; outline:none;">
-        <button onclick="saveQuickChatApiKey()" style="background:#10B981; color:#fff; border:none; border-radius:6px; padding:0.3rem 0.65rem; font-size:0.76rem; font-weight:700; cursor:pointer; white-space:nowrap;">Save</button>
       </div>
 
       <!-- Daily Spend Alert Banner (shows only when over budget) -->
@@ -800,11 +795,16 @@
       </div>
 
       <!-- Quick Prompts -->
-      <div style="padding: 0.5rem 0.75rem 0.75rem; display:flex; flex-wrap:wrap; gap:0.4rem; background: var(--surface-2,#1a1f2e);">
+      <div style="padding: 0.5rem 0.75rem 0.5rem; display:flex; flex-wrap:wrap; gap:0.4rem; background: var(--surface-2,#1a1f2e);">
         <button onclick="askQuickQuestion('How much can I spend today safely?')" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.25rem 0.65rem;font-size:0.75rem;color:#a5b4fc;cursor:pointer;">Today's budget?</button>
         <button onclick="askQuickQuestion('What are my biggest expenses this cycle?')" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.25rem 0.65rem;font-size:0.75rem;color:#a5b4fc;cursor:pointer;">Top expenses?</button>
         <button onclick="askQuickQuestion('Should I buy something new given my current balance?')" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.25rem 0.65rem;font-size:0.75rem;color:#a5b4fc;cursor:pointer;">Can I buy now?</button>
         <button onclick="askQuickQuestion('Give me a full financial health assessment.')" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.25rem 0.65rem;font-size:0.75rem;color:#a5b4fc;cursor:pointer;">Health check</button>
+      </div>
+
+      <!-- AI Disclaimer Note -->
+      <div style="padding: 0.35rem 0.75rem 0.5rem; background: var(--surface-2,#1a1f2e); text-align: center; border-top: 1px solid rgba(255,255,255,0.04);">
+        <span style="font-size: 0.67rem; color: var(--text-muted); opacity: 0.7;">ℹ️ AI guidance is for informational purposes and may not always be 100% accurate. Please review critical financial decisions.</span>
       </div>
     </div>
 

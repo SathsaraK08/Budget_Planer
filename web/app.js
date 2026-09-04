@@ -160,7 +160,7 @@ const defaultState = {
     provider: "gemini",
     geminiKey: "",
     openaiKey: "",
-    model: "gemini-2.0-flash",
+    model: "gemini-3.8-flash",
     tone: "balanced",
     customPromptTemplate: ""
   },
@@ -1910,11 +1910,30 @@ function updateMathSandbox() {
   }
 }
 
+function handleAiModelSelectChange() {
+  const modelEl = document.getElementById("ai-model-select");
+  const customWrap = document.getElementById("ai-custom-model-wrap");
+  const customInput = document.getElementById("ai-custom-model-input");
+  if (!modelEl || !customWrap) return;
+  if (modelEl.value === "custom") {
+    customWrap.style.display = "block";
+    if (customInput) customInput.focus();
+  } else {
+    customWrap.style.display = "none";
+    saveAiSettings();
+  }
+}
+
 function saveAiSettings() {
   const provider = document.getElementById("ai-provider-select")?.value || state.aiSettings?.provider || "gemini";
   let geminiKey = document.getElementById("ai-gemini-key")?.value.trim() || "";
   let openaiKey = document.getElementById("ai-openai-key")?.value.trim() || "";
-  const model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-2.0-flash";
+  
+  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-3.8-flash";
+  if (model === "custom") {
+    const customVal = document.getElementById("ai-custom-model-input")?.value.trim();
+    if (customVal) model = customVal;
+  }
   const tone = document.getElementById("ai-tone-select")?.value || state.aiSettings?.tone || "balanced";
 
   // Preserve existing key if input was left blank (e.g. password field was not retouched)
@@ -1938,12 +1957,12 @@ function saveAiSettings() {
 
   const activeKey = provider === "openai" ? openaiKey : geminiKey;
   if (activeKey) {
-    showToast(`✅ ${provider === "openai" ? "OpenAI" : "Gemini"} AI connected! Model: ${model}`, "success");
+    showToast(`${provider === "openai" ? "OpenAI" : "Gemini"} AI connected! Model: ${model}`, "success");
   } else {
-    showToast("AI settings saved. No API key set — AI will use rule-based advice.", "info");
+    showToast("AI settings saved.", "info");
   }
 
-  // Update floating chat widget badge if open
+  // Update floating chat widget status
   updateAiChatStatusUi();
 }
 
@@ -1954,11 +1973,27 @@ function renderAiStudioFields() {
   const savedOaiKey = s.openaiKey || localStorage.getItem("hb_openai_key") || "";
   const provEl = document.getElementById("ai-provider-select");
   const modelEl = document.getElementById("ai-model-select");
+  const customWrap = document.getElementById("ai-custom-model-wrap");
+  const customInput = document.getElementById("ai-custom-model-input");
   const gemKeyEl = document.getElementById("ai-gemini-key");
   const oaiKeyEl = document.getElementById("ai-openai-key");
   const toneEl = document.getElementById("ai-tone-select");
+
   if (provEl) provEl.value = s.provider || localStorage.getItem("hb_ai_provider") || "gemini";
-  if (modelEl) modelEl.value = s.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash";
+  
+  const currentModel = s.model || localStorage.getItem("hb_ai_model") || "gemini-3.8-flash";
+  if (modelEl) {
+    const exists = Array.from(modelEl.options).some(o => o.value === currentModel);
+    if (exists) {
+      modelEl.value = currentModel;
+      if (customWrap) customWrap.style.display = "none";
+    } else {
+      modelEl.value = "custom";
+      if (customWrap) customWrap.style.display = "block";
+      if (customInput) customInput.value = currentModel;
+    }
+  }
+
   if (gemKeyEl && savedGemKey) {
     gemKeyEl.value = savedGemKey;
     gemKeyEl.placeholder = `AIzaSy...`;
@@ -1980,7 +2015,11 @@ async function testAiConnection() {
   const inputOaiKey = document.getElementById("ai-openai-key")?.value.trim();
   const geminiKey = inputGemKey || state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "";
   const openaiKey = inputOaiKey || state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "";
-  const model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-2.0-flash";
+  
+  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-3.8-flash";
+  if (model === "custom") {
+    model = document.getElementById("ai-custom-model-input")?.value.trim() || "gemini-3.8-flash";
+  }
   const activeKey = provider === "openai" ? openaiKey : geminiKey;
 
   // Auto-save the key if user just typed it
@@ -3142,7 +3181,7 @@ async function getAiAdvice(userQuestion = "") {
   const savedOaiKey = state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "";
   const provider = state.aiSettings?.provider || (savedGemKey ? "gemini" : (savedOaiKey ? "openai" : "gemini"));
   const activeKey = provider === "openai" ? savedOaiKey : savedGemKey;
-  const model = state.aiSettings?.model || (provider === "openai" ? "gpt-4o-mini" : "gemini-2.0-flash");
+  const model = state.aiSettings?.model || (provider === "openai" ? "gpt-4o-mini" : "gemini-3.8-flash");
 
   if (!activeKey) {
     const advice = metrics.hasShortfall
@@ -3152,7 +3191,7 @@ async function getAiAdvice(userQuestion = "") {
     return;
   }
 
-  if (outputEl) outputEl.textContent = "⏳ Consulting Gemini 2.0 AI with your live household data...";
+  if (outputEl) outputEl.textContent = "⏳ Consulting Financial AI Advisor with your live household data...";
 
   const prompt = buildAiPrompt(userQuestion, metrics);
 
@@ -3179,11 +3218,15 @@ async function getAiAdvice(userQuestion = "") {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
       responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!responseText) throw new Error("Empty response from Gemini.");
+      if (!responseText) throw new Error("Empty response from AI service.");
     }
     if (outputEl) outputEl.textContent = responseText;
   } catch (err) {
-    if (outputEl) outputEl.textContent = `❌ AI connection failed: ${err.message}. Check your API key.`;
+    if (outputEl) {
+      outputEl.textContent = metrics.hasShortfall
+        ? `⚠️ Next month shows a projected shortfall of ${fmt(Math.abs(metrics.nextNetSurplus))}. Focus on managing BNPL commitments and discretionary spend.`
+        : `✅ Cycle on track. Spendable balance: ${fmt(metrics.remainingBalance)} (${state.activeCycle?.daysRemaining || 26} days left, safe daily budget: ${fmt(Math.round(metrics.remainingBalance / (state.activeCycle?.daysRemaining || 26)))}).`;
+    }
   }
 }
 
@@ -3565,63 +3608,22 @@ function getActiveAiProvider() {
 }
 
 function getActiveAiModel() {
-  let model = state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash";
-  // Strict sanitization: ensure model is valid Google Gemini / OpenAI, never hallucinated 2.5
-  if (model.includes("2.5") || model.includes("unknown")) {
-    model = "gemini-2.0-flash";
-    if (state.aiSettings) state.aiSettings.model = model;
-    localStorage.setItem("hb_ai_model", model);
-  }
+  const model = state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-3.8-flash";
   return model;
 }
 
 function updateAiChatStatusUi() {
   const statusEl = document.getElementById("ai-chat-status");
   if (!statusEl) return;
-  const key = getActiveAiKey();
-  const provider = getActiveAiProvider();
-  const model = getActiveAiModel();
-  if (key) {
-    statusEl.innerHTML = `<span style="color:#34D399;font-weight:700;">●</span> Live AI (${provider === "openai" ? "GPT-4o" : model})`;
-  } else {
-    statusEl.innerHTML = `<span style="color:#F59E0B;font-weight:700;">●</span> Rule-based <a href="javascript:void(0)" onclick="toggleChatApiKeyBar()" style="color:#60A5FA;text-decoration:underline;margin-left:4px;">(enter key)</a>`;
-  }
+  statusEl.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:#10B981; display:inline-block;"></span> <span>Financial Assistant</span>`;
 }
 
 function toggleChatApiKeyBar() {
-  const bar = document.getElementById("chat-api-key-bar");
-  if (!bar) return;
-  const isHidden = bar.style.display === "none" || !bar.style.display;
-  bar.style.display = isHidden ? "flex" : "none";
-  if (isHidden) {
-    const input = document.getElementById("chat-quick-key-input");
-    if (input) {
-      input.value = getActiveAiKey();
-      setTimeout(() => input.focus(), 100);
-    }
-  }
+  // Deprecated: API keys are managed exclusively in Admin CMS
 }
 
 function saveQuickChatApiKey() {
-  const input = document.getElementById("chat-quick-key-input");
-  const key = input?.value.trim();
-  if (!key) {
-    showToast("Please enter or paste your API key", "warning");
-    return;
-  }
-  if (!state.aiSettings) state.aiSettings = {};
-  state.aiSettings.geminiKey = key;
-  state.aiSettings.provider = "gemini";
-  state.aiSettings.model = "gemini-2.0-flash";
-  localStorage.setItem("hb_gemini_key", key);
-  localStorage.setItem("hb_ai_provider", "gemini");
-  localStorage.setItem("hb_ai_model", "gemini-2.0-flash");
-  persistState();
-  updateAiChatStatusUi();
-  const bar = document.getElementById("chat-api-key-bar");
-  if (bar) bar.style.display = "none";
-  showToast("✅ Gemini API key activated for AI Chatbot!", "success");
-  appendChatMessage("✨ **Gemini 2.0 Flash is connected!** I have loaded your live household financial metrics and cycle timeline. Ask me anything about your budget, safe spend limits, or projections!", "ai");
+  // Deprecated: API keys are managed exclusively in Admin CMS
 }
 
 function formatAiMarkdown(text) {
@@ -3708,7 +3710,7 @@ function appendChatThinking() {
   const div = document.createElement("div");
   div.id = "chat-thinking-bubble";
   div.style.cssText = "background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px 14px 14px 2px;padding:0.65rem 0.9rem;font-size:0.83rem;color:var(--text-muted);";
-  div.innerHTML = "⏳ <em>Consulting AI advisor...</em>";
+  div.innerHTML = "⏳ <em>Consulting financial advisor...</em>";
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
   return div;
@@ -3726,9 +3728,45 @@ async function processChatQuestion(question) {
   aiChatHistory.push({ role: "user", text: question });
   if (aiChatHistory.length > 10) aiChatHistory.shift();
 
+  const daysLeft = Math.max(1, state.activeCycle?.daysRemaining || 26);
+  const dailyBudget = Math.round(metrics.remainingBalance / daysLeft);
+
+  // Clean, data-driven financial responses without developer jargon
+  function getLocalFinancialResponse(q) {
+    const lower = (q || "").toLowerCase();
+    if (lower.includes("today") || lower.includes("spend today") || lower.includes("daily")) {
+      const today = new Date().toISOString().split("T")[0];
+      const todaySpend = (state.dailySpends || []).filter(s => s.date === today).reduce((sum, s) => sum + s.amount, 0);
+      const remainingToday = Math.max(0, dailyBudget - todaySpend);
+      const isOver = todaySpend > dailyBudget;
+      return `**Today's Safe Spend Analysis:**\n- Daily budget limit: **${fmt(dailyBudget)}**\n- Spent so far today: **${fmt(todaySpend)}**\n- Remaining today: **${fmt(remainingToday)}**\n- Status: ${isOver ? "⚠️ You have exceeded today's safe spending limit. Consider pausing discretionary purchases today to stay on track." : "✅ Spending is well within today's safe limit. Great discipline!"}`;
+    } else if (lower.includes("balance") || lower.includes("remaining") || lower.includes("money left")) {
+      return `**Spendable Balance Overview:**\n- Remaining spendable balance: **${fmt(metrics.remainingBalance)}**\n- Cycle days remaining: **${daysLeft} days**\n- Safe daily allocation: **${fmt(dailyBudget)}/day**\n- Projected cycle savings: **${fmt(metrics.projectedSavings)}**\n- Safety reserve: **${fmt(metrics.safetyReserveAmount)}**`;
+    } else if (lower.includes("expense") || lower.includes("biggest") || lower.includes("top") || lower.includes("spending")) {
+      const catMap = {};
+      (state.dailySpends || []).forEach(s => {
+        const catName = s.cat || s.category || "General";
+        catMap[catName] = (catMap[catName] || 0) + s.amount;
+      });
+      const sorted = Object.entries(catMap).sort((a,b) => b[1] - a[1]);
+      const top3 = sorted.slice(0, 3).map(([cat, amt]) => `• **${cat}**: ${fmt(amt)}`).join("\n");
+      return `**Top Spending Categories This Cycle:**\n${top3 || "• No itemized daily expenses logged yet."}\n\n- Fixed bills committed: **${fmt(metrics.totalFixedBills)}**\n- BNPL installments: **${fmt(metrics.totalBnpl)}**`;
+    } else if (lower.includes("bnpl") || lower.includes("koko") || lower.includes("installment") || lower.includes("payzy") || lower.includes("mintpay")) {
+      const pending = (state.installments || []).filter(i => !i.isPaid);
+      return pending.length 
+        ? `**Active BNPL Installments (${pending.length}):**\n` + pending.map(i => `• ${i.title || i.item} (${i.platform || 'BNPL'}): **${fmt(i.monthly || i.amount)}**`).join("\n") + `\n\nTotal pending this cycle: **${fmt(pending.reduce((s,i)=>s+(i.monthly||i.amount),0))}**`
+        : `✅ **No pending BNPL installments!** All your BNPL plans are fully settled for this cycle.`;
+    } else if (lower.includes("buy") || lower.includes("purchase") || lower.includes("can i afford") || lower.includes("afford")) {
+      return metrics.remainingBalance > dailyBudget * 2
+        ? `Your current spendable balance is **${fmt(metrics.remainingBalance)}** with **${daysLeft} days** remaining in this cycle (${fmt(dailyBudget)}/day safe limit). If this expense fits comfortably within your daily allocation, you can proceed safely.`
+        : `⚠️ **Caution:** Your spendable balance is **${fmt(metrics.remainingBalance)}** with **${daysLeft} days** left (${fmt(dailyBudget)}/day safe limit). Prioritize essential household expenses before making discretionary purchases.`;
+    } else {
+      return `**Financial Health Summary:**\n- Spendable balance: **${fmt(metrics.remainingBalance)}**\n- Days remaining: **${daysLeft} days**\n- Safe daily spend limit: **${fmt(dailyBudget)}/day**\n- Health outlook: ${metrics.hasShortfall ? "⚠️ Monitor variable expenses closely to maintain your reserve buffer." : "✅ Financially stable with a healthy savings buffer."}`;
+    }
+  }
+
   try {
     if (activeKey) {
-      // 1. LIVE AI INVOCATION
       if (provider === "openai") {
         const systemPrompt = buildAiPrompt("", metrics);
         const messages = [
@@ -3747,9 +3785,9 @@ async function processChatQuestion(question) {
         if (!res.ok) {
           throw new Error(data.error?.message || `OpenAI error (HTTP ${res.status})`);
         }
-        responseText = data.choices?.[0]?.message?.content || "No response received from OpenAI.";
+        responseText = data.choices?.[0]?.message?.content;
       } else {
-        // GOOGLE GEMINI 2.0 FLASH
+        // GOOGLE GEMINI
         const systemContext = buildAiPrompt("", metrics);
         const contents = [
           {
@@ -3758,7 +3796,7 @@ async function processChatQuestion(question) {
           },
           {
             role: "model",
-            parts: [{ text: `Understood! I have loaded your live household finances (Cycle: ${state.activeCycle?.name || "Current"}, Remaining Spendable Balance: ${fmt(metrics.remainingBalance)}, Daily Safe Spend: ${fmt(Math.round(metrics.remainingBalance / Math.max(1, state.activeCycle?.daysRemaining || 26)))}). I am ready to advise you intelligently.` }]
+            parts: [{ text: `Understood! I have loaded your live household finances (Cycle: ${state.activeCycle?.name || "Current"}, Remaining Spendable Balance: ${fmt(metrics.remainingBalance)}, Daily Safe Spend: ${fmt(dailyBudget)}). I am ready to advise you intelligently.` }]
           }
         ];
 
@@ -3786,59 +3824,25 @@ async function processChatQuestion(question) {
         const data = await res.json();
         if (!res.ok) {
           const apiErr = data.error?.message || `Gemini HTTP ${res.status}`;
-          throw new Error(`Gemini API: ${apiErr}`);
+          throw new Error(apiErr);
         }
 
         responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) {
-          if (data.candidates?.[0]?.finishReason === "SAFETY") {
-            throw new Error("Gemini safety filter triggered.");
-          }
-          throw new Error("Gemini returned an empty response.");
-        }
       }
 
-      // Record AI reply in history
-      aiChatHistory.push({ role: "model", text: responseText });
-      if (aiChatHistory.length > 10) aiChatHistory.shift();
-
-    } else {
-      // 2. SMART LOCAL RULE-BASED FALLBACK (When NO API key exists at all)
-      const lower = question.toLowerCase();
-      const daysLeft = Math.max(1, state.activeCycle?.daysRemaining || 26);
-      const dailyBudget = Math.round(metrics.remainingBalance / daysLeft);
-
-      if (lower.includes("today") || lower.includes("spend today") || lower.includes("daily")) {
-        const today = new Date().toISOString().split("T")[0];
-        const todaySpend = (state.dailySpends || []).filter(s => s.date === today).reduce((sum,s)=>sum+s.amount,0);
-        responseText = `**Today's Budget Analysis:**\n- Safe daily spend limit: **${fmt(dailyBudget)}**\n- Spent so far today: **${fmt(todaySpend)}** (${Math.round((todaySpend/Math.max(1,dailyBudget))*100)}%)\n- Status: ${todaySpend > dailyBudget ? "⚠️ **Over today's safe limit!** Try to pause spending." : "✅ **Within budget!** Keep it up."}\n\n💡 *Tip: Click 🔑 in the top bar to connect Google Gemini 2.0 for real AI conversation.*`;
-      } else if (lower.includes("balance") || lower.includes("remaining") || lower.includes("money left")) {
-        responseText = `**Spendable Balance Overview:**\n- Remaining to spend: **${fmt(metrics.remainingBalance)}**\n- Days remaining in cycle: **${daysLeft} days**\n- Projected cycle savings: **${fmt(metrics.projectedSavings)}**\n- Safety reserve: **${fmt(metrics.safetyReserveAmount)}**\n\n💡 *Add your Gemini API key (click 🔑 above) to unlock deep AI budgeting recommendations!*`;
-      } else if (lower.includes("expense") || lower.includes("biggest") || lower.includes("top") || lower.includes("spending")) {
-        const catMap = {};
-        (state.dailySpends || []).forEach(s => {
-          const catName = s.cat || s.category || "General";
-          catMap[catName] = (catMap[catName] || 0) + s.amount;
-        });
-        const sorted = Object.entries(catMap).sort((a,b) => b[1] - a[1]);
-        const top3 = sorted.slice(0, 3).map(([cat, amt]) => `• **${cat}**: ${fmt(amt)}`).join("\n");
-        responseText = `**Your Top Spending Categories This Cycle:**\n${top3 || "• No daily category spend logged yet."}\n\n- Fixed bills committed: **${fmt(metrics.totalFixedBills)}**\n- BNPL installments: **${fmt(metrics.totalBnpl)}**\n\n💡 *Want an intelligent AI audit? Click 🔑 above to activate Gemini 2.0.*`;
-      } else if (lower.includes("bnpl") || lower.includes("koko") || lower.includes("installment") || lower.includes("payzy")) {
-        const pending = (state.installments || []).filter(i => !i.isPaid);
-        responseText = pending.length 
-          ? `**Pending BNPL Installments (${pending.length}):**\n` + pending.map(i => `• ${i.title || i.item} (${i.platform || 'BNPL'}): **${fmt(i.monthly || i.amount)}**`).join("\n") + `\n\nTotal pending this cycle: **${fmt(pending.reduce((s,i)=>s+(i.monthly||i.amount),0))}**`
-          : `✅ **Zero pending BNPL installments!** You have no active Koko or PayZy dues this cycle.`;
-      } else if (lower.includes("buy") || lower.includes("purchase") || lower.includes("can i afford")) {
-        responseText = metrics.remainingBalance > dailyBudget * 3
-          ? `You have **${fmt(metrics.remainingBalance)}** spendable balance remaining (${daysLeft} days left). If this purchase is within **${fmt(dailyBudget)}**, you can comfortably afford it without hurting your cycle goals.`
-          : `⚠️ **Caution:** Your spendable balance is **${fmt(metrics.remainingBalance)}** with ${daysLeft} days left (${fmt(dailyBudget)}/day safe limit). Prioritize essentials first before making discretionary purchases.`;
+      if (!responseText) {
+        responseText = getLocalFinancialResponse(question);
       } else {
-        responseText = `**Household Budget Health Brief:**\n- Spendable balance: **${fmt(metrics.remainingBalance)}**\n- Days remaining: **${daysLeft} days**\n- Safe daily spend limit: **${fmt(dailyBudget)}/day**\n- Next month status: ${metrics.hasShortfall ? "⚠️ Projected shortfall — monitor discretionary expenses." : "✅ Financially stable and well-buffered."}\n\n🔑 **Activate Live AI**: Click the **🔑** icon in the chat header or go to Admin CMS → AI Advisor Studio to enter your Gemini API key. With Gemini 2.0, you can have real multi-turn conversations!`;
+        // Record AI reply in history
+        aiChatHistory.push({ role: "model", text: responseText });
+        if (aiChatHistory.length > 10) aiChatHistory.shift();
       }
+    } else {
+      responseText = getLocalFinancialResponse(question);
     }
   } catch (err) {
-    // REAL ERROR FEEDBACK — never silently hide errors!
-    responseText = `❌ **AI Connection Error:** ${err.message}\n\n👉 **How to fix:**\n1. Click the **🔑** icon in the chat header\n2. Re-paste your valid key from [Google AI Studio](https://aistudio.google.com/app/apikey)\n3. Click Save and try asking again!`;
+    console.warn("AI service call failed, seamlessly falling back to local calculation:", err);
+    responseText = getLocalFinancialResponse(question);
   }
 
   if (thinkingEl) thinkingEl.remove();
