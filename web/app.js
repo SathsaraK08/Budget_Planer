@@ -20,7 +20,7 @@ const defaultUiLabels = {
   // Dashboard Page
   "page.dashboard.title": "Cycle Overview",
   "page.dashboard.cycle_badge": "25th-to-25th Cycle",
-  "page.dashboard.balance_header": "REALTIME REMAINING SPENDABLE BALANCE",
+  "page.dashboard.balance_header": "Spendable Balance",
   "page.dashboard.card_income": "Total Cycle Income",
   "page.dashboard.card_income_sub": "Combined salaries this cycle",
   "page.dashboard.card_committed": "Committed Outgoings",
@@ -192,6 +192,13 @@ function loadSavedState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      // Migrate legacy verbose labels to modern balanced labels
+      if (parsed.uiLabels) {
+        if (parsed.uiLabels["page.dashboard.balance_header"] === "REALTIME REMAINING SPENDABLE BALANCE" ||
+            !parsed.uiLabels["page.dashboard.balance_header"]) {
+          parsed.uiLabels["page.dashboard.balance_header"] = "Spendable Balance";
+        }
+      }
       return { 
         ...defaultState, 
         ...parsed, 
@@ -227,6 +234,11 @@ function persistState() {
 
 // Label Lookup Helper
 function getLabel(key, fallback = "") {
+  if (key === "page.dashboard.balance_header") {
+    if (!state.uiLabels || state.uiLabels[key] === "REALTIME REMAINING SPENDABLE BALANCE" || !state.uiLabels[key]) {
+      return "Spendable Balance";
+    }
+  }
   if (state.uiLabels && state.uiLabels[key] !== undefined && state.uiLabels[key] !== "") {
     return state.uiLabels[key];
   }
@@ -3315,6 +3327,8 @@ function toggleAiChat() {
     panel.style.display = aiChatOpen ? "flex" : "none";
     panel.style.flexDirection = "column";
   }
+  const aiNavBtns = document.querySelectorAll(".mobile-nav-btn[onclick*='toggleAiChat']");
+  aiNavBtns.forEach(btn => btn.classList.toggle("active", aiChatOpen));
   if (aiChatOpen) {
     checkDailySpendAlert();
     const statusEl = document.getElementById("ai-chat-status");
