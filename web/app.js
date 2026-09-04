@@ -1278,32 +1278,37 @@ function openSpendModal() {
   if (amtInput) amtInput.value = "";
   if (titleInput) titleInput.value = "";
 
-  // Populate category chips (1-tap, no iOS select wheel)
+  // Populate category chips (1-tap, no iOS select wheel) + Add Category button
   const catContainer = document.getElementById("qs-category-chips");
   if (catContainer) {
     const cats = (state.categories && state.categories.length)
-      ? state.categories.map(c => ({ name: c.name, icon: c.name.toLowerCase().includes("groc") ? "🛒" : c.name.toLowerCase().includes("food") ? "🍽️" : c.name.toLowerCase().includes("trans") ? "🚗" : c.name.toLowerCase().includes("health") ? "💊" : "🏷️" }))
+      ? state.categories.map(c => ({ name: c.name, icon: c.name.toLowerCase().includes("groc") ? "🛒" : c.name.toLowerCase().includes("food") ? "🍽️" : c.name.toLowerCase().includes("trans") ? "🚗" : c.name.toLowerCase().includes("health") ? "💊" : c.name.toLowerCase().includes("shop") ? "🛍️" : "🏷️" }))
       : STITCH_DEFAULT_CATEGORIES;
-    selectedSpendCategory = cats[0].name;
-    catContainer.innerHTML = cats.map((c, i) => `
-      <button type="button" class="cat-pill-chip ${i === 0 ? 'active' : ''}" data-cat="${c.name}" onclick="selectSpendCategory('${c.name}')">
+    if (!selectedSpendCategory) selectedSpendCategory = cats[0].name;
+    catContainer.innerHTML = cats.map((c) => `
+      <button type="button" class="cat-pill-chip ${c.name === selectedSpendCategory ? 'active' : ''}" data-cat="${c.name}" onclick="selectSpendCategory('${c.name}')">
         <span>${c.icon}</span>
         <span>${c.name}</span>
       </button>
-    `).join("");
+    `).join("") + `
+      <button type="button" class="cat-pill-chip" onclick="quickAddCategoryPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399; background: rgba(16, 185, 129, 0.1);" title="Add New Expense Category">
+        <span>➕</span>
+        <span>Add Category</span>
+      </button>
+    `;
   }
 
-  // Populate member cards (Who paid)
+  // Populate member cards (Who paid) + Add Member card
   const memberContainer = document.getElementById("qs-member-chips");
   const activeMember = getActiveSessionMember();
-  selectedSpendMemberId = activeMember.id;
+  if (!selectedSpendMemberId) selectedSpendMemberId = activeMember.id;
   if (memberContainer) {
     const members = (state.members && state.members.length) ? state.members : [
       { id: "m_default_1", name: "Primary Member", role: "admin" },
       { id: "m_default_2", name: "Partner", role: "partner" }
     ];
     memberContainer.innerHTML = members.map(m => {
-      const isSelected = m.id === activeMember.id;
+      const isSelected = m.id === selectedSpendMemberId;
       return `
         <button type="button" class="member-chip-card ${isSelected ? 'active' : ''}" data-member-id="${m.id}" onclick="selectSpendMember('${m.id}')">
           <span style="font-size: 1.1rem;">👤</span>
@@ -1313,16 +1318,24 @@ function openSpendModal() {
           </div>
         </button>
       `;
-    }).join("");
+    }).join("") + `
+      <button type="button" class="member-chip-card" onclick="quickAddMemberPrompt()" style="border: 1.5px dashed rgba(52, 211, 153, 0.5); justify-content: center; color: #34D399; background: rgba(16, 185, 129, 0.06);" title="Add Household Member">
+        <span style="font-size: 1.1rem;">➕</span>
+        <div style="text-align: center;">
+          <div style="font-weight: 700;">Add Member</div>
+          <small style="font-size: 0.68rem; opacity: 0.8;">New Payer</small>
+        </div>
+      </button>
+    `;
   }
 
   // Populate payment method chips
   const methodContainer = document.getElementById("qs-method-chips");
-  selectedSpendMethod = "Cash";
+  if (!selectedSpendMethod) selectedSpendMethod = "Cash";
   if (methodContainer) {
     const methods = ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
-    methodContainer.innerHTML = methods.map((m, i) => `
-      <button type="button" class="method-pill-chip ${i === 0 ? 'active' : ''}" data-method="${m}" onclick="selectSpendMethod('${m}')">
+    methodContainer.innerHTML = methods.map((m) => `
+      <button type="button" class="method-pill-chip ${m === selectedSpendMethod ? 'active' : ''}" data-method="${m}" onclick="selectSpendMethod('${m}')">
         ${m === 'Cash' ? '💵 Cash' : m.includes('Credit') ? '💳 Credit Card' : m.includes('Debit') ? '💳 Debit Card' : '🏦 Bank Transfer'}
       </button>
     `).join("");
@@ -1330,24 +1343,87 @@ function openSpendModal() {
 
   // Populate bank chips
   const bankContainer = document.getElementById("qs-bank-chips");
-  selectedSpendBank = "Commercial Bank";
+  if (!selectedSpendBank) selectedSpendBank = "Commercial Bank";
   if (bankContainer) {
     const banks = ["Commercial Bank", "Bank of Ceylon", "Sampath Bank", "Hatton National Bank", "Nations Trust Bank", "DFCC Bank", "Other"];
-    bankContainer.innerHTML = banks.map((b, i) => `
-      <button type="button" class="bank-pill-chip ${i === 0 ? 'active' : ''}" data-bank="${b}" onclick="selectSpendBank('${b}')">
+    bankContainer.innerHTML = banks.map((b) => `
+      <button type="button" class="bank-pill-chip ${b === selectedSpendBank ? 'active' : ''}" data-bank="${b}" onclick="selectSpendBank('${b}')">
         ${b}
       </button>
-    `).join("");
+    `).join("") + `
+      <button type="button" class="bank-pill-chip" onclick="quickAddBankPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399;" title="Add Custom Bank">
+        ➕ Custom Bank
+      </button>
+    `;
   }
 
   const bankWrap = document.getElementById("qs-sheet-bank-wrap");
-  if (bankWrap) bankWrap.style.display = "none";
+  if (bankWrap) {
+    bankWrap.style.display = (selectedSpendMethod !== "Cash") ? "block" : "none";
+  }
 
   // Open Sheet
   overlay.classList.add("active");
   setTimeout(() => {
     if (amtInput) amtInput.focus();
   }, 200);
+}
+
+// Quick Prompt Handlers for Instant On-The-Fly Values
+function quickAddCategoryPrompt() {
+  const name = prompt("Enter new category name (e.g. Shopping, Utilities, Medical, Gym):");
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  state.categories = state.categories || [];
+  let existing = state.categories.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+  if (!existing) {
+    existing = {
+      id: "cat_" + Date.now(),
+      name: trimmed,
+      monthlyBudget: 15000,
+      color: "#10B981"
+    };
+    state.categories.push(existing);
+    persistState();
+    renderApp();
+  }
+  selectedSpendCategory = existing.name;
+  openSpendModal();
+  selectSpendCategory(existing.name);
+  showToast(`✅ Created & selected category: ${existing.name}`, "success");
+}
+
+function quickAddMemberPrompt() {
+  const name = prompt("Enter new household member name (e.g. Wife, Kasun, Roommate):");
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  state.members = state.members || [];
+  let existing = state.members.find(m => m.name.toLowerCase() === trimmed.toLowerCase());
+  if (!existing) {
+    existing = {
+      id: "m_" + Date.now(),
+      name: trimmed,
+      role: "member",
+      salary: 0
+    };
+    state.members.push(existing);
+    persistState();
+    renderApp();
+  }
+  selectedSpendMemberId = existing.id;
+  openSpendModal();
+  selectSpendMember(existing.id);
+  showToast(`✅ Created & selected member: ${existing.name}`, "success");
+}
+
+function quickAddBankPrompt() {
+  const bank = prompt("Enter bank or card issuer name (e.g. FriMi, HSBC, Standard Chartered):");
+  if (!bank || !bank.trim()) return;
+  const trimmed = bank.trim();
+  selectedSpendBank = trimmed;
+  openSpendModal();
+  selectSpendBank(trimmed);
+  showToast(`✅ Selected bank: ${trimmed}`, "success");
 }
 
 function openSpendWithCategory(catName) {
@@ -2056,6 +2132,24 @@ function renderAllTables(metrics) {
         </tr>
       `;
     }).join("") : `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:1rem;">No income entries yet. Click "➕ Add Income" to log this cycle's salaries.</td></tr>`;
+  }
+
+  // 1b. CMS Daily Expenses Table
+  const cmsSpendsBody = document.getElementById("cms-spends-table-body");
+  if (cmsSpendsBody) {
+    cmsSpendsBody.innerHTML = (state.dailySpends || []).length ? (state.dailySpends || []).map(s => `
+      <tr>
+        <td>${s.date}</td>
+        <td><strong>${s.title}</strong></td>
+        <td><span class="category-tag">${s.cat || 'General'}</span></td>
+        <td><span class="badge-attribution-payer">👤 ${s.paid_by_name || s.memberName || 'Shared'}</span></td>
+        <td><span class="badge-attribution-method">💳 ${s.payment_method || s.method || 'Cash'}${s.payment_bank ? ` (${s.payment_bank.split(' ')[0]})` : ''}</span></td>
+        <td><strong style="color: #F87171;">-${fmt(s.amount)}</strong></td>
+        <td>
+          <button class="btn-table-delete" onclick="deleteSpend('${s.id}')">🗑️ Delete</button>
+        </td>
+      </tr>
+    `).join("") : `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:1rem;">No daily expenses logged yet. Click "➕ Log New Expense" to record one.</td></tr>`;
   }
 
   // 2. Categories Table

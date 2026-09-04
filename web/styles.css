@@ -3351,13 +3351,20 @@ body {
   border-color: #6366F1;
 }
 
-/* Category Chips Scroll (NO IOS SELECT OVERLAY) */
+/* Category Chips Scroll & Wrap */
 .category-chips-scroll {
   display: flex;
   gap: 0.5rem;
-  overflow-x: auto;
+  flex-wrap: wrap;
   padding-bottom: 0.35rem;
   scrollbar-width: none;
+}
+
+@media (max-width: 600px) {
+  .category-chips-scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }
 
 .category-chips-scroll::-webkit-scrollbar {

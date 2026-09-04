@@ -184,6 +184,12 @@
             <h3>⚡ CMS Quick Actions</h3>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button class="btn btn-primary" onclick="openSpendModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>⚡</span> <strong>Log Daily Expense</strong>
+            </button>
+            <button class="btn btn-secondary" onclick="openIncomeModal()" style="justify-content: flex-start; padding: 1rem;">
+              <span>💵</span> <strong>Add Cycle Income</strong>
+            </button>
             <button class="btn btn-secondary" onclick="openMemberModal()" style="justify-content: flex-start; padding: 1rem;">
               <span>➕</span> <strong>Add New Member</strong>
             </button>
@@ -445,6 +451,33 @@
                 </tr>
               </thead>
               <tbody id="cms-incomes-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Daily Expenses Log (NEW) -->
+        <div class="section-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🧾 Variable Expenses & Daily Spends</h3>
+              <p class="text-muted">Review, record, or delete day-to-day variable expenses logged by household members.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openSpendModal()">⚡ Log New Expense</button>
+          </div>
+          <div class="table-responsive">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Who Paid</th>
+                  <th>Payment Method</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-spends-table-body"></tbody>
             </table>
           </div>
         </div>
@@ -982,6 +1015,59 @@ CREATE TABLE household_state_history (
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" id="generic-modal-save-btn" onclick="handleModalSave()">Save Changes</button>
+      </div>
+    </div>
+  <!-- Quick Log Expense Sheet Dialog -->
+  <div class="mobile-bottom-sheet-overlay" id="spend-sheet-overlay" onclick="closeSpendSheet(event)">
+    <div class="mobile-bottom-sheet" id="spend-bottom-sheet">
+      <div class="sheet-handle-bar">
+        <div class="sheet-drag-handle"></div>
+      </div>
+      
+      <div class="sheet-header">
+        <h3>Quick Log Expense</h3>
+        <button class="sheet-close-btn" onclick="closeSpendSheet()">&times;</button>
+      </div>
+
+      <!-- Large Display Amount -->
+      <div class="sheet-amount-container">
+        <span class="sheet-currency-symbol">Rs.</span>
+        <input type="number" id="qs-sheet-amt" class="sheet-amount-input" placeholder="0" inputmode="decimal" autofocus>
+      </div>
+
+      <!-- Description / Merchant Input -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Description</label>
+        <input type="text" id="qs-sheet-title" class="sheet-text-input" placeholder="e.g. Keells Super, Dinner, Uber ride">
+      </div>
+
+      <!-- 1-Tap Category Chips -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Category (1-Tap Selection)</label>
+        <div class="category-chips-scroll" id="qs-category-chips"></div>
+      </div>
+
+      <!-- Paid By Member Selector -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Who Paid?</label>
+        <div class="member-toggle-grid" id="qs-member-chips"></div>
+      </div>
+
+      <!-- Payment Method Chips -->
+      <div class="sheet-field">
+        <label class="sheet-field-label">Payment Method</label>
+        <div class="method-chips-row" id="qs-method-chips"></div>
+        <div id="qs-sheet-bank-wrap" style="display:none; margin-top:0.6rem;">
+          <label class="sheet-field-label" style="font-size:0.7rem;">Linked Bank / Card Issuer</label>
+          <div class="bank-chips-scroll" id="qs-bank-chips"></div>
+        </div>
+      </div>
+
+      <!-- Submit Action Button -->
+      <div class="sheet-actions" style="margin-top: 1.25rem;">
+        <button class="btn btn-primary btn-sheet-submit" onclick="submitSpendFromSheet()">
+          <span>⚡ Save Expense</span>
+        </button>
       </div>
     </div>
   </div>
