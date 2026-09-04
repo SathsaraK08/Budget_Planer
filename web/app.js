@@ -1293,8 +1293,8 @@ function openSpendModal() {
         <span>${c.name}</span>
       </button>
     `).join("") + `
-      <button type="button" class="cat-pill-chip" onclick="quickAddCategoryPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399; background: rgba(16, 185, 129, 0.1);" title="Add New Expense Category">
-        <span>➕</span>
+      <button type="button" class="stitch-chip-add" onclick="quickAddCategoryPrompt()" title="Add New Expense Category">
+        <span class="stitch-add-icon">➕</span>
         <span>Add Category</span>
       </button>
     `;
@@ -1313,19 +1313,19 @@ function openSpendModal() {
       const isSelected = m.id === selectedSpendMemberId;
       return `
         <button type="button" class="member-chip-card ${isSelected ? 'active' : ''}" data-member-id="${m.id}" onclick="selectSpendMember('${m.id}')">
-          <span style="font-size: 1.1rem;">👤</span>
+          <span style="font-size: 1.15rem;">👤</span>
           <div style="text-align: left;">
-            <div>${m.name}</div>
-            <small style="color: var(--text-muted); font-size: 0.7rem;">${m.role === 'admin' ? '👑 Admin' : 'Member'}</small>
+            <div style="font-weight: 700; color: #FFFFFF;">${m.name}</div>
+            <small style="color: ${isSelected ? '#34D399' : 'var(--text-muted)'}; font-size: 0.72rem;">${m.role === 'admin' ? '👑 Admin' : 'Member'}</small>
           </div>
         </button>
       `;
     }).join("") + `
-      <button type="button" class="member-chip-card" onclick="quickAddMemberPrompt()" style="border: 1.5px dashed rgba(52, 211, 153, 0.5); justify-content: center; color: #34D399; background: rgba(16, 185, 129, 0.06);" title="Add Household Member">
-        <span style="font-size: 1.1rem;">➕</span>
-        <div style="text-align: center;">
-          <div style="font-weight: 700;">Add Member</div>
-          <small style="font-size: 0.68rem; opacity: 0.8;">New Payer</small>
+      <button type="button" class="stitch-member-add-card" onclick="quickAddMemberPrompt()" title="Add Household Member">
+        <span class="stitch-member-add-icon">➕</span>
+        <div>
+          <div class="stitch-member-add-label">Add Member</div>
+          <small class="stitch-member-add-sub">New Payer</small>
         </div>
       </button>
     `;
@@ -1350,8 +1350,8 @@ function openSpendModal() {
         </button>
       `;
     }).join("") + `
-      <button type="button" class="method-pill-chip" onclick="quickAddMethodPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399; background: rgba(16, 185, 129, 0.08);" title="Add New Payment Method">
-        <span>➕</span>
+      <button type="button" class="stitch-chip-add" onclick="quickAddMethodPrompt()" title="Add New Payment Method">
+        <span class="stitch-add-icon">➕</span>
         <span>Add Method</span>
       </button>
     `;
@@ -1367,8 +1367,9 @@ function openSpendModal() {
         ${b}
       </button>
     `).join("") + `
-      <button type="button" class="bank-pill-chip" onclick="quickAddBankPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399;" title="Add Custom Bank">
-        ➕ Custom Bank
+      <button type="button" class="stitch-chip-add" onclick="quickAddBankPrompt()" title="Add Custom Bank">
+        <span class="stitch-add-icon">➕</span>
+        <span>Custom Bank</span>
       </button>
     `;
   }

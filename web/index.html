@@ -69,17 +69,24 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div style="padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.5rem;">
-          <span id="sidebar-sync-indicator" style="font-size: 0.72rem; color: #9CA3AF;">☁️ Supabase Synced</span>
-          <button class="btn-help-pill" title="Cloud Snapshots &amp; History" onclick="openSnapshotsModal()" style="font-size: 0.7rem;">📸 History</button>
+        <div class="sidebar-cloud-bar">
+          <div class="sidebar-cloud-status">
+            <span class="sidebar-cloud-dot"></span>
+            <span id="sidebar-sync-indicator">Supabase Synced</span>
+          </div>
+          <button class="btn-history-pill" title="Cloud Snapshots &amp; History" onclick="openSnapshotsModal()">
+            <span>📸</span> History
+          </button>
         </div>
-        <div class="member-chip" onclick="openSessionMemberModal()" style="cursor: pointer;" title="Switch Active Identity">
+        <div class="member-chip" onclick="openSessionMemberModal()" title="Switch Active Identity">
           <span class="avatar" id="sidebar-user-avatar">👤</span>
           <div class="user-info-text">
             <div class="member-name" id="sidebar-user-name">Active User</div>
             <div class="member-role" id="sidebar-user-role">Tap to switch identity</div>
           </div>
-          <button class="btn-icon" title="Switch User Identity">👥</button>
+          <div class="member-switch-badge" title="Switch User Identity">
+            <span>⇄</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -678,13 +685,20 @@
 
       <!-- Sleek Application Compact Footer -->
       <footer class="app-compact-footer">
-        <div class="footer-copy">
-          © 2026 HomeBudget • 25th Salary Cycle • Developed with ❤️ by <strong style="color:var(--primary-light, #34D399);">Sathsara Karunarathne</strong>
+        <div class="footer-left-content">
+          <div class="footer-brand-title">
+            <span class="app-logo-icon">💰</span>
+            <span class="sidebar-app-name">HomeBudget</span>
+            <span class="footer-cycle-pill">25th Cycle</span>
+          </div>
+          <div class="footer-copy">
+            © 2026 HomeBudget • 25th Salary Cycle • Developed with ❤️ by <strong class="footer-dev-name">Sathsara Karunarathne</strong>
+          </div>
         </div>
         <div class="footer-badges">
           <span class="footer-badge">🛡️ Offline-First &amp; Cloud Synced</span>
           <span class="footer-badge">⚡ Real-Time Math</span>
-          <a href="admin.html" class="footer-link">👑 Admin CMS</a>
+          <a href="admin.html" class="footer-link">👑 Admin CMS ›</a>
         </div>
       </footer>
 
