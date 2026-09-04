@@ -350,23 +350,77 @@ function calculateMetrics() {
 
 // Modal Engine
 let currentModalSaveCallback = null;
-function openModal(title, bodyHtml, onSave) {
+function openModal(title, bodyHtml, onSave, options = {}) {
+  // Always close mobile sidebar when any modal is invoked
+  document.body.classList.remove("sidebar-open");
+
   const modal = document.getElementById("generic-modal");
   if (!modal) return;
   document.getElementById("generic-modal-title").textContent = title;
   document.getElementById("generic-modal-body").innerHTML = bodyHtml;
   currentModalSaveCallback = onSave;
+
+  const saveBtn = document.getElementById("generic-modal-save-btn");
+  if (saveBtn) {
+    if (typeof onSave === "function") {
+      saveBtn.style.display = "inline-flex";
+      saveBtn.textContent = options.saveLabel || "Save Changes";
+    } else {
+      saveBtn.style.display = "none";
+    }
+  }
+
+  const cancelBtn = modal.querySelector(".modal-footer .btn-secondary");
+  if (cancelBtn) {
+    cancelBtn.textContent = options.cancelLabel || (typeof onSave === "function" ? "Cancel" : "Close");
+  }
+
   modal.classList.add("active");
 }
+
 function closeModal() {
   const modal = document.getElementById("generic-modal");
   if (modal) modal.classList.remove("active");
   currentModalSaveCallback = null;
 }
+
 function handleModalSave() {
   if (typeof currentModalSaveCallback === "function") {
     currentModalSaveCallback();
+  } else {
+    closeModal();
   }
+}
+
+function customInputPrompt(title, label, placeholder, defaultValue, onConfirm) {
+  document.body.classList.remove("sidebar-open");
+  const inputId = "prompt-input-" + Date.now();
+  const html = `
+    <div style="padding: 0.5rem 0;">
+      <label style="display:block; font-size:0.85rem; font-weight:600; color:#9CA3AF; margin-bottom:0.5rem;">${label}</label>
+      <input type="text" id="${inputId}" class="form-control" placeholder="${placeholder || ''}" value="${defaultValue || ''}" style="width:100%; font-size:16px; padding:0.75rem 0.9rem; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); border-radius:10px; color:#FFFFFF; outline:none;" autocomplete="off" autofocus>
+    </div>
+  `;
+  openModal(
+    title,
+    html,
+    () => {
+      const val = document.getElementById(inputId)?.value.trim();
+      if (val && typeof onConfirm === "function") {
+        onConfirm(val);
+      }
+      closeModal();
+    },
+    { saveLabel: "➕ Confirm & Add", cancelLabel: "Cancel" }
+  );
+
+  setTimeout(() => {
+    const inp = document.getElementById(inputId);
+    if (inp) {
+      inp.focus();
+      inp.select();
+    }
+  }, 150);
 }
 
 function customConfirm(message, onConfirm) {
@@ -1281,6 +1335,7 @@ function closeSpendSheet(event) {
 }
 
 function openSpendModal() {
+  document.body.classList.remove("sidebar-open");
   const overlay = document.getElementById("spend-sheet-overlay");
   if (!overlay) {
     return;
@@ -1398,87 +1453,108 @@ function openSpendModal() {
   }, 200);
 }
 
-// Quick Prompt Handlers for Instant On-The-Fly Values
+// Quick Prompt Handlers for Instant On-The-Fly Values (In-App Modal — Zero prompt() blocking on iOS/Android)
 function quickAddCategoryPrompt() {
-  const name = prompt("Enter new category name (e.g. Shopping, Utilities, Medical, Gym):");
-  if (!name || !name.trim()) return;
-  const trimmed = name.trim();
-  state.categories = state.categories || [];
-  let existing = state.categories.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
-  if (!existing) {
-    existing = {
-      id: "cat_" + Date.now(),
-      name: trimmed,
-      monthlyBudget: 15000,
-      color: "#10B981"
-    };
-    state.categories.push(existing);
-    persistState();
-    renderApp();
-  }
-  selectedSpendCategory = existing.name;
-  openSpendModal();
-  selectSpendCategory(existing.name);
-  showToast(`✅ Created & selected category: ${existing.name}`, "success");
+  customInputPrompt(
+    "➕ Add Expense Category",
+    "Category Name (e.g. Shopping, Utilities, Medical, Gym, Fuel)",
+    "Enter category name...",
+    "",
+    (trimmed) => {
+      state.categories = state.categories || [];
+      let existing = state.categories.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+      if (!existing) {
+        existing = {
+          id: "cat_" + Date.now(),
+          name: trimmed,
+          monthlyBudget: 15000,
+          color: "#10B981"
+        };
+        state.categories.push(existing);
+        persistState();
+        renderApp();
+      }
+      selectedSpendCategory = existing.name;
+      openSpendModal();
+      selectSpendCategory(existing.name);
+      showToast(`✅ Created & selected category: ${existing.name}`, "success");
+    }
+  );
 }
 
 function quickAddMemberPrompt() {
-  const name = prompt("Enter new household member name (e.g. Wife, Kasun, Roommate):");
-  if (!name || !name.trim()) return;
-  const trimmed = name.trim();
-  state.members = state.members || [];
-  let existing = state.members.find(m => m.name.toLowerCase() === trimmed.toLowerCase());
-  if (!existing) {
-    existing = {
-      id: "m_" + Date.now(),
-      name: trimmed,
-      role: "member",
-      salary: 0
-    };
-    state.members.push(existing);
-    persistState();
-    renderApp();
-  }
-  selectedSpendMemberId = existing.id;
-  openSpendModal();
-  selectSpendMember(existing.id);
-  showToast(`✅ Created & selected member: ${existing.name}`, "success");
+  customInputPrompt(
+    "➕ Add Household Member",
+    "Member Name (e.g. Wife, Kasun, Roommate)",
+    "Enter member name...",
+    "",
+    (trimmed) => {
+      state.members = state.members || [];
+      let existing = state.members.find(m => m.name.toLowerCase() === trimmed.toLowerCase());
+      if (!existing) {
+        existing = {
+          id: "m_" + Date.now(),
+          name: trimmed,
+          role: "member",
+          salary: 0,
+          color: "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
+        };
+        state.members.push(existing);
+        persistState();
+        renderApp();
+      }
+      selectedSpendMemberId = existing.id;
+      openSpendModal();
+      selectSpendMember(existing.id);
+      showToast(`✅ Created & selected member: ${existing.name}`, "success");
+    }
+  );
 }
 
 function quickAddBankPrompt() {
-  const bank = prompt("Enter bank or card issuer name (e.g. FriMi, HSBC, Standard Chartered):");
-  if (!bank || !bank.trim()) return;
-  const trimmed = bank.trim();
-  selectedSpendBank = trimmed;
-  openSpendModal();
-  selectSpendBank(trimmed);
-  showToast(`✅ Selected bank: ${trimmed}`, "success");
+  customInputPrompt(
+    "➕ Add Custom Bank / Issuer",
+    "Bank Name (e.g. FriMi, HSBC, Standard Chartered, Pan Asia)",
+    "Enter bank or card issuer name...",
+    "",
+    (trimmed) => {
+      selectedSpendBank = trimmed;
+      openSpendModal();
+      selectSpendBank(trimmed);
+      showToast(`✅ Selected bank: ${trimmed}`, "success");
+    }
+  );
 }
 
 function quickAddMethodPrompt() {
-  const method = prompt("Enter new payment method name (e.g. FriMi, PayPal, Koko Pay, Crypto, Cheque, Company Card):");
-  if (!method || !method.trim()) return;
-  const trimmed = method.trim();
-  state.paymentMethods = state.paymentMethods || [
-    { id: "pm_1", name: "Cash", type: "cash" },
-    { id: "pm_2", name: "Debit Card", type: "card" },
-    { id: "pm_3", name: "Credit Card", type: "card" },
-    { id: "pm_4", name: "Bank Transfer", type: "bank" }
-  ];
-  const exists = state.paymentMethods.some(m => (typeof m === 'string' ? m : m.name).toLowerCase() === trimmed.toLowerCase());
-  if (!exists) {
-    state.paymentMethods.push({
-      id: "pm_" + Date.now(),
-      name: trimmed,
-      type: trimmed.toLowerCase().includes("cash") ? "cash" : (trimmed.toLowerCase().includes("card") ? "card" : (trimmed.toLowerCase().includes("bank") ? "bank" : "digital"))
-    });
-    persistState();
-    renderApp();
-  }
-  selectedSpendMethod = trimmed;
-  openSpendModal();
-  selectSpendMethod(trimmed);
-  showToast(`✅ Created & selected payment method: ${trimmed}`, "success");
+  customInputPrompt(
+    "➕ Add Payment Method",
+    "Payment Method Name (e.g. FriMi, PayPal, Koko Pay, Crypto, Cheque)",
+    "Enter payment method name...",
+    "",
+    (trimmed) => {
+      state.paymentMethods = state.paymentMethods || [
+        { id: "pm_1", name: "Cash", type: "cash" },
+        { id: "pm_2", name: "Debit Card", type: "card" },
+        { id: "pm_3", name: "Credit Card", type: "card" },
+        { id: "pm_4", name: "Bank Transfer", type: "bank" }
+      ];
+      const exists = state.paymentMethods.some(m => (typeof m === 'string' ? m : m.name).toLowerCase() === trimmed.toLowerCase());
+      if (!exists) {
+        state.paymentMethods.push({
+          id: "pm_" + Date.now(),
+          name: trimmed,
+          type: trimmed.toLowerCase().includes("cash") ? "cash" : (trimmed.toLowerCase().includes("card") ? "card" : (trimmed.toLowerCase().includes("bank") ? "bank" : "digital"))
+        });
+        persistState();
+        renderApp();
+      }
+      selectedSpendMethod = trimmed;
+      openSpendModal();
+      selectSpendMethod(trimmed);
+      showToast(`✅ Created & selected payment method: ${trimmed}`, "success");
+    }
+  );
 }
 
 function openSpendWithCategory(catName) {
@@ -1937,37 +2013,67 @@ function updateSessionMemberUI() {
 }
 
 function openSessionMemberModal() {
+  document.body.classList.remove("sidebar-open");
   const members = (state.members && state.members.length) ? state.members : [
     { id: "m_default_1", name: "Primary Member", role: "admin", color: "#10B981" },
     { id: "m_default_2", name: "Partner", role: "partner", color: "#EC4899" }
   ];
   const active = getActiveSessionMember();
+  let tempId = active ? active.id : members[0].id;
+  let tempName = active ? active.name : members[0].name;
+
+  window._selectModalMember = function(id, name) {
+    tempId = id;
+    tempName = name;
+    document.querySelectorAll(".member-select-card").forEach(c => {
+      const isMatch = c.getAttribute("data-id") === id;
+      c.classList.toggle("active", isMatch);
+      const ind = c.querySelector(".member-active-check");
+      if (ind) ind.style.display = isMatch ? "inline-block" : "none";
+    });
+    // Immediately apply on 1-tap for lightning-fast mobile UX
+    setActiveSessionMember(id, name);
+    setTimeout(() => closeModal(), 200);
+  };
+
   const html = `
     <div style="text-align:center; margin-bottom:1.25rem;">
       <div style="font-size:2.5rem; margin-bottom:0.25rem;">👥</div>
       <h3 style="font-size:1.15rem; color:#F3F4F6; font-weight:700;">Who's using HomeBudget right now?</h3>
-      <p style="color:var(--text-muted); font-size:0.85rem;">Select your identity to attribute today's spend logs and bill settlements.</p>
+      <p style="color:var(--text-muted); font-size:0.85rem;">Tap your profile to attribute today's spend logs and bill settlements.</p>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem; margin-bottom:1rem;">
       ${members.map(m => {
         const isSelected = active && (active.id === m.id || active.name === m.name);
         return `
-          <button type="button" class="member-select-card" onclick="setActiveSessionMember('${m.id}', '${m.name}'); closeModal();" style="
-            background: ${isSelected ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)'};
-            border: 1.5px solid ${isSelected ? '#10B981' : 'rgba(255,255,255,0.1)'};
-            border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; text-align: center; color: #F3F4F6; transition: all 0.2s; width: 100%;
+          <button type="button" class="member-select-card ${isSelected ? 'active' : ''}" data-id="${m.id}" onclick="window._selectModalMember('${m.id}', '${m.name}')" style="
+            background: ${isSelected ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};
+            border: 2px solid ${isSelected ? '#10B981' : 'rgba(255,255,255,0.1)'};
+            border-radius: 14px; padding: 1.1rem 0.75rem; cursor: pointer; text-align: center; color: #F3F4F6; transition: all 0.2s; width: 100%;
+            -webkit-tap-highlight-color: transparent; touch-action: manipulation;
           ">
-            <div style="width:44px; height:44px; border-radius:50%; background:${m.color || '#10B981'}33; border:2px solid ${m.color || '#10B981'}; color:${m.color || '#10B981'}; font-weight:700; font-size:1.2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
+            <div style="width:48px; height:48px; border-radius:50%; background:${m.color || '#10B981'}33; border:2px solid ${m.color || '#10B981'}; color:${m.color || '#10B981'}; font-weight:700; font-size:1.25rem; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
               ${(m.name || 'M')[0].toUpperCase()}
             </div>
-            <strong style="display:block; font-size:0.95rem; margin-bottom:0.2rem;">${m.name}</strong>
-            <small style="color:${isSelected ? 'var(--primary)' : 'var(--text-muted)'}; font-size:0.75rem;">${(m.role === 'admin' || m.role === 'primary') ? '👑 Admin' : '👤 Partner'}${isSelected ? ' • Active' : ''}</small>
+            <strong style="display:block; font-size:0.98rem; margin-bottom:0.25rem; color:#FFFFFF;">${m.name}</strong>
+            <small style="color:${isSelected ? '#34D399' : 'var(--text-muted)'}; font-size:0.76rem; font-weight:600;">
+              ${(m.role === 'admin' || m.role === 'primary') ? '👑 Admin' : '👤 Partner'}
+              <span class="member-active-check" style="display:${isSelected ? 'inline-block' : 'none'}; margin-left:3px; color:#10B981;">• Active</span>
+            </small>
           </button>
         `;
       }).join('')}
     </div>
   `;
-  openModal("👥 Select Active Identity", html, null);
+  openModal(
+    "👥 Select Active Identity",
+    html,
+    () => {
+      setActiveSessionMember(tempId, tempName);
+      closeModal();
+    },
+    { saveLabel: "Save Changes", cancelLabel: "Cancel" }
+  );
 }
 
 // Mobile sidebar toggle

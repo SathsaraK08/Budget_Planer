@@ -122,11 +122,57 @@
         <form class="auth-form active" id="form-login" onsubmit="handleLogin(event)">
           <div id="login-alert" class="auth-alert auth-alert-error"></div>
           <div><label class="form-label">Email Address</label><input type="email" id="login-email" class="form-input" placeholder="you@email.com" autocomplete="email" required></div>
-          <div><label class="form-label">Password</label><input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required></div>
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+              <label class="form-label" style="margin-bottom:0;">Password</label>
+              <a href="#" onclick="showAuthTab('forgot');return false;" style="font-size:0.78rem; color:var(--primary); text-decoration:none; font-weight:600;">Forgot Password?</a>
+            </div>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
+          </div>
           <button type="submit" class="btn-auth btn-auth-primary" id="btn-login">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Sign In to HomeBudget
           </button>
           <div class="auth-footer"><a href="#" onclick="showAuthTab('register');return false;">New household? Register here →</a></div>
+        </form>
+
+        <!-- FORGOT PASSWORD -->
+        <form class="auth-form" id="form-forgot" onsubmit="handleForgotPassword(event)">
+          <div id="forgot-alert" class="auth-alert auth-alert-error"></div>
+          <div class="info-box" style="margin-bottom:0.5rem;">
+            🔒 Enter your account email address. We'll send you a secure link to reset your password.
+          </div>
+          <div>
+            <label class="form-label">Account Email Address</label>
+            <input type="email" id="forgot-email" class="form-input" placeholder="you@email.com" autocomplete="email" required>
+          </div>
+          <button type="submit" class="btn-auth btn-auth-primary" id="btn-forgot">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Send Reset Link
+          </button>
+          <div class="auth-footer">
+            <a href="#" onclick="showAuthTab('login');return false;">← Back to Sign In</a>
+          </div>
+        </form>
+
+        <!-- RESET PASSWORD (WHEN RECOVERY TOKEN PRESENT) -->
+        <form class="auth-form" id="form-reset" onsubmit="handleUpdatePassword(event)">
+          <div id="reset-alert" class="auth-alert auth-alert-error"></div>
+          <div class="info-box" style="margin-bottom:0.5rem;">
+            🔑 Please enter a new password for your HomeBudget household account.
+          </div>
+          <div>
+            <label class="form-label">New Password</label>
+            <input type="password" id="reset-new-password" class="form-input" placeholder="Min. 8 characters" autocomplete="new-password" required>
+          </div>
+          <div>
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="reset-confirm-password" class="form-input" placeholder="Repeat new password" autocomplete="new-password" required>
+          </div>
+          <button type="submit" class="btn-auth btn-auth-primary" id="btn-reset">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg> Update Password &amp; Sign In
+          </button>
+          <div class="auth-footer">
+            <a href="#" onclick="showAuthTab('login');return false;">← Cancel &amp; Back to Sign In</a>
+          </div>
         </form>
         <!-- REGISTER -->
         <div class="auth-form" id="form-register">
@@ -188,10 +234,20 @@
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3YXZ6eGp5cnJiZmh1aHR3anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTQ2MzYsImV4cCI6MjEwMzU3MDYzNn0.PSrmU84hKH-eF-73DcnB0oZaP6Bt3iwoMCSoRLiUpp0";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     (async()=>{ 
+      if(window.location.hash.includes("type=recovery")) {
+        showAuthTab("reset");
+        return;
+      }
       if(sessionStorage.getItem("demo_auth") === "true") { window.location.href="index.html"; return; }
       const {data:{session}} = await _supabase.auth.getSession(); 
-      if(session) window.location.href="index.html"; 
+      if(session && !window.location.hash.includes("type=recovery")) window.location.href="index.html"; 
     })();
+
+    _supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        showAuthTab("reset");
+      }
+    });
 
     function enterLocalMode() {
       sessionStorage.setItem("demo_auth", "true");
@@ -203,11 +259,69 @@
     function showAuthTab(tab) {
       document.getElementById("form-login").classList.toggle("active", tab==="login");
       document.getElementById("form-register").classList.toggle("active", tab==="register");
-      document.getElementById("tab-btn-login").classList.toggle("active", tab==="login");
+      const forgotForm = document.getElementById("form-forgot");
+      if (forgotForm) forgotForm.classList.toggle("active", tab==="forgot");
+      const resetForm = document.getElementById("form-reset");
+      if (resetForm) resetForm.classList.toggle("active", tab==="reset");
+
+      document.getElementById("tab-btn-login").classList.toggle("active", tab==="login" || tab==="forgot" || tab==="reset");
       document.getElementById("tab-btn-register").classList.toggle("active", tab==="register");
       clearAlerts();
     }
-    function clearAlerts() { ["login-alert","reg-alert"].forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove("visible");el.textContent="";}});}
+
+    function clearAlerts() { 
+      ["login-alert","reg-alert","forgot-alert","reset-alert"].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){el.classList.remove("visible");el.textContent="";}
+      });
+    }
+
+    async function handleForgotPassword(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-forgot");
+      const email = document.getElementById("forgot-email").value.trim();
+      clearAlerts();
+      if (!email) return showAlert("forgot-alert", "Please enter your account email address.");
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Sending reset link...';
+      try {
+        const redirectUrl = window.location.origin + window.location.pathname;
+        const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectUrl
+        });
+        if (error) throw error;
+        showAlert("forgot-alert", "Password reset email sent! Check your inbox (or spam) and click the link to set a new password.", "success");
+        btn.innerHTML = '✅ Link Sent';
+      } catch (err) {
+        showAlert("forgot-alert", err.message || "Failed to send reset link. Please try again.");
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Send Reset Link';
+      }
+    }
+
+    async function handleUpdatePassword(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-reset");
+      const pw = document.getElementById("reset-new-password").value;
+      const confirm = document.getElementById("reset-confirm-password").value;
+      clearAlerts();
+      if (!pw || pw.length < 8) return showAlert("reset-alert", "Password must be at least 8 characters.");
+      if (pw !== confirm) return showAlert("reset-alert", "Passwords do not match.");
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Updating password...';
+      try {
+        const { error } = await _supabase.auth.updateUser({ password: pw });
+        if (error) throw error;
+        showAlert("reset-alert", "Password updated successfully! Redirecting to HomeBudget...", "success");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      } catch (err) {
+        showAlert("reset-alert", err.message || "Failed to update password. Please try again.");
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg> Update Password &amp; Sign In';
+      }
+    }
     function showAlert(id,msg,type="error"){const el=document.getElementById(id);if(!el)return;el.className="auth-alert auth-alert-"+type+" visible";el.textContent=(type==="error"?"⚠️ ":"✅ ")+msg;}
     function updateStepBars(s){[1,2,3].forEach(i=>{const b=document.getElementById("step-bar-"+i);b.className="reg-step"+(i<s?" done":i===s?" active":"");}); }
     function showRegStep(s){[1,2,3].forEach(i=>document.getElementById("reg-step-"+i).classList.toggle("active",i===s));updateStepBars(s);}

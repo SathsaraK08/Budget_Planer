@@ -1283,7 +1283,7 @@ body:has(.wp-admin-bar) .sidebar {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 30000;
   padding: 1rem;
 }
 .modal-overlay.active {
@@ -1323,6 +1323,9 @@ body:has(.wp-admin-bar) .sidebar {
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
+  padding: 0.25rem 0.5rem;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .modal-body {
   padding: 1.5rem;
@@ -1343,7 +1346,7 @@ body:has(.wp-admin-bar) .sidebar {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  z-index: 11000;
+  z-index: 40000;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1762,7 +1765,7 @@ input:checked + .slider:before {
     width: 285px !important;
     height: 100vh !important;
     max-height: 100vh !important;
-    z-index: 99999 !important;
+    z-index: 1001 !important;
     display: flex !important;
     flex-direction: column !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -1791,7 +1794,7 @@ input:checked + .slider:before {
     inset: 0;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    z-index: 99998;
+    z-index: 1000;
     opacity: 0;
     transition: opacity 0.25s ease;
   }
@@ -3601,11 +3604,12 @@ body {
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 1050;
+  z-index: 20000;
   opacity: 0;
   transition: opacity 0.25s ease;
   align-items: flex-end;
   justify-content: center;
+  touch-action: manipulation;
 }
 
 .mobile-bottom-sheet-overlay.active {

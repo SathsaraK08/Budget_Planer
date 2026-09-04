@@ -728,7 +728,7 @@
   </div>
 
   <!-- Generic Non-Blocking Modal Dialog -->
-  <div class="modal-overlay" id="generic-modal">
+  <div class="modal-overlay" id="generic-modal" onclick="if(event.target===this)closeModal()">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="generic-modal-title">Item Editor</h3>
