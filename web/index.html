@@ -14,69 +14,6 @@
 </head>
 <body class="theme-emerald">
 
-  <!-- STITCH LUMINAL FINANCE UNIVERSAL HEADER -->
-  <header class="luminal-navbar">
-    <div class="navbar-left">
-      <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
-        <span>☰</span>
-      </button>
-      <div class="navbar-brand">
-        <span class="brand-logo-icon app-logo-icon" id="app-logo-icon">💰</span>
-        <div>
-          <span class="brand-name sidebar-app-name" id="sidebar-app-name">HomeBudget</span>
-          <span class="brand-cycle-badge sidebar-cycle-tag" id="sidebar-cycle-tag">25th Cycle</span>
-        </div>
-      </div>
-      <div class="navbar-cycle-pill hide-mobile">
-        🗓️ <span id="cycle-range-text">Aug 25 – Sep 25</span> • <strong id="cycle-days-left-badge">18 Days Left</strong>
-      </div>
-    </div>
-
-    <!-- Desktop & Tablet Navigation Tabs -->
-    <nav class="navbar-nav-tabs hide-mobile">
-      <button class="nav-tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
-        <span>📊</span> <span>Dashboard</span>
-      </button>
-      <button class="nav-tab-btn" data-tab="daily-spends" onclick="switchTab('daily-spends')">
-        <span>⚡</span> <span>Daily Spends</span>
-      </button>
-      <button class="nav-tab-btn" data-tab="fixed-bills" onclick="switchTab('fixed-bills')">
-        <span>🏠</span> <span>Fixed Bills</span>
-      </button>
-      <button class="nav-tab-btn" data-tab="installments" onclick="switchTab('installments')">
-        <span>🛍️</span> <span>BNPL &amp; Koko</span>
-      </button>
-      <button class="nav-tab-btn" data-tab="forecast" onclick="switchTab('forecast')">
-        <span>🔮</span> <span>Forecast</span>
-      </button>
-      <button class="nav-tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
-        <span>📈</span> <span>Analytics</span>
-      </button>
-    </nav>
-
-    <!-- Quick Action Controls -->
-    <div class="navbar-right">
-      <button class="btn-quick-log" onclick="openSpendModal()">
-        <span>⚡</span> <span>Log Spend</span>
-      </button>
-      <button class="navbar-session-chip" id="top-session-member-btn" onclick="openSessionMemberModal()" title="Switch active user identity">
-        <span class="session-dot"></span>
-        <span id="top-session-member-name">👤 Select User</span>
-        <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
-      </button>
-      <span id="supabase-sync-indicator" class="navbar-sync-chip hide-mobile" title="Supabase Cloud Sync">☁️ Synced</span>
-      <a href="admin.html" class="navbar-icon-btn" title="Admin CMS Portal">
-        <span>⚙️</span>
-      </a>
-      <button class="navbar-icon-btn hide-mobile" onclick="openHelpGuide('cycle')" title="Budgeting Guide">
-        <span>📖</span>
-      </button>
-      <button class="navbar-icon-btn hide-mobile btn-logout" onclick="logoutHousehold()" title="Sign out">
-        <span>🚪</span>
-      </button>
-    </div>
-  </header>
-
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <div class="app-shell">
@@ -149,6 +86,63 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
+
+      <!-- DESKTOP TOP CONTEXTUAL APP HEADER (Linear / Stripe Fintech Style) -->
+      <header class="app-top-header hide-mobile">
+        <div class="header-left">
+          <div class="header-title-badge-group">
+            <h1 id="page-context-title" class="page-context-title">Cycle Dashboard</h1>
+            <div class="header-cycle-pill">
+              🗓️ <span id="cycle-range-text">Aug 25 – Sep 25</span> • <strong id="cycle-days-left-badge">18 Days Left</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button class="btn-quick-log" onclick="openSpendModal()">
+            <span>⚡</span> <span>Log Spend</span>
+          </button>
+          <button class="navbar-session-chip" id="top-session-member-btn" onclick="openSessionMemberModal()" title="Switch active user identity">
+            <span class="session-dot"></span>
+            <span id="top-session-member-name">👤 Select User</span>
+            <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
+          </button>
+          <span id="supabase-sync-indicator" class="navbar-sync-chip" title="Supabase Cloud Sync">☁️ Synced</span>
+          <a href="admin.html" class="navbar-icon-btn" title="Admin CMS Portal">
+            <span>⚙️</span>
+          </a>
+          <button class="navbar-icon-btn" onclick="openHelpGuide('cycle')" title="Budgeting Guide">
+            <span>📖</span>
+          </button>
+          <button class="navbar-icon-btn btn-logout" onclick="logoutHousehold()" title="Sign out">
+            <span>🚪</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- MOBILE SLIM TOP BAR (Visible only on mobile devices) -->
+      <header class="mobile-top-bar show-mobile-only">
+        <div class="mobile-top-left">
+          <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+            <span>☰</span>
+          </button>
+          <div class="mobile-brand-wrap">
+            <span class="brand-logo-icon app-logo-icon">💰</span>
+            <div>
+              <span class="mobile-brand-title sidebar-app-name">HomeBudget</span>
+              <span class="mobile-brand-sub sidebar-cycle-tag">25th Cycle</span>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-top-right">
+          <button class="mobile-btn-quick-log" onclick="openSpendModal()">
+            <span>⚡</span> Log
+          </button>
+          <div class="mobile-member-avatar" onclick="openSessionMemberModal()" title="Switch User Identity">
+            <span id="mobile-session-avatar">👤</span>
+          </div>
+        </div>
+      </header>
 
       <!-- TAB 1: DASHBOARD (CENTRAL FINANCIAL COMMAND CENTER) -->
       <section id="tab-dashboard" class="tab-pane active">

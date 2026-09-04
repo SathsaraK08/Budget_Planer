@@ -1475,6 +1475,22 @@ async function switchTab(tabId) {
   document.body.classList.remove("sidebar-open");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
+  const pageTitleEl = document.getElementById("page-context-title");
+  if (pageTitleEl) {
+    const titles = {
+      "dashboard": "Cycle Dashboard",
+      "daily-spends": "Daily Spends & Cashflow",
+      "fixed-bills": "Fixed Bills & Loans",
+      "installments": "BNPL & Installments",
+      "completed-payments": "Completed Payments Archive",
+      "forecast": "Survival Forecast & Runway",
+      "wishlist": "Needs & Wishlist Planner",
+      "calendar": "Monthly Spend Calendar",
+      "analytics": "Cycle Financial Analytics"
+    };
+    pageTitleEl.textContent = titles[tabId] || "Cycle Dashboard";
+  }
+
   if (tabId === "cms-labels") {
     renderLabelsCmsScreen();
   }
