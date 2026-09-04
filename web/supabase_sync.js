@@ -141,14 +141,14 @@ async function saveToSupabase(stateOverride) {
     if (!stateToSave) return;
     const householdId = await getActiveHouseholdId();
     const headers = await sbHeaders({ "Prefer": "resolution=merge-duplicates,return=minimal" });
-    const res = await fetch(REST_BASE + "/household_state", {
+    const res = await fetch(REST_BASE + "/household_state?on_conflict=household_id", {
       method: "POST",
       headers: headers,
       body: JSON.stringify({ household_id: householdId, state_json: stateToSave, app_version: "6" })
     });
     if (!res.ok) throw new Error("HTTP " + res.status + ": " + await res.text());
     localStorage.setItem(STORAGE_KEY + "_timestamp", Date.now().toString());
-    setSyncStatus("online", "saved");
+    setSyncStatus("online", "synced");
   } catch (err) {
     console.warn("[Supabase] Save failed:", err.message);
     setSyncStatus("offline", "(offline)");

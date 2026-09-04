@@ -261,7 +261,7 @@ function fmt(val) {
   return `${sym} ${num}`;
 }
 
-// Toast
+// Toast — Clean emoji icons without duplicate rendering
 function showToast(message, type = "info") {
   let container = document.getElementById("toast-container");
   if (!container) {
@@ -270,9 +270,13 @@ function showToast(message, type = "info") {
     container.className = "toast-container";
     document.body.appendChild(container);
   }
+  // Strip any leading emojis from message so we never show duplicate icons like "[✅] [✅]"
+  const cleanMsg = (message || "").replace(/^[\s✅⚠️❌ℹ️⚡]+/, "").trim();
+  const icon = type === "success" ? "✅" : type === "danger" ? "⚠️" : "ℹ️";
+
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<span>${type === "success" ? "✅" : type === "danger" ? "⚠️" : "ℹ️"}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span>${icon}</span> <span>${cleanMsg}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = "0";
@@ -1343,72 +1347,76 @@ function closeSpendSheet(event) {
   if (overlay) overlay.classList.remove("active");
 }
 
-function openSpendModal() {
-  document.body.classList.remove("sidebar-open");
-  const overlay = document.getElementById("spend-sheet-overlay");
-  if (!overlay) {
-    return;
+function setQuickSpendDate(preset) {
+  const dateInput = document.getElementById("qs-sheet-date");
+  if (!dateInput) return;
+  const now = new Date();
+  if (preset === "today") {
+    dateInput.value = now.toISOString().split("T")[0];
+  } else if (preset === "yesterday") {
+    const yest = new Date(now.getTime() - 86400000);
+    dateInput.value = yest.toISOString().split("T")[0];
   }
+  document.querySelectorAll(".btn-date-preset").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.toLowerCase() === preset);
+  });
+}
 
-  // Reset inputs
-  const amtInput = document.getElementById("qs-sheet-amt");
-  const titleInput = document.getElementById("qs-sheet-title");
-  if (amtInput) amtInput.value = "";
-  if (titleInput) titleInput.value = "";
-
-  // Populate category chips (1-tap, no iOS select wheel) + Add Category button
+// Modular Chip Renderers — update buttons in-place without wiping user's typed inputs
+function renderSpendCategoryChips() {
   const catContainer = document.getElementById("qs-category-chips");
-  if (catContainer) {
-    const cats = (state.categories && state.categories.length)
-      ? state.categories.map(c => ({ name: c.name, icon: c.name.toLowerCase().includes("groc") ? "🛒" : c.name.toLowerCase().includes("food") ? "🍽️" : c.name.toLowerCase().includes("trans") ? "🚗" : c.name.toLowerCase().includes("health") ? "💊" : c.name.toLowerCase().includes("shop") ? "🛍️" : "🏷️" }))
-      : STITCH_DEFAULT_CATEGORIES;
-    if (!selectedSpendCategory) selectedSpendCategory = cats[0].name;
-    catContainer.innerHTML = cats.map((c) => `
-      <button type="button" class="cat-pill-chip ${c.name === selectedSpendCategory ? 'active' : ''}" data-cat="${c.name}" onclick="selectSpendCategory('${c.name}')">
-        <span>${c.icon}</span>
-        <span>${c.name}</span>
-      </button>
-    `).join("") + `
-      <button type="button" class="stitch-chip-add" onclick="quickAddCategoryPrompt()" title="Add New Expense Category">
-        <span class="stitch-add-icon">➕</span>
-        <span>Add Category</span>
-      </button>
-    `;
-  }
+  if (!catContainer) return;
+  const cats = (state.categories && state.categories.length)
+    ? state.categories.map(c => ({ name: c.name, icon: c.name.toLowerCase().includes("groc") ? "🛒" : c.name.toLowerCase().includes("food") ? "🍽️" : c.name.toLowerCase().includes("trans") ? "🚗" : c.name.toLowerCase().includes("health") ? "💊" : c.name.toLowerCase().includes("shop") ? "🛍️" : "🏷️" }))
+    : STITCH_DEFAULT_CATEGORIES;
+  if (!selectedSpendCategory) selectedSpendCategory = cats[0].name;
+  catContainer.innerHTML = cats.map((c) => `
+    <button type="button" class="cat-pill-chip ${c.name === selectedSpendCategory ? 'active' : ''}" data-cat="${c.name}" onclick="selectSpendCategory('${c.name}')">
+      <span>${c.icon}</span>
+      <span>${c.name}</span>
+    </button>
+  `).join("") + `
+    <button type="button" class="stitch-chip-add" onclick="quickAddCategoryPrompt()" title="Add New Expense Category">
+      <span class="stitch-add-icon">➕</span>
+      <span>Add Category</span>
+    </button>
+  `;
+}
 
-  // Populate member cards (Who paid) + Add Member card
+function renderSpendMemberChips() {
   const memberContainer = document.getElementById("qs-member-chips");
+  if (!memberContainer) return;
   const activeMember = getActiveSessionMember();
   if (!selectedSpendMemberId) selectedSpendMemberId = activeMember.id;
-  if (memberContainer) {
-    const members = (state.members && state.members.length) ? state.members : [
-      { id: "m_default_1", name: "Primary Member", role: "admin" },
-      { id: "m_default_2", name: "Partner", role: "partner" }
-    ];
-    memberContainer.innerHTML = members.map(m => {
-      const isSelected = m.id === selectedSpendMemberId;
-      return `
-        <button type="button" class="member-chip-card ${isSelected ? 'active' : ''}" data-member-id="${m.id}" onclick="selectSpendMember('${m.id}')">
-          <span style="font-size: 1.15rem;">👤</span>
-          <div style="text-align: left;">
-            <div style="font-weight: 700; color: #FFFFFF;">${m.name}</div>
-            <small style="color: ${isSelected ? '#34D399' : 'var(--text-muted)'}; font-size: 0.72rem;">${m.role === 'admin' ? '👑 Admin' : 'Member'}</small>
-          </div>
-        </button>
-      `;
-    }).join("") + `
-      <button type="button" class="stitch-member-add-card" onclick="quickAddMemberPrompt()" title="Add Household Member">
-        <span class="stitch-member-add-icon">➕</span>
-        <div>
-          <div class="stitch-member-add-label">Add Member</div>
-          <small class="stitch-member-add-sub">New Payer</small>
+  const members = (state.members && state.members.length) ? state.members : [
+    { id: "m_default_1", name: "Primary Member", role: "admin" },
+    { id: "m_default_2", name: "Partner", role: "partner" }
+  ];
+  memberContainer.innerHTML = members.map(m => {
+    const isSelected = m.id === selectedSpendMemberId;
+    return `
+      <button type="button" class="member-chip-card ${isSelected ? 'active' : ''}" data-member-id="${m.id}" onclick="selectSpendMember('${m.id}')">
+        <span style="font-size: 1.15rem;">👤</span>
+        <div style="text-align: left;">
+          <div style="font-weight: 700; color: #FFFFFF;">${m.name}</div>
+          <small style="color: ${isSelected ? '#34D399' : 'var(--text-muted)'}; font-size: 0.72rem;">${m.role === 'admin' ? '👑 Admin' : 'Member'}</small>
         </div>
       </button>
     `;
-  }
+  }).join("") + `
+    <button type="button" class="stitch-member-add-card" onclick="quickAddMemberPrompt()" title="Add Household Member">
+      <span class="stitch-member-add-icon">➕</span>
+      <div>
+        <div class="stitch-member-add-label">Add Member</div>
+        <small class="stitch-member-add-sub">New Payer</small>
+      </div>
+    </button>
+  `;
+}
 
-  // Populate payment method chips (dynamic from state.paymentMethods) + Add Method button
+function renderSpendMethodChips() {
   const methodContainer = document.getElementById("qs-method-chips");
+  if (!methodContainer) return;
   state.paymentMethods = (state.paymentMethods && state.paymentMethods.length)
     ? state.paymentMethods
     : ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
@@ -1416,24 +1424,23 @@ function openSpendModal() {
     const firstM = state.paymentMethods[0];
     selectedSpendMethod = typeof firstM === "string" ? firstM : (firstM?.name || "Cash");
   }
-  if (methodContainer) {
-    methodContainer.innerHTML = state.paymentMethods.map((m) => {
-      const mName = typeof m === "string" ? m : (m?.name || "Cash");
-      const icon = mName.toLowerCase().includes("cash") ? "💵" : (mName.toLowerCase().includes("credit") || mName.toLowerCase().includes("debit") || mName.toLowerCase().includes("card")) ? "💳" : mName.toLowerCase().includes("bank") ? "🏦" : (mName.toLowerCase().includes("frimi") || mName.toLowerCase().includes("wallet") || mName.toLowerCase().includes("pay") || mName.toLowerCase().includes("koko")) ? "📱" : "🏷️";
-      return `
-        <button type="button" class="method-pill-chip ${mName === selectedSpendMethod ? 'active' : ''}" data-method="${mName}" onclick="selectSpendMethod('${mName}')">
-          <span>${icon}</span> <span>${mName}</span>
-        </button>
-      `;
-    }).join("") + `
-      <button type="button" class="stitch-chip-add" onclick="quickAddMethodPrompt()" title="Add New Payment Method">
-        <span class="stitch-add-icon">➕</span>
-        <span>Add Method</span>
+  methodContainer.innerHTML = state.paymentMethods.map((m) => {
+    const mName = typeof m === "string" ? m : (m?.name || "Cash");
+    const icon = mName.toLowerCase().includes("cash") ? "💵" : (mName.toLowerCase().includes("credit") || mName.toLowerCase().includes("debit") || mName.toLowerCase().includes("card")) ? "💳" : mName.toLowerCase().includes("bank") ? "🏦" : (mName.toLowerCase().includes("frimi") || mName.toLowerCase().includes("wallet") || mName.toLowerCase().includes("pay") || mName.toLowerCase().includes("koko")) ? "📱" : "🏷️";
+    return `
+      <button type="button" class="method-pill-chip ${mName === selectedSpendMethod ? 'active' : ''}" data-method="${mName}" onclick="selectSpendMethod('${mName}')">
+        <span>${icon}</span> <span>${mName}</span>
       </button>
     `;
-  }
+  }).join("") + `
+    <button type="button" class="stitch-chip-add" onclick="quickAddMethodPrompt()" title="Add New Payment Method">
+      <span class="stitch-add-icon">➕</span>
+      <span>Add Method</span>
+    </button>
+  `;
+}
 
-  // Populate bank chips
+function renderSpendBankChips() {
   const bankContainer = document.getElementById("qs-bank-chips");
   if (!selectedSpendBank) selectedSpendBank = "Commercial Bank";
   if (bankContainer) {
@@ -1449,20 +1456,55 @@ function openSpendModal() {
       </button>
     `;
   }
-
   const bankWrap = document.getElementById("qs-sheet-bank-wrap");
   if (bankWrap) {
     bankWrap.style.display = (selectedSpendMethod !== "Cash") ? "block" : "none";
   }
+}
+
+function openSpendModal(preserveInputs = false) {
+  document.body.classList.remove("sidebar-open");
+  const overlay = document.getElementById("spend-sheet-overlay");
+  if (!overlay) return;
+
+  const amtInput = document.getElementById("qs-sheet-amt");
+  const titleInput = document.getElementById("qs-sheet-title");
+  const dateInput = document.getElementById("qs-sheet-date");
+  const timeInput = document.getElementById("qs-sheet-time");
+
+  // Only reset input values when opening fresh, NEVER when adding a category/method
+  if (!preserveInputs) {
+    if (amtInput) amtInput.value = "";
+    if (titleInput) titleInput.value = "";
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().split("T")[0];
+    }
+    if (timeInput) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      timeInput.value = `${hh}:${mm}`;
+    }
+    // Highlight "Today" preset button
+    document.querySelectorAll(".btn-date-preset").forEach(btn => {
+      btn.classList.toggle("active", btn.textContent.toLowerCase() === "today");
+    });
+  }
+
+  // Render chip components
+  renderSpendCategoryChips();
+  renderSpendMemberChips();
+  renderSpendMethodChips();
+  renderSpendBankChips();
 
   // Open Sheet
   overlay.classList.add("active");
   setTimeout(() => {
-    if (amtInput) amtInput.focus();
+    if (amtInput && !preserveInputs) amtInput.focus();
   }, 200);
 }
 
-// Quick Prompt Handlers for Instant On-The-Fly Values (In-App Modal — Zero prompt() blocking on iOS/Android)
+// Quick Prompt Handlers for Instant On-The-Fly Values (In-App Modal — Preserves user's typed inputs!)
 function quickAddCategoryPrompt() {
   customInputPrompt(
     "➕ Add Expense Category",
@@ -1484,9 +1526,10 @@ function quickAddCategoryPrompt() {
         renderApp();
       }
       selectedSpendCategory = existing.name;
-      openSpendModal();
+      // Re-render chips only so typed description/amount are NEVER cleared
+      renderSpendCategoryChips();
       selectSpendCategory(existing.name);
-      showToast(`✅ Created & selected category: ${existing.name}`, "success");
+      showToast(`Created & selected category: ${existing.name}`, "success");
     }
   );
 }
@@ -1513,9 +1556,10 @@ function quickAddMemberPrompt() {
         renderApp();
       }
       selectedSpendMemberId = existing.id;
-      openSpendModal();
+      // Re-render chips only so typed description/amount are NEVER cleared
+      renderSpendMemberChips();
       selectSpendMember(existing.id);
-      showToast(`✅ Created & selected member: ${existing.name}`, "success");
+      showToast(`Created & selected member: ${existing.name}`, "success");
     }
   );
 }
@@ -1528,9 +1572,9 @@ function quickAddBankPrompt() {
     "",
     (trimmed) => {
       selectedSpendBank = trimmed;
-      openSpendModal();
+      renderSpendBankChips();
       selectSpendBank(trimmed);
-      showToast(`✅ Selected bank: ${trimmed}`, "success");
+      showToast(`Selected bank: ${trimmed}`, "success");
     }
   );
 }
@@ -1559,9 +1603,9 @@ function quickAddMethodPrompt() {
         renderApp();
       }
       selectedSpendMethod = trimmed;
-      openSpendModal();
+      renderSpendMethodChips();
       selectSpendMethod(trimmed);
-      showToast(`✅ Created & selected payment method: ${trimmed}`, "success");
+      showToast(`Created & selected payment method: ${trimmed}`, "success");
     }
   );
 }
@@ -1576,16 +1620,24 @@ function openSpendWithCategory(catName) {
 function submitSpendFromSheet() {
   const amtInput = document.getElementById("qs-sheet-amt");
   const titleInput = document.getElementById("qs-sheet-title");
+  const dateInput = document.getElementById("qs-sheet-date");
+  const timeInput = document.getElementById("qs-sheet-time");
+
   const amount = parseFloat(amtInput?.value) || 0;
   const title = (titleInput?.value || "").trim();
+  let spendDate = (dateInput?.value || "").trim();
+  if (!spendDate) {
+    spendDate = new Date().toISOString().split("T")[0];
+  }
+  const spendTime = (timeInput?.value || "").trim() || null;
 
   if (amount <= 0) {
-    showToast("⚠️ Please enter a valid expense amount", "danger");
+    showToast("Please enter a valid expense amount", "danger");
     if (amtInput) amtInput.focus();
     return;
   }
   if (!title) {
-    showToast("⚠️ Please enter what this was for (e.g. Groceries)", "danger");
+    showToast("Please enter what this was for (e.g. Groceries)", "danger");
     if (titleInput) titleInput.focus();
     return;
   }
@@ -1596,7 +1648,8 @@ function submitSpendFromSheet() {
   state.dailySpends = state.dailySpends || [];
   state.dailySpends.unshift({
     id: "d_" + Date.now(),
-    date: new Date().toISOString().split("T")[0],
+    date: spendDate,
+    time: spendTime,
     amount,
     title,
     cat: selectedSpendCategory,
@@ -1610,10 +1663,18 @@ function submitSpendFromSheet() {
     isPaid: true
   });
 
+  // Sort dailySpends chronologically descending (newest date and time first)
+  state.dailySpends.sort((a, b) => {
+    const dtA = (a.date || "") + " " + (a.time || "00:00");
+    const dtB = (b.date || "") + " " + (b.time || "00:00");
+    return dtB.localeCompare(dtA);
+  });
+
   closeSpendSheet();
   persistState();
   renderApp();
-  showToast(`✅ Saved ${fmt(amount)} for ${title} (${member ? member.name : 'Shared'} • ${selectedSpendMethod})`, "success");
+  const timeDisplay = spendTime ? ` at ${spendTime}` : "";
+  showToast(`Saved ${fmt(amount)} for ${title} (${spendDate}${timeDisplay})`, "success");
 }
 
 function deleteSpend(id) {
@@ -2383,7 +2444,7 @@ function renderAllTables(metrics) {
   if (cmsSpendsBody) {
     cmsSpendsBody.innerHTML = (state.dailySpends || []).length ? (state.dailySpends || []).map(s => `
       <tr>
-        <td>${s.date}</td>
+        <td>${s.date}${s.time ? ` <span style="color:var(--text-muted);font-size:0.75rem;">${s.time}</span>` : ''}</td>
         <td><strong>${s.title}</strong></td>
         <td><span class="category-tag">${s.cat || 'General'}</span></td>
         <td><span class="badge-attribution-payer">👤 ${s.paid_by_name || s.memberName || 'Shared'}</span></td>
@@ -2639,7 +2700,7 @@ function renderAllTables(metrics) {
               <span class="badge-payer">👤 ${payer}</span>
               <span class="badge-method">💳 ${methodStr}</span>
             </div>
-            <small>${s.date} • ${s.cat || 'General'}</small>
+            <small>${s.date}${s.time ? ' ' + s.time : ''} • ${s.cat || 'General'}</small>
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
@@ -2663,7 +2724,7 @@ function renderAllTables(metrics) {
               <span class="badge-payer">👤 ${payer}</span>
               <span class="badge-method">💳 ${methodStr}</span>
             </div>
-            <small>${s.date} • ${s.cat || 'General'}</small>
+            <small>${s.date}${s.time ? ' ' + s.time : ''} • ${s.cat || 'General'}</small>
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <strong class="spend-amount" style="color: var(--danger);">- ${fmt(s.amount)}</strong>
@@ -2844,7 +2905,7 @@ function renderCompletedPaymentsPage(metrics) {
             <div class="spend-row paid-row">
               <div class="spend-info">
                 <strong class="item-title">${s.title}</strong>
-                <small>${s.date} • ${s.cat} • ${s.method}</small>
+                <small>${s.date}${s.time ? ' ' + s.time : ''} • ${s.cat || 'General'} • ${s.method || 'Cash'}</small>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <strong>${fmt(s.amount)}</strong>

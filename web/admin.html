@@ -1122,6 +1122,28 @@ CREATE TABLE household_state_history (
         <input type="text" id="qs-sheet-title" class="sheet-text-input" placeholder="e.g. Keells Super, Dinner, Uber ride">
       </div>
 
+      <!-- Date & Time Selector (Must date, optional time) -->
+      <div class="sheet-field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+          <label class="sheet-field-label" style="margin-bottom:0;">Expense Date &amp; Time</label>
+          <div style="display:flex; gap:0.35rem;">
+            <button type="button" class="btn-date-preset" onclick="setQuickSpendDate('today')">Today</button>
+            <button type="button" class="btn-date-preset" onclick="setQuickSpendDate('yesterday')">Yesterday</button>
+          </div>
+        </div>
+        <div class="sheet-datetime-grid">
+          <div class="sheet-input-icon-wrap" style="flex:1.35;">
+            <span class="sheet-input-icon">📅</span>
+            <input type="date" id="qs-sheet-date" class="sheet-date-input" title="Expense Date (Required)">
+          </div>
+          <div class="sheet-input-icon-wrap" style="flex:1;">
+            <span class="sheet-input-icon">🕒</span>
+            <input type="time" id="qs-sheet-time" class="sheet-time-input" title="Expense Time (Optional)">
+          </div>
+        </div>
+        <div style="font-size:0.71rem; color:var(--text-muted); margin-top:0.35rem;">📅 Date is mandatory for cycle tracking. 🕒 Time is optional.</div>
+      </div>
+
       <!-- 1-Tap Category Chips -->
       <div class="sheet-field">
         <label class="sheet-field-label">Category (1-Tap Selection)</label>
