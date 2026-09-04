@@ -1350,6 +1350,13 @@ function openSpendModal() {
   }, 200);
 }
 
+function openSpendWithCategory(catName) {
+  openSpendModal();
+  if (typeof selectSpendCategory === "function") {
+    selectSpendCategory(catName);
+  }
+}
+
 function submitSpendFromSheet() {
   const amtInput = document.getElementById("qs-sheet-amt");
   const titleInput = document.getElementById("qs-sheet-title");
@@ -1449,22 +1456,13 @@ function deleteCategory(id) {
 
 // Tab Switching
 async function switchTab(tabId) {
-  // If leaving public landing page to any functional page, enforce auth session
-  if (tabId !== "landing") {
-    const session = typeof getCurrentSession === "function" ? await getCurrentSession() : null;
-    if (!session) {
-      window.location.href = "auth.html";
-      return;
-    }
-  }
-
-  // Toggle top header: hidden on public landing page, visible on app modules
-  const topHeader = document.querySelector(".top-header");
-  if (topHeader) {
-    topHeader.style.display = (tabId === "landing") ? "none" : "flex";
-  }
+  tabId = tabId || "dashboard";
+  if (tabId === "landing") tabId = "dashboard";
 
   document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".nav-tab-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
   });
   document.querySelectorAll(".mobile-nav-btn").forEach(btn => {
@@ -1475,11 +1473,8 @@ async function switchTab(tabId) {
   });
   // Close mobile sidebar on tab change
   document.body.classList.remove("sidebar-open");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
-  if (tabId === "landing") {
-    setTimeout(() => initThreeHeroScene(), 50);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
   if (tabId === "cms-labels") {
     renderLabelsCmsScreen();
   }
@@ -1908,6 +1903,10 @@ function renderApp() {
   document.querySelectorAll("#app-logo-icon, .app-logo-icon").forEach(el => el.textContent = state.household?.logo || "💰");
   document.querySelectorAll("#sidebar-app-name, .sidebar-app-name").forEach(el => el.textContent = state.household?.name || "HomeBudget");
   document.querySelectorAll("#sidebar-cycle-tag, .sidebar-cycle-tag").forEach(el => el.textContent = state.household?.tagline || "25th-to-25th Cycle");
+
+  const daysRemaining = getDaysRemainingInCycle();
+  const daysBadge = document.getElementById("cycle-days-left-badge");
+  if (daysBadge) daysBadge.textContent = `${daysRemaining} Days Left`;
 
   const metrics = calculateMetrics();
 
@@ -3506,54 +3505,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   // First render with local data for instant startup
   renderApp();
 
-  // Set initial top-header visibility: hidden if starting on landing page
-  const initialActive = document.querySelector(".tab-pane.active");
-  const topHeader = document.querySelector(".top-header");
-  if (topHeader && initialActive && initialActive.id === "tab-landing") {
-    topHeader.style.display = "none";
-  }
-
-  // Initialize Three.js 3D Animated Hero Scene
-  setTimeout(() => initThreeHeroScene(), 100);
-
   // Initialize Draggable AI Chatbot Widget
   initDraggableAiChat();
 
   // Then try to load from Supabase cloud (non-blocking)
   if (typeof loadFromSupabase === "function") {
-    const cloudState = await loadFromSupabase();
-    if (cloudState && Object.keys(cloudState).length > 0) {
-      // Cloud has newer data — merge and re-render
-      console.info("[App] Applying cloud state");
-      state = {
-        ...defaultState,
-        ...cloudState,
-        household: { ...defaultState.household, ...cloudState.household },
-        uiComponents: { ...defaultState.uiComponents, ...cloudState.uiComponents },
-        uiLabels: { ...defaultUiLabels, ...(cloudState.uiLabels || {}) },
-        forecastSettings: { ...defaultState.forecastSettings, ...cloudState.forecastSettings },
-        bnplPlatforms: (cloudState.bnplPlatforms && cloudState.bnplPlatforms.length) ? cloudState.bnplPlatforms : defaultState.bnplPlatforms,
-        fixedBillCategories: (cloudState.fixedBillCategories && cloudState.fixedBillCategories.length) ? cloudState.fixedBillCategories : defaultState.fixedBillCategories,
-        wishlistCategories: (cloudState.wishlistCategories && cloudState.wishlistCategories.length) ? cloudState.wishlistCategories : defaultState.wishlistCategories,
-        cycleHistory: (cloudState.cycleHistory && cloudState.cycleHistory.length) ? cloudState.cycleHistory : defaultState.cycleHistory
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      renderApp(); // Re-render with cloud data
+    try {
+      const cloudState = await loadFromSupabase();
+      if (cloudState && Object.keys(cloudState).length > 0) {
+        console.info("[App] Applying cloud state");
+        state = {
+          ...defaultState,
+          ...cloudState,
+          household: { ...defaultState.household, ...cloudState.household },
+          uiComponents: { ...defaultState.uiComponents, ...cloudState.uiComponents },
+          uiLabels: { ...defaultUiLabels, ...(cloudState.uiLabels || {}) },
+          forecastSettings: { ...defaultState.forecastSettings, ...cloudState.forecastSettings },
+          bnplPlatforms: (cloudState.bnplPlatforms && cloudState.bnplPlatforms.length) ? cloudState.bnplPlatforms : defaultState.bnplPlatforms,
+          fixedBillCategories: (cloudState.fixedBillCategories && cloudState.fixedBillCategories.length) ? cloudState.fixedBillCategories : defaultState.fixedBillCategories,
+          wishlistCategories: (cloudState.wishlistCategories && cloudState.wishlistCategories.length) ? cloudState.wishlistCategories : defaultState.wishlistCategories,
+          cycleHistory: (cloudState.cycleHistory && cloudState.cycleHistory.length) ? cloudState.cycleHistory : defaultState.cycleHistory
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        renderApp(); // Re-render with cloud data
+      }
+    } catch (e) {
+      console.warn("[App] Cloud load fallback:", e);
     }
   }
 
-  // Check auth session & prompt identity if 2+ members and none selected yet
-  const session = typeof getCurrentSession === "function" ? await getCurrentSession() : null;
-  if (session) {
-    updateSessionMemberUI();
-    // Default directly to live dashboard so user sees budget immediately
-    switchTab("dashboard");
-    if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
-      setTimeout(() => openSessionMemberModal(), 600);
-    }
+  // Always default directly to live dashboard so user sees real budget immediately
+  switchTab("dashboard");
+  updateSessionMemberUI();
+
+  // Prompt member identity if 2+ members and none selected yet
+  if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
+    setTimeout(() => openSessionMemberModal(), 700);
   }
 
-  document.querySelectorAll(".nav-item").forEach(btn => {
+  // Bind sidebar and top tab navigation
+  document.querySelectorAll(".nav-item, .nav-tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab;
       if (tab) switchTab(tab);

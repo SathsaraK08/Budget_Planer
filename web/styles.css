@@ -89,63 +89,209 @@ body {
   overflow-x: hidden;
 }
 
-/* Top WordPress Admin Bar */
-.wp-admin-bar {
-  height: 38px;
-  background: #060911;
-  border-bottom: 1px solid #1E293B;
+/* ==============================================================================
+   LUMINAL FINANCE UNIVERSAL HEADER & APP LAYOUT
+   ============================================================================== */
+.luminal-navbar {
+  height: 62px;
+  background: rgba(14, 14, 17, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.25rem;
-  font-size: 0.82rem;
+  padding: 0 1.5rem;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
 }
-.wp-bar-left, .wp-bar-right {
+
+.navbar-left, .navbar-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
-.wp-bar-item {
-  color: var(--text-secondary);
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   text-decoration: none;
+}
+
+.brand-logo-icon {
+  font-size: 1.4rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
+  justify-content: center;
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  display: block;
+  line-height: 1.1;
+}
+
+.brand-cycle-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #34D399;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.navbar-cycle-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  color: #D1D5DB;
+  margin-left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.navbar-cycle-pill strong {
+  color: #34D399;
+}
+
+/* Center Desktop Navigation Tabs */
+.navbar-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.3rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-tab-btn {
   background: transparent;
   border: none;
+  color: #9CA3AF;
   font-size: 0.82rem;
-  font-family: inherit;
-}
-.wp-bar-item:hover {
-  color: #FFFFFF;
-  background: #1E293B;
-}
-.wp-bar-item.brand-indicator {
-  font-weight: 700;
-  color: var(--primary-light);
-}
-.wp-bar-btn-primary {
-  background: var(--primary) !important;
-  color: #FFFFFF !important;
   font-weight: 600;
-  padding: 0.2rem 0.75rem !important;
+  font-family: inherit;
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.wp-bar-btn-primary:hover {
-  background: var(--primary-hover) !important;
+
+.nav-tab-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-tab-btn.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+  color: #34D399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Right Navigation Action Buttons */
+.btn-quick-log {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #FFFFFF;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-quick-log:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+.navbar-session-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  color: #E5E7EB;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.navbar-session-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.navbar-sync-chip {
+  font-size: 0.75rem;
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.navbar-icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.navbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+/* Global Fix for Numeric Stepper Arrows in Chrome, Edge, Safari, Firefox */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type=number] {
+  -moz-appearance: textfield !important;
 }
 
 /* App Shell (Sidebar + Main) */
 .app-shell {
   display: flex;
-  min-height: calc(100vh - 38px);
+  min-height: calc(100vh - 62px);
+  background: #000000;
 }
 
 /* Sidebar Styles */
@@ -157,8 +303,8 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   position: sticky;
-  top: 38px;
-  height: calc(100vh - 38px);
+  top: 62px;
+  height: calc(100vh - 62px);
   overflow-y: auto;
   z-index: 90;
 }
@@ -3233,5 +3379,94 @@ body {
   background: linear-gradient(135deg, #10B981, #059669);
   box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
 }
+
+/* ==============================================================================
+   DESKTOP MODAL & RESPONSIVE SPLIT GRID
+   ============================================================================== */
+.dashboard-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.glass-panel {
+  background: rgba(22, 22, 26, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  padding: 1.25rem 1.35rem !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Desktop Modal Centering for Quick Log Expense */
+@media (min-width: 769px) {
+  .mobile-bottom-sheet-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2rem !important;
+  }
+  .mobile-bottom-sheet {
+    border-radius: 24px !important;
+    max-width: 500px !important;
+    width: 100% !important;
+    box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    transform: scale(0.96) !important;
+  }
+  .mobile-bottom-sheet-overlay.active .mobile-bottom-sheet {
+    transform: scale(1) !important;
+  }
+  .sheet-handle-bar {
+    display: none !important;
+  }
+}
+
+/* Application Compact Footer */
+.app-compact-footer {
+  margin-top: 3.5rem;
+  padding: 1.75rem 0.5rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: #9CA3AF;
+}
+
+.footer-copy strong {
+  color: #34D399;
+}
+
+.footer-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.footer-badge {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  color: #9CA3AF;
+}
+
+.footer-link {
+  color: #FBBF24;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
 
 

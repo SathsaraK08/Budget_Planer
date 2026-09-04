@@ -11,97 +11,111 @@
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- Three.js 3D WebGL Library for Animated Interactive Hero -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body class="theme-emerald">
 
-  <!-- WordPress Top Admin Bar -->
-  <header class="wp-admin-bar">
-    <div class="wp-bar-left">
+  <!-- STITCH LUMINAL FINANCE UNIVERSAL HEADER -->
+  <header class="luminal-navbar">
+    <div class="navbar-left">
       <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
         <span>☰</span>
       </button>
-      <span class="wp-bar-item brand-indicator">
-        <span class="app-logo-icon">💰</span> <strong class="sidebar-app-name">HomeBudget</strong>
-      </span>
-      <span class="wp-bar-item">|</span>
-      <a href="admin.html" class="wp-bar-item" style="color: var(--accent); font-weight: 700;">
-        <span>👑</span> <strong>Admin CMS</strong>
-      </a>
-      <button class="wp-bar-item wp-bar-btn-primary" onclick="openSpendModal()">
-        <span>➕</span> Log Spend
-      </button>
-      <button class="wp-bar-item hide-mobile" onclick="openBillModal()">
-        <span>➕</span> Fixed Bill
-      </button>
-      <button class="wp-bar-item hide-mobile" onclick="openBnplModal()">
-        <span>➕</span> BNPL Plan
-      </button>
-      <button class="wp-bar-item hide-mobile" onclick="openWishlistModal()">
-        <span>➕</span> Wishlist
-      </button>
+      <div class="navbar-brand">
+        <span class="brand-logo-icon app-logo-icon" id="app-logo-icon">💰</span>
+        <div>
+          <span class="brand-name sidebar-app-name" id="sidebar-app-name">HomeBudget</span>
+          <span class="brand-cycle-badge sidebar-cycle-tag" id="sidebar-cycle-tag">25th Cycle</span>
+        </div>
+      </div>
+      <div class="navbar-cycle-pill hide-mobile">
+        🗓️ <span id="cycle-range-text">Aug 25 – Sep 25</span> • <strong id="cycle-days-left-badge">18 Days Left</strong>
+      </div>
     </div>
-    <div class="wp-bar-right">
-      <!-- Session Member Identity Selector -->
-      <button class="wp-bar-item session-user-chip" id="top-session-member-btn" onclick="openSessionMemberModal()" title="Switch active user identity">
+
+    <!-- Desktop & Tablet Navigation Tabs -->
+    <nav class="navbar-nav-tabs hide-mobile">
+      <button class="nav-tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <span>📊</span> <span>Dashboard</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="daily-spends" onclick="switchTab('daily-spends')">
+        <span>⚡</span> <span>Daily Spends</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="fixed-bills" onclick="switchTab('fixed-bills')">
+        <span>🏠</span> <span>Fixed Bills</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="installments" onclick="switchTab('installments')">
+        <span>🛍️</span> <span>BNPL &amp; Koko</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="forecast" onclick="switchTab('forecast')">
+        <span>🔮</span> <span>Forecast</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+        <span>📈</span> <span>Analytics</span>
+      </button>
+    </nav>
+
+    <!-- Quick Action Controls -->
+    <div class="navbar-right">
+      <button class="btn-quick-log" onclick="openSpendModal()">
+        <span>⚡</span> <span>Log Spend</span>
+      </button>
+      <button class="navbar-session-chip" id="top-session-member-btn" onclick="openSessionMemberModal()" title="Switch active user identity">
         <span class="session-dot"></span>
         <span id="top-session-member-name">👤 Select User</span>
         <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
       </button>
-      <button class="btn-help-pill hide-mobile" onclick="openHelpGuide('cycle')">
-        <span>📖</span> Help
+      <span id="supabase-sync-indicator" class="navbar-sync-chip hide-mobile" title="Supabase Cloud Sync">☁️ Synced</span>
+      <a href="admin.html" class="navbar-icon-btn" title="Admin CMS Portal">
+        <span>⚙️</span>
+      </a>
+      <button class="navbar-icon-btn hide-mobile" onclick="openHelpGuide('cycle')" title="Budgeting Guide">
+        <span>📖</span>
       </button>
-      <button class="wp-bar-item btn-logout" onclick="logoutHousehold()" title="Sign out of household">
-        <span>🚪</span> <span class="hide-mobile">Logout</span>
+      <button class="navbar-icon-btn hide-mobile btn-logout" onclick="logoutHousehold()" title="Sign out">
+        <span>🚪</span>
       </button>
     </div>
   </header>
+
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <div class="app-shell">
     
-    <!-- Sidebar Navigation -->
+    <!-- Collapsible Modern Drawer / Sidebar -->
     <aside class="sidebar">
       <div class="brand">
         <div style="display:flex; align-items:center; gap:0.75rem;">
-          <div class="brand-icon app-logo-icon" id="app-logo-icon">💰</div>
+          <div class="brand-icon app-logo-icon">💰</div>
           <div>
-            <h2 id="sidebar-app-name">HomeBudget</h2>
-            <span class="cycle-tag" id="sidebar-cycle-tag">25th-to-25th Cycle</span>
+            <h2>HomeBudget</h2>
+            <span class="cycle-tag">25th-to-25th Cycle</span>
           </div>
         </div>
         <button class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Close menu">✕</button>
       </div>
 
       <nav class="nav-links">
-        <button class="nav-item active" data-tab="landing" onclick="switchTab('landing')">
-          <span class="icon">✨</span> <span class="nav-label">3D Home &amp; Features</span>
-        </button>
-        <button class="nav-item" data-tab="dashboard">
+        <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
           <span class="icon">📊</span> <span class="nav-label" data-label-key="nav.dashboard">Dashboard</span>
         </button>
-        <button class="nav-item" data-tab="completed-payments">
+        <button class="nav-item" data-tab="daily-spends" onclick="switchTab('daily-spends')">
+          <span class="icon">⚡</span> <span class="nav-label" data-label-key="nav.daily_spends">Daily Spends</span>
+        </button>
+        <button class="nav-item" data-tab="fixed-bills" onclick="switchTab('fixed-bills')">
+          <span class="icon">🏠</span> <span class="nav-label" data-label-key="nav.fixed_bills">Fixed Bills &amp; Loans</span>
+        </button>
+        <button class="nav-item" data-tab="installments" onclick="switchTab('installments')">
+          <span class="icon">🛍️</span> <span class="nav-label" data-label-key="nav.bnpl">BNPL &amp; Koko</span>
+        </button>
+        <button class="nav-item" data-tab="completed-payments" onclick="switchTab('completed-payments')">
           <span class="icon">✅</span> <span class="nav-label" data-label-key="nav.completed">Completed Payments</span>
           <span class="nav-badge badge-completed-count">0</span>
         </button>
-        <button class="nav-item" data-tab="daily-spends">
-          <span class="icon">⚡</span> <span class="nav-label" data-label-key="nav.daily_spends">Daily Spends</span>
-        </button>
-        <button class="nav-item" data-tab="installments">
-          <span class="icon">🛍️</span> <span class="nav-label" data-label-key="nav.bnpl">BNPL & Koko</span>
-        </button>
-        <button class="nav-item" data-tab="fixed-bills">
-          <span class="icon">🏠</span> <span class="nav-label" data-label-key="nav.fixed_bills">Fixed Bills & Loans</span>
-        </button>
-        <button class="nav-item" data-tab="forecast">
+        <button class="nav-item" data-tab="forecast" onclick="switchTab('forecast')">
           <span class="icon">🔮</span> <span class="nav-label" data-label-key="nav.forecast">Survival Forecast</span>
         </button>
-        <button class="nav-item" data-tab="wishlist">
+        <button class="nav-item" data-tab="wishlist" onclick="switchTab('wishlist')">
           <span class="icon">✨</span> <span class="nav-label" data-label-key="nav.wishlist">Needs Planner</span>
-        </button>
-        <button class="nav-item" data-tab="subscriptions">
-          <span class="icon">📱</span> <span class="nav-label" data-label-key="nav.subscriptions">Subscriptions</span>
         </button>
         <button class="nav-item" data-tab="calendar" onclick="renderCalendarView()">
           <span class="icon">📅</span> <span class="nav-label" data-label-key="nav.calendar">Spend Calendar</span>
@@ -112,17 +126,15 @@
 
         <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0;"></div>
 
-        <!-- Dedicated Link to WordPress Admin CMS -->
         <a href="admin.html" class="nav-item nav-admin-link">
           <span class="icon">👑</span> <strong>Admin CMS Portal</strong>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <!-- Supabase cloud sync indicator -->
         <div style="padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.5rem;">
-          <span id="supabase-sync-indicator" style="font-size: 0.72rem; color: #9CA3AF;">☁️ Supabase connecting...</span>
-          <button class="btn-help-pill" title="Cloud Snapshots & History" onclick="openSnapshotsModal()" style="font-size: 0.7rem;">📸 History</button>
+          <span id="sidebar-sync-indicator" style="font-size: 0.72rem; color: #9CA3AF;">☁️ Supabase Synced</span>
+          <button class="btn-help-pill" title="Cloud Snapshots &amp; History" onclick="openSnapshotsModal()" style="font-size: 0.7rem;">📸 History</button>
         </div>
         <div class="member-chip" onclick="openSessionMemberModal()" style="cursor: pointer;" title="Switch Active Identity">
           <span class="avatar" id="sidebar-user-avatar">👤</span>
@@ -137,328 +149,10 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      
-      <!-- Top Header -->
-      <header class="top-header">
-        <div>
-          <div class="header-title-flex">
-            <h1 id="page-title" data-label-key="page.dashboard.title">Cycle Overview</h1>
-            <span class="badge badge-admin" data-label-key="page.dashboard.cycle_badge">25th-to-25th Cycle</span>
-            <div id="spend-level-badge-container" style="display:inline-block;"></div>
-            <button class="btn-help-pill" onclick="openHelpGuide('cycle')" data-label-key="btn.how_it_works">❓ How It Works</button>
-          </div>
-          <p class="cycle-subtitle" id="cycle-range-text">Aug 25 – Sep 25, 2026 • <strong>26 Days Remaining</strong></p>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary" onclick="openSessionMemberModal()" title="Switch active user identity">
-            <span>👤</span> <span id="header-active-member-label">Active User</span>
-          </button>
-          <a href="admin.html" class="btn btn-admin">
-            <span>👑</span> <span data-label-key="btn.admin_cms">Admin CMS</span>
-          </a>
-          <button class="btn btn-primary" onclick="openSpendModal()">
-            <span>➕</span> <span data-label-key="btn.log_spend">Log Daily Spend</span>
-          </button>
-        </div>
-      </header>
 
-      <!-- TAB 0: 3D FULL INTERACTIVE LANDING PAGE -->
-      <section id="tab-landing" class="tab-pane active">
+      <!-- TAB 1: DASHBOARD (CENTRAL FINANCIAL COMMAND CENTER) -->
+      <section id="tab-dashboard" class="tab-pane active">
         
-        <!-- Dedicated Landing Page Navigation Bar -->
-        <nav class="landing-navbar">
-          <div class="landing-nav-brand">
-            <span style="font-size:1.5rem;">💰</span>
-            <strong style="font-size:1.15rem; color:#fff; letter-spacing:-0.02em;">HomeBudget</strong>
-          </div>
-          <div class="landing-nav-links">
-            <a href="#landing-ticker-section" class="landing-nav-link">Overview</a>
-            <a href="#landing-features" class="landing-nav-link">Features</a>
-            <a href="#landing-explainer" class="landing-nav-link">Why 25th Cycle?</a>
-            <a href="admin.html" class="landing-nav-link" style="color:var(--accent);">👑 Admin CMS</a>
-            <a href="auth.html" class="landing-nav-link">Sign In</a>
-          </div>
-          <div class="landing-nav-cta">
-            <button class="btn btn-primary btn-sm" onclick="switchTab('dashboard')">
-              <span>🚀</span> Launch App
-            </button>
-          </div>
-        </nav>
-
-        <!-- Full 3D Interactive WebGL Hero -->
-        <div class="landing-hero-3d">
-          <div class="landing-canvas-container">
-            <canvas id="three-hero-canvas"></canvas>
-          </div>
-          <div class="landing-hero-overlay">
-            <div class="hero-3d-badge">
-              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine • Autonomous AI Advisor
-            </div>
-            <h1 class="landing-hero-title">
-              Take 100% Control of Your <span>Household Financial Rhythm</span>
-            </h1>
-            <p class="landing-hero-subtitle">
-              Deterministic salary cycle budgeting, automated BNPL installment tracking, forward survival forecasting, and live AI financial coaching — all synced in real-time.
-            </p>
-            <div class="landing-hero-actions">
-              <button class="btn btn-primary" onclick="switchTab('dashboard')">
-                <span>🚀</span> Launch App Dashboard
-              </button>
-              <button class="btn btn-secondary" onclick="openSpendModal()">
-                <span>⚡</span> Quick Log Expense
-              </button>
-              <button class="btn btn-secondary" onclick="toggleAiChat()">
-                <span>🤖</span> Talk to AI Copilot
-              </button>
-              <a href="admin.html" class="btn btn-admin">
-                <span>👑</span> Admin CMS Portal
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Metrics & Value Ticker -->
-        <div class="landing-ticker" id="landing-ticker-section">
-          <div class="ticker-card">
-            <div class="ticker-icon">📅</div>
-            <div class="ticker-info">
-              <strong>25th-to-25th Cycle</strong>
-              <small>Synced with salary day</small>
-            </div>
-          </div>
-          <div class="ticker-card">
-            <div class="ticker-icon">☁️</div>
-            <div class="ticker-info">
-              <strong>Supabase Cloud</strong>
-              <small>Instant multi-device sync</small>
-            </div>
-          </div>
-          <div class="ticker-card">
-            <div class="ticker-icon">🛍️</div>
-            <div class="ticker-info">
-              <strong>BNPL Auto-Payoff</strong>
-              <small>Koko &amp; Mintpay tracking</small>
-            </div>
-          </div>
-          <div class="ticker-card">
-            <div class="ticker-icon">🤖</div>
-            <div class="ticker-info">
-              <strong>Smart AI Advisor</strong>
-              <small>Multi-LLM Financial Copilot</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section Header: Explore App Modules -->
-        <div class="landing-section-header" id="landing-features">
-          <h2>⚡ Complete Financial Command Center</h2>
-          <p>Click any module below to instantly jump to that live interactive section in the app.</p>
-        </div>
-
-        <!-- 10 Feature Cards with Direct Quick-Action Routing -->
-        <div class="landing-grid">
-          
-          <div class="landing-card">
-            <div class="landing-card-icon">📊</div>
-            <h3>Realtime Cycle Dashboard</h3>
-            <p>Real-time spendable cashflow banner after commitments, live outgoings breakdown, and safety reserve tracking.</p>
-            <button class="btn btn-primary" onclick="switchTab('dashboard')">🚀 Open Dashboard</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">🛍️</div>
-            <h3>BNPL &amp; Koko Plans</h3>
-            <p>Track active 3-month installments with remaining balances, payment status, and automatic monthly cashflow liberation.</p>
-            <button class="btn btn-secondary" onclick="switchTab('installments')">🛍️ Manage BNPL</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">🏠</div>
-            <h3>Fixed Bills &amp; Bank Loans</h3>
-            <p>Track mandatory rent, utility bills, insurance, and bank loans with automated status ticks and settled archives.</p>
-            <button class="btn btn-secondary" onclick="switchTab('fixed-bills')">🏠 View Fixed Bills</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">🔮</div>
-            <h3>Forward Survival Forecast</h3>
-            <p>Deterministic mathematical engine projecting next cycle's surplus or deficit before next month even starts.</p>
-            <button class="btn btn-secondary" onclick="switchTab('forecast')">🔮 View Forecast</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">✨</div>
-            <h3>Needs Planner &amp; Wishlist</h3>
-            <p>Categorized buy-list bucket cart with real-time affordability checks based on current cycle spendable balance.</p>
-            <button class="btn btn-secondary" onclick="switchTab('wishlist')">✨ Plan Needs</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">⚡</div>
-            <h3>Daily Expense Logs</h3>
-            <p>Instant daily expense logging with payment method tagging and shared multi-member attribution.</p>
-            <button class="btn btn-secondary" onclick="switchTab('daily-spends')">⚡ Log Spends</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">📅</div>
-            <h3>Spend Calendar &amp; Heatmap</h3>
-            <p>Monthly calendar view with green, amber, and red color-coded spend thresholds and itemized daily drill-downs.</p>
-            <button class="btn btn-secondary" onclick="switchTab('calendar')">📅 Open Calendar</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">📈</div>
-            <h3>Analytics &amp; Chart.js Live Trends</h3>
-            <p>Live interactive trend lines, spending category doughnut charts, and cycle-over-cycle savings rate comparisons.</p>
-            <button class="btn btn-secondary" onclick="switchTab('analytics')">📈 View Analytics</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">🤖</div>
-            <h3>Data-Aware Smart AI Advisor</h3>
-            <p>Intelligent floating AI advisor with live access to your household figures for deterministic personalized coaching.</p>
-            <button class="btn btn-secondary" onclick="toggleAiChat()">🤖 Ask AI Advisor</button>
-          </div>
-
-          <div class="landing-card">
-            <div class="landing-card-icon">👑</div>
-            <h3>WordPress-Style Admin CMS</h3>
-            <p>Zero-redeploy CMS to rename every title, header, label, and button across the app, manage themes, and edit schema.</p>
-            <a href="admin.html" class="btn btn-admin">👑 Open Admin CMS</a>
-          </div>
-
-        </div>
-
-        <!-- 25th-to-25th Cycle Explainer Card -->
-        <div class="landing-explainer-card" id="landing-explainer">
-          <div class="landing-explainer-grid">
-            <div class="landing-explainer-content">
-              <h3>📅 Why 25th-to-25th Cycle Sync Matters</h3>
-              <p>
-                In corporate environments, salaries are credited on the 25th, but rent and loan deductions happen immediately. Traditional calendar month trackers (1st–30th) give a false illusion of excess money in early days, leading to mid-month cashflow crises.
-              </p>
-              <p>
-                <strong>HomeBudget synchronizes directly with your salary payday</strong>, reserving all mandatory bills first and giving you a 100% mathematically accurate spendable daily budget.
-              </p>
-            </div>
-            <div class="landing-comparison-box">
-              <div class="comparison-row">
-                <span style="color:var(--danger);">❌ Traditional Calendar Budget</span>
-                <span style="color:var(--text-muted);">Misleading balances, mid-month cash shortfall</span>
-              </div>
-              <div class="comparison-row">
-                <span style="color:var(--success);font-weight:700;">✅ HomeBudget 25th Cycle</span>
-                <span style="color:#A7F3D0;">Guaranteed accurate daily cashflow until next payday</span>
-              </div>
-              <div class="comparison-row">
-                <span style="color:var(--primary-light);">🛡️ Forward Safety Buffer</span>
-                <span style="color:#9CA3AF;">Predicts next cycle's surplus before it starts</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom CTA Banner -->
-        <div class="landing-cta-banner">
-          <h2>Ready to Take Total Control of Your Finances?</h2>
-          <p>Start tracking your real-time spendable cashflow, planned needs, and BNPL commitments today.</p>
-          <div class="cta-buttons">
-            <button class="btn btn-primary btn-lg" onclick="switchTab('dashboard')">
-              <span>🚀</span> Launch App Dashboard
-            </button>
-            <a href="admin.html" class="btn btn-admin btn-lg">
-              <span>👑</span> Open Admin CMS
-            </a>
-          </div>
-        </div>
-
-        <!-- Landing Page Modern Footer -->
-        <footer class="landing-footer">
-          <div class="landing-footer-grid">
-            <div class="landing-footer-brand">
-              <div class="brand-logo-text" style="display:flex; align-items:center; gap:0.5rem;">
-                <span style="font-size:1.8rem;">💰</span>
-                <strong style="font-size:1.35rem; color:#fff; letter-spacing:-0.02em;">HomeBudget</strong>
-              </div>
-              <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.6; margin-top:0.75rem; max-width:320px;">
-                Deterministic 25th-to-25th household budget planner built for modern families. Real-time multi-device sync, smart BNPL installment tracking, and intelligent AI coaching.
-              </p>
-              <div style="margin-top:1rem; display:inline-flex; align-items:center; gap:0.5rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:0.35rem 0.75rem; border-radius:999px; font-size:0.75rem; color:#6EE7B7;">
-                <span class="session-dot" style="background:#10B981;"></span> Cloud Sync Active &amp; Operational
-              </div>
-            </div>
-
-            <div class="landing-footer-col">
-              <h4>Quick Navigation</h4>
-              <ul>
-                <li><a href="#" onclick="switchTab('dashboard'); return false;">📊 Dashboard</a></li>
-                <li><a href="#" onclick="switchTab('daily-spends'); return false;">⚡ Daily Spends</a></li>
-                <li><a href="#" onclick="switchTab('installments'); return false;">🛍️ BNPL &amp; Koko</a></li>
-                <li><a href="#" onclick="switchTab('fixed-bills'); return false;">🏠 Fixed Bills &amp; Loans</a></li>
-                <li><a href="#" onclick="switchTab('forecast'); return false;">🔮 Survival Forecast</a></li>
-              </ul>
-            </div>
-
-            <div class="landing-footer-col">
-              <h4>Account &amp; Management</h4>
-              <ul>
-                <li><a href="admin.html">👑 Admin CMS Portal</a></li>
-                <li><a href="auth.html">🔐 Sign In / Register</a></li>
-                <li><a href="#" onclick="openSessionMemberModal(); return false;">👥 Switch Active User</a></li>
-                <li><a href="#" onclick="openHelpGuide('cycle'); return false;">📖 Budgeting Guide</a></li>
-                <li><a href="#" onclick="toggleAiChat(); return false;">🤖 AI Budget Advisor</a></li>
-              </ul>
-            </div>
-
-            <div class="landing-footer-col">
-              <h4>About &amp; Security</h4>
-              <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">
-                Built with local-first offline resilience, Supabase cloud encryption, and responsive multi-device layouts for iPhone, iPad, and desktop.
-              </p>
-              <div style="margin-top:1rem;">
-                <button class="btn btn-primary btn-sm" onclick="switchTab('dashboard')" style="font-size:0.82rem; padding:0.45rem 0.9rem;">
-                  <span>🚀</span> Launch App
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="landing-footer-bottom">
-            <div class="copyright-text">
-              © 2026 HomeBudget. All rights reserved. Developed with ❤️ by <strong style="color:var(--primary-light);">Sathsara Karunarathne</strong>
-            </div>
-            <div class="footer-links-inline">
-              <span>Private &amp; Secure</span>
-              <span>•</span>
-              <span>25th Salary Cycle</span>
-              <span>•</span>
-              <span>v3.5 Production</span>
-            </div>
-          </div>
-        </footer>
-
-      </section>
-
-      <!-- TAB 1: DASHBOARD -->
-      <section id="tab-dashboard" class="tab-pane">
-        
-        <!-- STITCH LUMINAL FINANCE MOBILE APP HEADER -->
-        <div class="stitch-mobile-header">
-          <div class="stitch-header-left">
-            <div class="stitch-avatar-badge" id="mobile-header-avatar" onclick="openSessionMemberModal()" title="Switch Household Identity">
-              SP
-            </div>
-            <div>
-              <h2 class="stitch-app-title" id="mobile-header-household-name">HomeBudget</h2>
-              <p class="stitch-app-subtitle" id="mobile-header-active-member">Sathsara &amp; Partner</p>
-            </div>
-          </div>
-          <div class="stitch-cycle-chip" id="mobile-cycle-badge">
-            🗓️ <span id="mobile-cycle-days-left">18 Days Left</span>
-          </div>
-        </div>
-
         <!-- STITCH SAFE TO SPEND HERO CARD (CENTRAL DAILY ENGINE) -->
         <section class="stitch-hero-card">
           <div class="stitch-hero-header">
@@ -466,7 +160,7 @@
             <span class="stitch-cycle-chip" style="font-size:0.68rem; padding:0.2rem 0.6rem;" id="mobile-status-pill">🟢 Healthy Flow</span>
           </div>
           <div class="stitch-currency-display" id="mobile-safe-daily-spend">Rs. 0</div>
-          <!-- Progress Bar -->
+          <!-- Dynamic Progress Bar -->
           <div class="stitch-progress-track">
             <div class="stitch-progress-fill" id="mobile-spend-progress-fill" style="width: 100%;"></div>
           </div>
@@ -476,96 +170,7 @@
           </div>
         </section>
 
-        <!-- STITCH QUICK ACTIONS BAR -->
-        <section class="stitch-quick-actions">
-          <button class="stitch-action-btn" onclick="openSpendModal()">
-            <span style="font-size: 1.3rem;">⚡</span>
-            <span>Quick Add</span>
-          </button>
-          <button class="stitch-action-primary" onclick="openSpendModal()">
-            <span style="font-size: 1.25rem;">➕</span>
-            <span>Log Expense</span>
-          </button>
-          <button class="stitch-action-btn" onclick="switchTab('fixed-bills')">
-            <span style="font-size: 1.3rem;">📅</span>
-            <span>Upcoming</span>
-          </button>
-        </section>
-
-        <!-- STITCH UPCOMING BILLS & BNPL STRIP -->
-        <section class="stitch-section">
-          <div class="stitch-section-header">
-            <h3>Upcoming Bills &amp; BNPL</h3>
-            <button class="stitch-link-btn" onclick="switchTab('fixed-bills')">See All ›</button>
-          </div>
-          <div class="stitch-cards-strip" id="mobile-upcoming-strip">
-            <!-- Dynamically populated -->
-          </div>
-        </section>
-
-        <!-- STITCH RECENT HOUSEHOLD TRANSACTIONS FEED -->
-        <section class="stitch-section">
-          <div class="stitch-section-header">
-            <h3>Recent Expenses</h3>
-            <button class="stitch-link-btn" onclick="switchTab('daily-spends')">View History ›</button>
-          </div>
-          <div class="stitch-transaction-feed" id="mobile-recent-spends-feed">
-            <!-- Dynamically populated -->
-          </div>
-        </section>
-        
-        <!-- 3D Interactive WebGL Financial Hero / Landing Section (Desktop Only) -->
-        <div class="hero-3d-wrapper" id="hero-3d-wrapper">
-          <div class="hero-3d-canvas-container">
-            <canvas id="three-hero-canvas"></canvas>
-          </div>
-          <div class="hero-3d-overlay">
-            <div class="hero-3d-badge">
-              <span class="live-pulse-dot"></span> 3D Smart Cycle Engine
-            </div>
-            <h2 class="hero-3d-title">Deterministic Household Financial Intelligence</h2>
-            <p class="hero-3d-subtitle">Real-time spendable cashflow, dynamic forward survival buffers, and multi-member commitments.</p>
-            <div class="hero-3d-actions">
-              <button class="btn btn-primary" onclick="openSpendModal()">
-                <span>⚡</span> Quick Log Spend
-              </button>
-              <button class="btn btn-secondary" onclick="toggleAiChat()">
-                <span>🤖</span> Ask AI Advisor
-              </button>
-              <a href="admin.html" class="btn btn-secondary">
-                <span>👑</span> Admin CMS Portal
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Realtime Remaining Spendable Balance Banner -->
-        <div class="balance-card" id="frontend-balance-card">
-          <div class="balance-card-header">
-            <span id="lbl-balance-header" data-label-key="page.dashboard.balance_header">REALTIME REMAINING SPENDABLE BALANCE</span>
-            <button class="btn-help-pill" style="margin-left: auto; margin-right: 0.75rem;" onclick="openHelpGuide('balance')">❓ Formula</button>
-            <span class="badge badge-success" id="forecast-badge">✅ Next Month Surplus</span>
-          </div>
-          <div class="balance-amount" id="remaining-balance-display">Rs. 117,635</div>
-          <div class="balance-footer">
-            <span>Projected Savings at Cycle End: <strong id="projected-savings-display">Rs. 109,635</strong></span>
-            <span>Total Combined Income: <strong id="total-income-display">Rs. 399,585</strong></span>
-          </div>
-        </div>
-
-        <!-- AI Guidance Card -->
-        <div class="ai-card" id="frontend-ai-card">
-          <div class="ai-header">
-            <span>✨</span>
-            <strong>Deterministic Financial Advisor</strong>
-            <button class="btn-help-pill" style="margin-left: auto;" onclick="openHelpGuide('ai')">❓ AI Privacy Info</button>
-          </div>
-          <p id="ai-advice-text">
-            Your recurring commitments (Rs. 251,745) are funded. With Rs. 117,635 spendable balance remaining across 26 days, your daily spending budget is approx Rs. 4,500/day.
-          </p>
-        </div>
-
-        <!-- Metrics Grid -->
+        <!-- FINANCIAL CYCLE METRICS (4-CARD BALANCED GRID) -->
         <div class="metrics-grid" id="frontend-metrics-grid">
           <div class="metric-card">
             <div class="metric-header">
@@ -591,16 +196,81 @@
               <span class="metric-icon">🛒</span>
             </div>
             <div class="metric-value" id="metric-spent">Rs. 0</div>
-            <div class="metric-sub" data-label-key="page.dashboard.card_spent_sub">Cash & Debit Card</div>
+            <div class="metric-sub" data-label-key="page.dashboard.card_spent_sub">Cash &amp; Debit Card</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-header">
-              <span data-label-key="page.dashboard.card_wishlist">Planned Wishlist</span>
-              <span class="metric-icon">🎁</span>
+              <span data-label-key="page.dashboard.balance_header">Spendable Buffer</span>
+              <span class="metric-icon">🛡️</span>
             </div>
-            <div class="metric-value" id="metric-wishlist">Rs. 0</div>
-            <div class="metric-sub" data-label-key="page.dashboard.card_wishlist_sub">Allocated for Current Cycle</div>
+            <div class="metric-value" id="remaining-balance-display">Rs. 0</div>
+            <div class="metric-sub">Net cash to 25th payday</div>
+          </div>
+        </div>
+
+        <!-- 1-TAP QUICK ACTIONS BAR -->
+        <section class="stitch-quick-actions">
+          <button class="stitch-action-primary" onclick="openSpendModal()">
+            <span style="font-size: 1.25rem;">⚡</span>
+            <span>Quick Log Spend</span>
+          </button>
+          <button class="stitch-action-btn" onclick="openSpendModal()">
+            <span style="font-size: 1.2rem;">🛒</span>
+            <span>Groceries</span>
+          </button>
+          <button class="stitch-action-btn" onclick="openSpendModal()">
+            <span style="font-size: 1.2rem;">🍽️</span>
+            <span>Dining</span>
+          </button>
+          <button class="stitch-action-btn" onclick="openSpendModal()">
+            <span style="font-size: 1.2rem;">🚗</span>
+            <span>Transport</span>
+          </button>
+          <button class="stitch-action-btn" onclick="switchTab('fixed-bills')">
+            <span style="font-size: 1.2rem;">📅</span>
+            <span>Bills &amp; BNPL</span>
+          </button>
+        </section>
+
+        <!-- TWO-COLUMN COMMAND GRID (DESKTOP 2-COL, MOBILE STACKED) -->
+        <div class="dashboard-split-grid">
+          <!-- Column 1: Upcoming Bills & BNPL Commitments -->
+          <section class="stitch-section glass-panel">
+            <div class="stitch-section-header">
+              <h3>Upcoming Bills &amp; BNPL</h3>
+              <button class="stitch-link-btn" onclick="switchTab('fixed-bills')">See All Bills ›</button>
+            </div>
+            <div class="stitch-cards-strip" id="mobile-upcoming-strip">
+              <!-- Dynamically populated with 1-tap paid buttons -->
+            </div>
+          </section>
+
+          <!-- Column 2: Recent Household Expenses Feed -->
+          <section class="stitch-section glass-panel">
+            <div class="stitch-section-header">
+              <h3>Recent Household Expenses</h3>
+              <button class="stitch-link-btn" onclick="switchTab('daily-spends')">View History ›</button>
+            </div>
+            <div class="stitch-transaction-feed" id="mobile-recent-spends-feed">
+              <!-- Dynamically populated with member & payment badges -->
+            </div>
+          </section>
+        </div>
+
+        <!-- AI Financial Guidance Card -->
+        <div class="ai-card" id="frontend-ai-card">
+          <div class="ai-header">
+            <span>✨</span>
+            <strong>Deterministic Financial Advisor</strong>
+            <button class="btn-help-pill" style="margin-left: auto;" onclick="openHelpGuide('ai')">❓ AI Info</button>
+          </div>
+          <p id="ai-advice-text">
+            Your recurring commitments are funded. With your spendable balance remaining across this cycle, your daily spending budget is calculated in real-time above.
+          </p>
+          <div style="display:none;">
+            <span id="total-income-display">Rs. 0</span>
+            <span id="projected-savings-display">Rs. 0</span>
           </div>
         </div>
 
@@ -611,38 +281,26 @@
               <h3 data-label-key="page.dashboard.breakdown_title">Cycle Outgoings Breakdown</h3>
               <p class="text-muted" data-label-key="page.dashboard.breakdown_sub">Exact breakdown of commitments deducted from your salary</p>
             </div>
-            <a href="/admin" class="btn btn-sm btn-secondary">Manage in CMS</a>
+            <a href="admin.html" class="btn btn-sm btn-secondary">Manage in CMS</a>
           </div>
           <div class="breakdown-list">
             <div class="breakdown-item">
-              <span class="name">Fixed Bills & Loans (Rent, ECB, Personal & Gold Loans)</span>
-              <strong id="bk-fixed">Rs. 146,044</strong>
+              <span class="name">Fixed Bills &amp; Loans (Rent, ECB, Personal &amp; Gold Loans)</span>
+              <strong id="bk-fixed">Rs. 0</strong>
             </div>
             <div class="breakdown-item">
               <span class="name">BNPL Installments (Koko, Mintpay, PayZy)</span>
-              <strong id="bk-installments">Rs. 44,467</strong>
+              <strong id="bk-installments">Rs. 0</strong>
             </div>
             <div class="breakdown-item">
               <span class="name">Credit Card Statements (Combank, Sampath)</span>
-              <strong id="bk-cc">Rs. 45,000</strong>
+              <strong id="bk-cc">Rs. 0</strong>
             </div>
             <div class="breakdown-item">
               <span class="name">Subscriptions (Dialog Router, Netflix, Apple, YouTube)</span>
-              <strong id="bk-subs">Rs. 16,234</strong>
+              <strong id="bk-subs">Rs. 0</strong>
             </div>
           </div>
-        </div>
-
-        <!-- Recent Daily Spends -->
-        <div class="section-card" id="frontend-recent-spends-card">
-          <div class="card-header-flex">
-            <div>
-              <h3 data-label-key="page.dashboard.recent_spends_title">Recent Daily Spends</h3>
-              <p class="text-muted" data-label-key="page.dashboard.recent_spends_sub">Itemized cash and card transactions</p>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="openSpendModal()">➕ Log Spend</button>
-          </div>
-          <div id="dashboard-recent-spends" class="spends-list"></div>
         </div>
       </section>
 
@@ -1023,6 +681,18 @@
         <!-- Day Detail Panel -->
         <div id="calendar-day-detail" style="display:none; margin-top:1rem;"></div>
       </section>
+
+      <!-- Sleek Application Compact Footer -->
+      <footer class="app-compact-footer">
+        <div class="footer-copy">
+          © 2026 HomeBudget • 25th Salary Cycle • Developed with ❤️ by <strong style="color:var(--primary-light, #34D399);">Sathsara Karunarathne</strong>
+        </div>
+        <div class="footer-badges">
+          <span class="footer-badge">🛡️ Offline-First &amp; Cloud Synced</span>
+          <span class="footer-badge">⚡ Real-Time Math</span>
+          <a href="admin.html" class="footer-link">👑 Admin CMS</a>
+        </div>
+      </footer>
 
     </main>
   </div>
