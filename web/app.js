@@ -1675,6 +1675,11 @@ async function switchTab(tabId) {
   tabId = tabId || "dashboard";
   if (tabId === "landing") tabId = "dashboard";
 
+  // Auto-resolve to cms-dashboard if on Admin CMS screen
+  if ((tabId === "dashboard" || !tabId) && !document.getElementById("tab-dashboard") && document.getElementById("tab-cms-dashboard")) {
+    tabId = "cms-dashboard";
+  }
+
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
   });
@@ -3841,8 +3846,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Always default directly to live dashboard so user sees real budget immediately
-  switchTab("dashboard");
+  // Default to live customer dashboard or Admin CMS depending on current page
+  const defaultTab = document.getElementById("tab-cms-dashboard") ? "cms-dashboard" : "dashboard";
+  switchTab(defaultTab);
   updateSessionMemberUI();
 
   // Prompt member identity if 2+ members and none selected yet

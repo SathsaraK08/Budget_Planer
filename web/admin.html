@@ -12,9 +12,30 @@
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
-<body class="theme-emerald">
+<body class="theme-emerald admin-cms-body">
 
-  <!-- WordPress Top Admin Bar -->
+  <!-- Mobile Slim Top Bar for Admin CMS (visible on mobile viewports) -->
+  <header class="mobile-top-bar" id="admin-mobile-top-bar">
+    <div class="mobile-top-left">
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle-admin" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      <div class="mobile-brand-wrap">
+        <div class="mobile-brand-logo-icon" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #FBBF24;">👑</div>
+        <div>
+          <span class="mobile-brand-title">Admin CMS</span>
+          <span class="mobile-brand-sub" style="color: #FBBF24;">Control Center</span>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-top-right">
+      <a href="index.html" class="mobile-btn-quick-log" style="text-decoration: none; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+        <span>🏠</span> Live Site
+      </a>
+    </div>
+  </header>
+
+  <!-- WordPress Top Admin Bar (Desktop) -->
   <header class="wp-admin-bar">
     <div class="wp-bar-left">
       <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
@@ -1035,6 +1056,30 @@ CREATE TABLE household_state_history (
 
     </main>
   </div>
+
+  <!-- Mobile Bottom Navigation for Admin CMS -->
+  <nav class="mobile-bottom-nav" id="admin-mobile-bottom-nav" aria-label="Admin Navigation">
+    <button class="mobile-nav-btn active" data-tab="cms-dashboard" onclick="switchTab('cms-dashboard')">
+      <span class="mobile-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
+      <span class="mobile-nav-label">Dashboard</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="cms-members" onclick="switchTab('cms-members')">
+      <span class="mobile-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+      <span class="mobile-nav-label">Members</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="cms-financials" onclick="switchTab('cms-financials')">
+      <span class="mobile-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></span>
+      <span class="mobile-nav-label">Financials</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="cms-categories" onclick="switchTab('cms-categories')">
+      <span class="mobile-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></span>
+      <span class="mobile-nav-label">Categories</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="toggleMobileSidebar()" aria-label="Open Full Admin Drawer">
+      <span class="mobile-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></span>
+      <span class="mobile-nav-label">All CMS</span>
+    </button>
+  </nav>
 
   <!-- Generic Non-Blocking Modal Dialog -->
   <div class="modal-overlay" id="generic-modal" onclick="if(event.target===this)closeModal()">

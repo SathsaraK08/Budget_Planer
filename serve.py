@@ -18,6 +18,14 @@ class BudgetAppHandler(http.server.SimpleHTTPRequestHandler):
             self.path = '/index.html'
         return super().do_GET()
 
+    def do_HEAD(self):
+        clean_path = self.path.split('?')[0].rstrip('/')
+        if clean_path.lower() in ('/admin', '/admin.html', '/wp-admin'):
+            self.path = '/admin.html'
+        elif clean_path == '' or clean_path == '/':
+            self.path = '/index.html'
+        return super().do_HEAD()
+
     def end_headers(self):
         # Disable caching for instant CMS development & updates
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
