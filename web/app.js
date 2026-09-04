@@ -1910,7 +1910,9 @@ function updateSessionMemberUI() {
   const active = getActiveSessionMember();
   const name = active ? active.name : "Primary Member";
   document.querySelectorAll("#top-session-member-name, #header-active-member-label").forEach(el => {
-    if (el) el.textContent = `👤 ${name}`;
+    if (el) {
+      el.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>` + (name || 'Primary Member');
+    }
   });
   const sidebarUserName = document.getElementById("sidebar-user-name");
   if (sidebarUserName) sidebarUserName.textContent = name;
@@ -1918,7 +1920,7 @@ function updateSessionMemberUI() {
   if (sidebarUserAvatar) sidebarUserAvatar.textContent = (name || 'U')[0].toUpperCase();
   const sidebarUserRole = document.getElementById("sidebar-user-role");
   if (sidebarUserRole && active) {
-    sidebarUserRole.textContent = (active.role === 'admin' || active.role === 'primary') ? '👑 Admin (Tap to switch)' : '👤 Member (Tap to switch)';
+    sidebarUserRole.textContent = (active.role === 'admin' || active.role === 'primary') ? 'Admin (Tap to switch)' : 'Member (Tap to switch)';
   }
 }
 

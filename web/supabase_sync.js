@@ -57,6 +57,31 @@ async function logoutHousehold() {
   window.location.href = "auth.html";
 }
 
+async function updateAuthHeaderUi() {
+  const session = await getCurrentSession();
+  const btn = document.getElementById("top-header-logout-btn");
+  if (!btn) return;
+  if (session) {
+    btn.className = "navbar-icon-btn btn-logout";
+    btn.title = "Sign out of household";
+    btn.onclick = logoutHousehold;
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </svg>`;
+  } else {
+    btn.className = "navbar-icon-btn btn-login";
+    btn.title = "Sign in to household";
+    btn.onclick = function() { window.location.href = "auth.html"; };
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+      <polyline points="10 17 15 12 10 7"></polyline>
+      <line x1="15" y1="12" x2="3" y2="12"></line>
+    </svg>`;
+  }
+}
+
 let syncStatus = "idle";
 let saveDebounceTimer = null;
 
@@ -64,10 +89,21 @@ function setSyncStatus(status, message) {
   syncStatus = status;
   const el = document.getElementById("supabase-sync-indicator");
   if (!el) return;
-  const icons = { idle: "cloud", syncing: "sync", online: "check", offline: "offline", error: "error" };
   const colors = { idle: "#9CA3AF", syncing: "#F59E0B", online: "#10B981", offline: "#6B7280", error: "#EF4444" };
-  const labels = { idle: "☁️", syncing: "🔄", online: "✅", offline: "📴", error: "❌" };
-  el.innerHTML = '<span style="color:' + (colors[status]||"#9CA3AF") + ';font-size:0.75rem;font-weight:600;">' + (labels[status]||"?") + ' Supabase ' + (message||status) + '</span>';
+  const svgIcons = {
+    idle: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>',
+    syncing: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px; animation: spin 1.2s linear infinite;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>',
+    online: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+    offline: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>',
+    error: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+  };
+  el.innerHTML = '<span style="color:' + (colors[status]||"#9CA3AF") + ';font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;">' + (svgIcons[status]||svgIcons.idle) + ' Supabase ' + (message||status) + '</span>';
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", function() {
+    updateAuthHeaderUi();
+  });
 }
 
 async function loadFromSupabase() {
