@@ -756,10 +756,18 @@
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:0.35rem;">
+          <button class="ai-chat-scale-btn" onclick="toggleChatApiKeyBar()" title="Configure API Key">🔑</button>
           <button class="ai-chat-scale-btn" onclick="resizeAiChat(-1)" title="Zoom Out">🔍−</button>
           <button class="ai-chat-scale-btn" onclick="resizeAiChat(1)" title="Zoom In">🔍+</button>
           <button class="ai-chat-scale-btn" onclick="toggleAiChat()" title="Close">✕</button>
         </div>
+      </div>
+
+      <!-- Quick API Key Configuration Bar -->
+      <div id="chat-api-key-bar" style="display:none; background:rgba(16,185,129,0.1); border-bottom:1px solid rgba(16,185,129,0.25); padding:0.5rem 0.75rem; align-items:center; gap:0.5rem;">
+        <span style="font-size:0.78rem; color:#34D399; white-space:nowrap;">🔑 Gemini Key:</span>
+        <input type="password" id="chat-quick-key-input" placeholder="Paste AIzaSy..." style="flex:1; min-width:0; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:0.3rem 0.5rem; font-size:0.78rem; outline:none;">
+        <button onclick="saveQuickChatApiKey()" style="background:#10B981; color:#fff; border:none; border-radius:6px; padding:0.3rem 0.65rem; font-size:0.76rem; font-weight:700; cursor:pointer; white-space:nowrap;">Save</button>
       </div>
 
       <!-- Daily Spend Alert Banner (shows only when over budget) -->
