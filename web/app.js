@@ -160,7 +160,7 @@ const defaultState = {
     provider: "gemini",
     geminiKey: "",
     openaiKey: "",
-    model: "gemini-3.8-flash",
+    model: "gemini-flash-latest",
     tone: "balanced",
     customPromptTemplate: ""
   },
@@ -2048,15 +2048,33 @@ async function testAiConnection() {
       if (!res.ok) throw new Error(data.error?.message || `OpenAI HTTP ${res.status}`);
       responseText = data.choices?.[0]?.message?.content || "Connected!";
     } else {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
-      const res = await fetch(url, {
+      let effectiveModel = model || "gemini-flash-latest";
+      if (effectiveModel === 'gemini-3.5-flash-lite' || effectiveModel === 'gemini-2.0-flash') {
+        effectiveModel = 'gemini-flash-latest';
+      }
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`;
+      let res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": activeKey
+        },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
+      if (!res.ok && (res.status === 404 || res.status === 400)) {
+        res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-goog-api-key": activeKey
+          },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || `Gemini API error (HTTP ${res.status})`);
-      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      responseText = parts.map(p => p.text || "").filter(Boolean).join("\n\n").trim();
       if (!responseText) throw new Error("API returned an empty response. Check model availability.");
     }
     const elapsed = Date.now() - startTime;
@@ -3167,10 +3185,10 @@ ${toneInstruction}
 User Question: "${userQuestion || 'What is my current budget health and what should I focus on today?'}"
 
 Guidelines for your response:
-1. Answer the user's question directly with clear, intelligent, and helpful insights using the real data numbers.
-2. Use markdown formatting: bold key amounts, use bullet points for action items, and keep paragraphs readable.
-3. Be conversational, empathetic, and dynamic (act like a genuine AI assistant, never use generic robotic templates).
-4. If they ask about buying something, evaluate their remaining balance vs daily safe limit and give a clear recommendation.`;
+1. Answer the user's question directly and conversationally as their personal AI advisor.
+2. If the user greets you or asks general questions (e.g. "hi", "what is this app", "how to find anything", "who are you"), reply warmly and explain clearly how to use HomeBudget and navigate its features.
+3. If the user asks about their finances or spending, use the real financial snapshot figures above to provide precise, insightful, and practical coaching.
+4. Format with markdown bold and bullet points when listing figures or recommendations. Keep answers concise and readable.`;
 }
 
 async function getAiAdvice(userQuestion = "") {
@@ -3210,14 +3228,30 @@ async function getAiAdvice(userQuestion = "") {
       if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
       responseText = data.choices?.[0]?.message?.content || "No response.";
     } else {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`, {
+      const effectiveModel = model || "gemini-flash-latest";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`;
+      let res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": activeKey
+        },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
+      if (!res.ok && (res.status === 404 || res.status === 400)) {
+        res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-goog-api-key": activeKey
+          },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
-      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      responseText = parts.map(p => p.text || "").filter(Boolean).join("\n\n").trim();
       if (!responseText) throw new Error("Empty response from AI service.");
     }
     if (outputEl) outputEl.textContent = responseText;
@@ -3608,7 +3642,7 @@ function getActiveAiProvider() {
 }
 
 function getActiveAiModel() {
-  const model = state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-3.8-flash";
+  const model = state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-flash-latest";
   return model;
 }
 
@@ -3808,18 +3842,56 @@ async function processChatQuestion(question) {
           });
         });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 800
-            }
-          })
-        });
+        let effectiveModel = model || 'gemini-flash-latest';
+        if (effectiveModel === 'gemini-3.5-flash-lite' || effectiveModel === 'gemini-2.0-flash') {
+          effectiveModel = 'gemini-flash-latest';
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        let res;
+        try {
+          res = await fetch(url, {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "X-goog-api-key": activeKey
+            },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 800
+              }
+            })
+          });
+        } catch (fetchErr) {
+          console.warn("[Gemini] Fetch timeout or abort, retrying with gemini-flash-latest:", fetchErr);
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        // If fetch timed out or selected model returned an error, immediately fallback to gemini-flash-latest
+        if (!res || !res.ok) {
+          console.warn(`[Gemini] Model ${effectiveModel} did not return 200. Calling fast production gemini-flash-latest...`);
+          res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-goog-api-key": activeKey
+            },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 800
+              }
+            })
+          });
+        }
 
         const data = await res.json();
         if (!res.ok) {
@@ -3827,7 +3899,8 @@ async function processChatQuestion(question) {
           throw new Error(apiErr);
         }
 
-        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        responseText = parts.map(p => p.text || "").filter(Boolean).join("\n\n").trim();
       }
 
       if (!responseText) {
