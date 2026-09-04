@@ -202,6 +202,8 @@ function loadSavedState() {
         bnplPlatforms: parsed.bnplPlatforms && parsed.bnplPlatforms.length ? parsed.bnplPlatforms : defaultState.bnplPlatforms,
         fixedBillCategories: parsed.fixedBillCategories && parsed.fixedBillCategories.length ? parsed.fixedBillCategories : defaultState.fixedBillCategories,
         wishlistCategories: parsed.wishlistCategories && parsed.wishlistCategories.length ? parsed.wishlistCategories : defaultState.wishlistCategories,
+        categories: parsed.categories && parsed.categories.length ? parsed.categories : defaultState.categories,
+        paymentMethods: parsed.paymentMethods && parsed.paymentMethods.length ? parsed.paymentMethods : defaultState.paymentMethods,
         cycleHistory: parsed.cycleHistory && parsed.cycleHistory.length ? parsed.cycleHistory : defaultState.cycleHistory
       };
     }
@@ -1329,16 +1331,30 @@ function openSpendModal() {
     `;
   }
 
-  // Populate payment method chips
+  // Populate payment method chips (dynamic from state.paymentMethods) + Add Method button
   const methodContainer = document.getElementById("qs-method-chips");
-  if (!selectedSpendMethod) selectedSpendMethod = "Cash";
+  state.paymentMethods = (state.paymentMethods && state.paymentMethods.length)
+    ? state.paymentMethods
+    : ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
+  if (!selectedSpendMethod) {
+    const firstM = state.paymentMethods[0];
+    selectedSpendMethod = typeof firstM === "string" ? firstM : (firstM?.name || "Cash");
+  }
   if (methodContainer) {
-    const methods = ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
-    methodContainer.innerHTML = methods.map((m) => `
-      <button type="button" class="method-pill-chip ${m === selectedSpendMethod ? 'active' : ''}" data-method="${m}" onclick="selectSpendMethod('${m}')">
-        ${m === 'Cash' ? '💵 Cash' : m.includes('Credit') ? '💳 Credit Card' : m.includes('Debit') ? '💳 Debit Card' : '🏦 Bank Transfer'}
+    methodContainer.innerHTML = state.paymentMethods.map((m) => {
+      const mName = typeof m === "string" ? m : (m?.name || "Cash");
+      const icon = mName.toLowerCase().includes("cash") ? "💵" : (mName.toLowerCase().includes("credit") || mName.toLowerCase().includes("debit") || mName.toLowerCase().includes("card")) ? "💳" : mName.toLowerCase().includes("bank") ? "🏦" : (mName.toLowerCase().includes("frimi") || mName.toLowerCase().includes("wallet") || mName.toLowerCase().includes("pay") || mName.toLowerCase().includes("koko")) ? "📱" : "🏷️";
+      return `
+        <button type="button" class="method-pill-chip ${mName === selectedSpendMethod ? 'active' : ''}" data-method="${mName}" onclick="selectSpendMethod('${mName}')">
+          <span>${icon}</span> <span>${mName}</span>
+        </button>
+      `;
+    }).join("") + `
+      <button type="button" class="method-pill-chip" onclick="quickAddMethodPrompt()" style="border: 1px dashed rgba(52, 211, 153, 0.6); color: #34D399; background: rgba(16, 185, 129, 0.08);" title="Add New Payment Method">
+        <span>➕</span>
+        <span>Add Method</span>
       </button>
-    `).join("");
+    `;
   }
 
   // Populate bank chips
@@ -1424,6 +1440,32 @@ function quickAddBankPrompt() {
   openSpendModal();
   selectSpendBank(trimmed);
   showToast(`✅ Selected bank: ${trimmed}`, "success");
+}
+
+function quickAddMethodPrompt() {
+  const method = prompt("Enter new payment method name (e.g. FriMi, PayPal, Koko Pay, Crypto, Cheque, Company Card):");
+  if (!method || !method.trim()) return;
+  const trimmed = method.trim();
+  state.paymentMethods = state.paymentMethods || [
+    { id: "pm_1", name: "Cash", type: "cash" },
+    { id: "pm_2", name: "Debit Card", type: "card" },
+    { id: "pm_3", name: "Credit Card", type: "card" },
+    { id: "pm_4", name: "Bank Transfer", type: "bank" }
+  ];
+  const exists = state.paymentMethods.some(m => (typeof m === 'string' ? m : m.name).toLowerCase() === trimmed.toLowerCase());
+  if (!exists) {
+    state.paymentMethods.push({
+      id: "pm_" + Date.now(),
+      name: trimmed,
+      type: trimmed.toLowerCase().includes("cash") ? "cash" : (trimmed.toLowerCase().includes("card") ? "card" : (trimmed.toLowerCase().includes("bank") ? "bank" : "digital"))
+    });
+    persistState();
+    renderApp();
+  }
+  selectedSpendMethod = trimmed;
+  openSpendModal();
+  selectSpendMethod(trimmed);
+  showToast(`✅ Created & selected payment method: ${trimmed}`, "success");
 }
 
 function openSpendWithCategory(catName) {
@@ -1527,6 +1569,15 @@ function deleteCategory(id) {
     persistState();
     renderApp();
     showToast("Category removed", "success");
+  });
+}
+
+function deletePaymentMethod(methodName) {
+  customConfirm(`Delete payment method "${methodName}"?`, () => {
+    state.paymentMethods = (state.paymentMethods || []).filter(m => (typeof m === "string" ? m : m.name) !== methodName);
+    persistState();
+    renderApp();
+    showToast(`Payment method removed: ${methodName}`, "success");
   });
 }
 
@@ -2173,6 +2224,27 @@ function renderAllTables(metrics) {
         </td>
       </tr>
     `).join("");
+  }
+
+  // 2b. Payment Methods Table
+  const cmsMethodsBody = document.getElementById("cms-methods-table-body");
+  if (cmsMethodsBody) {
+    const methods = (state.paymentMethods && state.paymentMethods.length)
+      ? state.paymentMethods
+      : ["Cash", "Credit Card", "Debit Card", "Bank Transfer"];
+    cmsMethodsBody.innerHTML = methods.map(m => {
+      const mName = typeof m === "string" ? m : (m?.name || "Cash");
+      const icon = mName.toLowerCase().includes("cash") ? "💵" : (mName.toLowerCase().includes("credit") || mName.toLowerCase().includes("debit") || mName.toLowerCase().includes("card")) ? "💳" : mName.toLowerCase().includes("bank") ? "🏦" : (mName.toLowerCase().includes("frimi") || mName.toLowerCase().includes("wallet") || mName.toLowerCase().includes("pay") || mName.toLowerCase().includes("koko")) ? "📱" : "🏷️";
+      return `
+        <tr>
+          <td><strong>${mName}</strong></td>
+          <td><span class="category-tag">${icon} ${mName}</span></td>
+          <td>
+            <button class="btn-table-delete" onclick="deletePaymentMethod('${mName}')">🗑️ Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
   // 3. Fixed Bills Tables (Active vs Completed)
@@ -3634,6 +3706,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           bnplPlatforms: (cloudState.bnplPlatforms && cloudState.bnplPlatforms.length) ? cloudState.bnplPlatforms : defaultState.bnplPlatforms,
           fixedBillCategories: (cloudState.fixedBillCategories && cloudState.fixedBillCategories.length) ? cloudState.fixedBillCategories : defaultState.fixedBillCategories,
           wishlistCategories: (cloudState.wishlistCategories && cloudState.wishlistCategories.length) ? cloudState.wishlistCategories : defaultState.wishlistCategories,
+          categories: (cloudState.categories && cloudState.categories.length) ? cloudState.categories : defaultState.categories,
+          paymentMethods: (cloudState.paymentMethods && cloudState.paymentMethods.length) ? cloudState.paymentMethods : defaultState.paymentMethods,
           cycleHistory: (cloudState.cycleHistory && cloudState.cycleHistory.length) ? cloudState.cycleHistory : defaultState.cycleHistory
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));

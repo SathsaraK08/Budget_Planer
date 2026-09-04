@@ -584,6 +584,29 @@
           </div>
           <div id="wishlist-cat-preview" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;"></div>
         </div>
+
+        <!-- Payment Methods Manager (NEW) -->
+        <div class="section-card" style="margin-top: 1.5rem;">
+          <div class="card-header-flex">
+            <div>
+              <h3>💳 Payment Methods Manager</h3>
+              <p class="text-muted">Add, customize, or delete payment methods available in the Quick Log Expense popup.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="quickAddMethodPrompt()">➕ Add Payment Method</button>
+          </div>
+          <div class="table-responsive" style="margin-top: 0.75rem;">
+            <table class="cms-table">
+              <thead>
+                <tr>
+                  <th>Method Name</th>
+                  <th>Icon / Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cms-methods-table-body"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- TAB 7: FORECAST & MATH ENGINE (SUPER DETAILED & VISUAL) -->
