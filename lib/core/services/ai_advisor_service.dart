@@ -11,27 +11,66 @@ abstract class AIProvider {
 }
 
 class GeminiProvider implements AIProvider {
+  final String model;
+  GeminiProvider({this.model = 'gemini-flash-latest'});
+
   @override
   Future<String?> generateAdvice({required String prompt, required String apiKey}) async {
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
-    );
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    try {
+      final cleanKey = apiKey.trim();
+      final url = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
+      );
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'X-goog-api-key': cleanKey,
+      };
+
+      final body = jsonEncode({
         'contents': [
-          {'parts': [{'text': prompt}]}
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
         ],
         'generationConfig': {
           'temperature': 0.3,
-          'maxOutputTokens': 300,
+          'maxOutputTokens': 400,
         }
-      }),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
+      });
+
+      var response = await http.post(url, headers: headers, body: body).timeout(
+        const Duration(seconds: 10),
+      );
+
+      // If the selected model returns 404/400, automatically fallback to gemini-flash-latest
+      if ((response.statusCode == 404 || response.statusCode == 400) && model != 'gemini-flash-latest') {
+        final fallbackUrl = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+        );
+        response = await http.post(fallbackUrl, headers: headers, body: body).timeout(
+          const Duration(seconds: 10),
+        );
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final parts = data['candidates']?[0]?['content']?['parts'] as List<dynamic>?;
+        if (parts != null && parts.isNotEmpty) {
+          final texts = parts
+              .map((p) => p['text'] as String?)
+              .where((t) => t != null && t.trim().isNotEmpty)
+              .cast<String>()
+              .toList();
+          if (texts.isNotEmpty) {
+            return texts.join('\n\n').trim();
+          }
+        }
+      }
+    } catch (_) {
+      // Fallback handled by caller
     }
     return null;
   }
