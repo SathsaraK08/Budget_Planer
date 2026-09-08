@@ -1,182 +1,301 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/budget_repository.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_theme.dart';
+import 'household_members_screen.dart';
+import 'appearance_screen.dart';
+import 'categories_manager_screen.dart';
+import 'advanced_settings_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+/// Settings home — 4 grouped sections, admin-only.
+/// Matches Design Batch 4, Screen 1.
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  final _geminiKeyController = TextEditingController();
-  final _supabaseUrlController = TextEditingController();
-  final _supabaseAnonKeyController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final repo = context.read<BudgetRepository>();
-    _geminiKeyController.text = repo.household.geminiApiKey ?? '';
-  }
-
-  @override
-  void dispose() {
-    _geminiKeyController.dispose();
-    _supabaseUrlController.dispose();
-    _supabaseAnonKeyController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<BudgetRepository>();
+    final isAdmin = repo.currentMember?.isAdmin ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings & Configuration'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Household Profile
+          if (!isAdmin)
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.lock_outline, color: AppTheme.warning, size: 18),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Settings are managed by the household admin.',
+                      style: TextStyle(fontSize: 13, color: AppTheme.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Household group
+          _buildGroupHeader('Household'),
+          _buildSettingsTile(
+            context,
+            icon: Icons.people_outline,
+            iconColor: AppTheme.primary,
+            title: 'Members & Salaries',
+            subtitle: '${repo.members.length} member${repo.members.length != 1 ? "s" : ""}',
+            enabled: isAdmin,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HouseholdMembersScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Appearance group
+          _buildGroupHeader('Appearance'),
+          _buildSettingsTile(
+            context,
+            icon: Icons.palette_outlined,
+            iconColor: AppTheme.secondary,
+            title: 'Theme & App Name',
+            subtitle: 'Preset color themes, logo icon',
+            enabled: isAdmin,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AppearanceScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Categories group
+          _buildGroupHeader('Categories'),
+          _buildSettingsTile(
+            context,
+            icon: Icons.category_outlined,
+            iconColor: AppTheme.accent,
+            title: 'Manage Categories',
+            subtitle: 'BNPL platforms, expense categories, wishlist categories',
+            enabled: isAdmin,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CategoriesManagerScreen()),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Advanced group
+          _buildGroupHeader('Advanced'),
+          _buildSettingsTile(
+            context,
+            icon: Icons.tune_outlined,
+            iconColor: AppTheme.warning,
+            title: 'Forecast & AI Settings',
+            subtitle: 'Safety buffer, AI advisor provider & key',
+            enabled: isAdmin,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdvancedSettingsScreen()),
+            ),
+          ),
+          _buildSettingsTile(
+            context,
+            icon: Icons.download_outlined,
+            iconColor: AppTheme.info,
+            title: 'Backup & Export',
+            subtitle: 'Download household data as JSON',
+            enabled: isAdmin,
+            onTap: () => _exportData(context, repo),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Household info card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.cardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('HOUSEHOLD CONFIGURATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary)),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const CircleAvatar(backgroundColor: AppTheme.primary, child: Icon(Icons.home, color: Colors.white)),
-                  title: Text(repo.household.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Monthly Cycle Starts: ${repo.household.cycleStartDay}th of each month\nCurrency: ${repo.household.currencyCode} (${repo.household.currencySymbol})'),
+                const Text(
+                  'CURRENT SESSION',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
+                const SizedBox(height: 12),
+                _infoRow('Household', repo.household.name),
+                const SizedBox(height: 6),
+                _infoRow('Acting as', repo.currentMember?.name ?? '—'),
+                const SizedBox(height: 6),
+                _infoRow('Role', repo.currentMember?.isAdmin == true ? 'Admin' : 'Member'),
+                const SizedBox(height: 6),
+                _infoRow('Cycle starts', '${repo.household.cycleStartDay}th of each month'),
               ],
             ),
           ),
+
           const SizedBox(height: 16),
 
-          // Gemini Free Tier API Key
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.cardBorder),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Icon(Icons.auto_awesome, color: AppTheme.secondary, size: 20),
-                    SizedBox(width: 8),
-                    Text('Gemini AI Advisor (Free Tier)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Enter your free Gemini API key to receive intelligent financial summaries. (If left blank, smart local rule-based advice is used).',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _geminiKeyController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Gemini API Key (Free Tier)',
-                    hintText: 'AIzaSy...',
-                    prefixIcon: Icon(Icons.key),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    repo.updateGeminiApiKey(_geminiKeyController.text.trim());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Gemini API Key saved! Refreshing AI insights.')),
-                    );
-                  },
-                  child: const Text('Save API Key'),
-                ),
-              ],
+          // Sign out
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _signOut(context, repo),
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Sign Out'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.danger,
+                side: const BorderSide(color: AppTheme.danger),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
 
-          // Supabase Sync Config
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.cardBorder),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Icon(Icons.cloud_sync_outlined, color: AppTheme.info, size: 20),
-                    SizedBox(width: 8),
-                    Text('Supabase Cloud Sync (Free Tier)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+  Widget _buildGroupHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Connect to your Supabase project to enable real-time sync between husband & wife accounts across Web, iOS, and Android.',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _supabaseUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Supabase URL',
-                    hintText: 'https://xyz.supabase.co',
-                    prefixIcon: Icon(Icons.link),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _supabaseAnonKeyController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Supabase Anon / Public Key',
-                    hintText: 'eyJhbGciOi...',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () async {
-                    final url = _supabaseUrlController.text.trim();
-                    final key = _supabaseAnonKeyController.text.trim();
-                    if (url.isNotEmpty && key.isNotEmpty) {
-                      await SupabaseService.saveCredentials(url, key);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Supabase credentials saved successfully!')),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Connect Supabase'),
-                ),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _exportData(BuildContext context, BudgetRepository repo) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Preparing export... Download will start shortly.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    await repo.exportToJson(context);
+  }
+
+  Future<void> _signOut(BuildContext context, BudgetRepository repo) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Text('Sign Out'),
+        content: const Text('You will need your credentials to log in again.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sign Out', style: TextStyle(color: AppTheme.danger)),
           ),
         ],
       ),
     );
+    if (confirm == true) {
+      await repo.signOut();
+    }
   }
 }

@@ -3,18 +3,20 @@ import 'package:provider/provider.dart';
 import 'core/services/budget_repository.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
+
+// Screens
+import 'features/landing/landing_screen.dart';
+import 'features/auth/auth_screen.dart';
+import 'features/setup_wizard/setup_wizard_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
-import 'features/income/income_screen.dart';
+import 'features/daily_spends/daily_spends_screen.dart';
 import 'features/fixed_payments/fixed_payments_screen.dart';
 import 'features/installments/installments_screen.dart';
-import 'features/credit_cards/credit_cards_screen.dart';
-import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/wishlist/wishlist_screen.dart';
-import 'features/daily_spends/daily_spends_screen.dart';
 import 'features/forecast/forecast_screen.dart';
+import 'features/analytics/analytics_screen.dart';
 import 'features/settings/settings_screen.dart';
-
-import 'features/auth/auth_screen.dart';
+import 'features/daily_spends/quick_spend_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,14 +38,123 @@ class HouseholdBudgetApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Household Budget Planner & Admin CMS',
+      title: 'HomeBudget',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const MainNavigationShell(),
+      // Named route '/' → AppRouter decides where to go
+      home: const AppRouter(),
     );
   }
 }
 
+/// AppRouter — session-aware routing with proper guard order.
+///
+/// Guard chain:
+///   1. Is Supabase configured + user authenticated? → If not → LandingScreen
+///   2. Is setup_completed = true in DB? → If not → SetupWizardScreen
+///   3. Otherwise → MainNavigationShell
+///
+/// This replaces all previous client-only/localStorage setup-loop patterns.
+class AppRouter extends StatefulWidget {
+  const AppRouter({super.key});
+
+  @override
+  State<AppRouter> createState() => _AppRouterState();
+}
+
+class _AppRouterState extends State<AppRouter> {
+  bool _isChecking = true;
+  _RouteTarget _target = _RouteTarget.landing;
+
+  @override
+  void initState() {
+    super.initState();
+    _determineRoute();
+  }
+
+  Future<void> _determineRoute() async {
+    // Check Supabase auth session
+    if (!SupabaseService.isConfigured) {
+      setState(() {
+        _target = _RouteTarget.landing;
+        _isChecking = false;
+      });
+      return;
+    }
+
+    final session = SupabaseService.client.auth.currentSession;
+    if (session == null) {
+      setState(() {
+        _target = _RouteTarget.landing;
+        _isChecking = false;
+      });
+      return;
+    }
+
+    // Session exists → load household data from DB
+    final repo = context.read<BudgetRepository>();
+    await repo.loadFromSupabase();
+
+    // Check setup_completed from DB (not local storage — fixes setup-loop bug)
+    if (!repo.household.setupCompleted) {
+      setState(() {
+        _target = _RouteTarget.setupWizard;
+        _isChecking = false;
+      });
+    } else {
+      setState(() {
+        _target = _RouteTarget.mainApp;
+        _isChecking = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isChecking) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.home_outlined, color: Colors.white, size: 26),
+              ),
+              const SizedBox(height: 24),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppTheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return switch (_target) {
+      _RouteTarget.landing => const LandingScreen(),
+      _RouteTarget.setupWizard => const SetupWizardScreen(),
+      _RouteTarget.mainApp => const MainNavigationShell(),
+    };
+  }
+}
+
+enum _RouteTarget { landing, setupWizard, mainApp }
+
+/// Main navigation shell — clean bottom nav per spec §Design Batch 2.
+/// Max 5 bottom nav items. Settings accessible via avatar/icon in header.
+/// Floating action button for "Log Expense" on all main screens.
 class MainNavigationShell extends StatefulWidget {
   const MainNavigationShell({super.key});
 
@@ -54,159 +165,127 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
+  // 5 main screens in bottom nav
+  static const List<Widget> _screens = [
     DashboardScreen(),
     DailySpendsScreen(),
-    InstallmentsScreen(),
-    ForecastScreen(),
+    FixedPaymentsScreen(),
     WishlistScreen(),
+    ForecastScreen(),
   ];
+
+  static const List<BottomNavigationBarItem> _navItems = [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.dashboard_outlined),
+      activeIcon: Icon(Icons.dashboard),
+      label: 'Dashboard',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.receipt_outlined),
+      activeIcon: Icon(Icons.receipt),
+      label: 'Spends',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.receipt_long_outlined),
+      activeIcon: Icon(Icons.receipt_long),
+      label: 'Bills',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.checklist_rtl_outlined),
+      activeIcon: Icon(Icons.checklist_rtl),
+      label: 'Wishlist',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.psychology_outlined),
+      activeIcon: Icon(Icons.psychology),
+      label: 'Forecast',
+    ),
+  ];
+
+  void _openQuickSpend() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const QuickSpendDialog(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<BudgetRepository>();
+    final isAdmin = repo.currentMember?.isAdmin ?? false;
 
     return Scaffold(
-      drawer: Drawer(
-        backgroundColor: AppTheme.surface,
-        child: ListView(
-          padding: EdgeInsets.zero,
+      appBar: AppBar(
+        title: Row(
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF065F46), Color(0xFF0F172A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(repo.household.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text('${repo.userName} (${repo.userRole})', style: const TextStyle(fontSize: 13, color: AppTheme.primaryLight, fontWeight: FontWeight.bold)),
-                  Text(repo.userEmail, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                ],
-              ),
+              child: const Icon(Icons.home_outlined, color: Colors.white, size: 16),
             ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined, color: AppTheme.primaryLight),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 0);
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.primaryLight),
-              title: const Text('Income Management'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const IncomeScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined, color: AppTheme.warning),
-              title: const Text('Fixed Bills & Loans'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const FixedPaymentsScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.shopping_bag_outlined, color: AppTheme.warning),
-              title: const Text('BNPL / Koko / Mintpay'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 2);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.credit_card, color: AppTheme.secondary),
-              title: const Text('Credit Cards'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditCardsScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.subscriptions_outlined, color: AppTheme.info),
-              title: const Text('Subscriptions & Auto-Pay'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionsScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.checklist_rtl_outlined, color: AppTheme.accent),
-              title: const Text('Wishlist / Things to Buy'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 4);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.psychology_outlined, color: AppTheme.primaryLight),
-              title: const Text('Survival Forecasting Engine'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 3);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.lock_person_outlined, color: AppTheme.textSecondary),
-              title: const Text('Login / Switch Account'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined, color: AppTheme.textSecondary),
-              title: const Text('Settings & Cloud Sync'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-              },
+            const SizedBox(width: 10),
+            Text(
+              repo.household.appName,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
           ],
         ),
+        actions: [
+          // Analytics shortcut
+          IconButton(
+            icon: const Icon(Icons.bar_chart_outlined),
+            tooltip: 'Analytics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+              );
+            },
+          ),
+          // BNPL Installments shortcut (not in main nav per spec — but still accessible)
+          IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined),
+            tooltip: 'Installments',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const InstallmentsScreen()),
+              );
+            },
+          ),
+          // Settings (admin only — but always visible, gated inside the screen)
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_outlined),
-            activeIcon: Icon(Icons.receipt),
-            label: 'Daily Spends',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Installments',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_outlined),
-            activeIcon: Icon(Icons.psychology),
-            label: 'Forecast',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checklist_rtl_outlined),
-            activeIcon: Icon(Icons.checklist_rtl),
-            label: 'Wishlist',
-          ),
-        ],
+        items: _navItems,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openQuickSpend,
+        tooltip: 'Log Expense',
+        backgroundColor: AppTheme.primary,
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }

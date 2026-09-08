@@ -748,38 +748,68 @@
           <div class="form-grid">
             <div class="form-group">
               <label>AI Provider</label>
-              <select id="ai-provider-select" class="form-control">
-                <option value="gemini">Google Gemini (Recommended Free Tier)</option>
-                <option value="openai">OpenAI ChatGPT</option>
+              <select id="ai-provider-select" class="form-control" onchange="handleAiProviderChange()">
+                <option value="gemini">🟢 Google Gemini (Free — needs Google account)</option>
+                <option value="groq">⚡ Groq (Free — ultra fast 100ms, no credit card)</option>
+                <option value="huggingface">🤗 HuggingFace (Free — open-source models)</option>
+                <option value="openai">💼 OpenAI ChatGPT (Paid)</option>
+                <option value="none">💡 None — Instant Local Math Only</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label>Model</label>
+              <label>Model <span id="ai-model-provider-badge" style="font-size: 0.74rem; color: #34D399; font-weight: 600; margin-left: 6px;"></span></label>
               <select id="ai-model-select" class="form-control" onchange="handleAiModelSelectChange()">
-                <option value="gemini-flash-latest" selected>gemini-flash-latest (Recommended — Fast &amp; Latest Gemini 3)</option>
-                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Fast &amp; Lightweight)</option>
-                <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Flash)</option>
-                <option value="gemini-3.1-pro">gemini-3.1-pro (Deep Reasoning &amp; Complex Math)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash (Legacy Flagship)</option>
-                <option value="gpt-4o-mini">gpt-4o-mini (OpenAI)</option>
-                <option value="gpt-4o">gpt-4o (OpenAI)</option>
-                <option value="custom">Custom Model Name...</option>
+                <optgroup label="Google Gemini Models">
+                  <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite — Fastest ⚡ (Recommended)</option>
+                  <option value="gemini-flash-latest">gemini-flash-latest — Latest Stable</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash — Flagship Quality</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro — Deep Reasoning</option>
+                </optgroup>
+                <option value="custom">✏️ Custom model name...</option>
               </select>
               <div id="ai-custom-model-wrap" style="display:none; margin-top: 6px;">
-                <input type="text" id="ai-custom-model-input" class="form-control" placeholder="Enter custom model string (e.g. gemini-3.8-flash)" onblur="saveAiSettings()">
+                <input type="text" id="ai-custom-model-input" class="form-control" placeholder="e.g. openai/gpt-oss-120b" onblur="saveAiSettings()">
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Google Gemini API Key</label>
+            <!-- Gemini Key -->
+            <div class="form-group" id="ai-key-gemini-wrap">
+              <label>🟢 Google Gemini API Key</label>
               <input type="password" id="ai-gemini-key" class="form-control" placeholder="AIzaSy..." onblur="saveAiSettings()">
-              <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 4px;">Get a free API key instantly at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: #34D399;">aistudio.google.com</a></small>
+              <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 4px;">
+                Free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: #34D399;">aistudio.google.com</a>
+                — Recommended model: <strong style="color: #34D399;">gemini-2.0-flash-lite</strong>
+              </small>
             </div>
 
-            <div class="form-group">
-              <label>OpenAI API Key (Optional)</label>
+            <!-- Groq Key -->
+            <div class="form-group" id="ai-key-groq-wrap" style="display:none;">
+              <label>⚡ Groq API Key</label>
+              <input type="password" id="ai-groq-key" class="form-control" placeholder="gsk_..." onblur="saveAiSettings()">
+              <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 4px;">
+                Free key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color: #34D399;">console.groq.com/keys</a>
+                — 14,400 free requests/day. Recommended: <strong style="color: #34D399;">llama-3.3-70b-versatile</strong> (Best Quality) or <strong style="color: #34D399;">openai/gpt-oss-120b</strong>.
+              </small>
+            </div>
+
+            <!-- HuggingFace Token -->
+            <div class="form-group" id="ai-key-hf-wrap" style="display:none;">
+              <label>🤗 HuggingFace Access Token</label>
+              <input type="password" id="ai-hf-key" class="form-control" placeholder="hf_..." onblur="saveAiSettings()">
+              <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 4px;">
+                Free token at <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" style="color: #34D399;">huggingface.co/settings/tokens</a> (select "Read" permission).
+                — Recommended: <strong style="color: #34D399;">meta-llama/Llama-3.1-8B-Instruct</strong>.
+              </small>
+            </div>
+
+            <!-- OpenAI Key -->
+            <div class="form-group" id="ai-key-openai-wrap" style="display:none;">
+              <label>💼 OpenAI API Key</label>
               <input type="password" id="ai-openai-key" class="form-control" placeholder="sk-proj-..." onblur="saveAiSettings()">
+              <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 4px;">
+                Get key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color: #34D399;">platform.openai.com/api-keys</a> (paid)
+              </small>
             </div>
 
             <div class="form-group">

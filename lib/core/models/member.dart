@@ -3,7 +3,8 @@ class HouseholdMember {
   final String householdId;
   final String? userId;
   final String name;
-  final String role; // 'husband', 'wife', 'self', 'partner'
+  final String role; // 'admin' | 'member'
+  final bool isAdmin;
   final String avatarColor;
   final double regularMonthlySalary;
 
@@ -13,6 +14,7 @@ class HouseholdMember {
     this.userId,
     required this.name,
     this.role = 'member',
+    this.isAdmin = false,
     this.avatarColor = '#10B981',
     this.regularMonthlySalary = 0.0,
   });
@@ -24,6 +26,7 @@ class HouseholdMember {
       userId: json['user_id'] as String?,
       name: json['name'] as String? ?? 'Member',
       role: json['role'] as String? ?? 'member',
+      isAdmin: json['is_admin'] as bool? ?? false,
       avatarColor: json['avatar_color'] as String? ?? '#10B981',
       regularMonthlySalary: (json['regular_monthly_salary'] as num?)?.toDouble() ?? 0.0,
     );
@@ -36,6 +39,7 @@ class HouseholdMember {
       'user_id': userId,
       'name': name,
       'role': role,
+      'is_admin': isAdmin,
       'avatar_color': avatarColor,
       'regular_monthly_salary': regularMonthlySalary,
     };
@@ -47,6 +51,7 @@ class HouseholdMember {
     String? userId,
     String? name,
     String? role,
+    bool? isAdmin,
     String? avatarColor,
     double? regularMonthlySalary,
   }) {
@@ -56,6 +61,7 @@ class HouseholdMember {
       userId: userId ?? this.userId,
       name: name ?? this.name,
       role: role ?? this.role,
+      isAdmin: isAdmin ?? this.isAdmin,
       avatarColor: avatarColor ?? this.avatarColor,
       regularMonthlySalary: regularMonthlySalary ?? this.regularMonthlySalary,
     );

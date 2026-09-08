@@ -211,8 +211,10 @@ function loadSavedState() {
           ...(parsed.aiSettings || {}),
           geminiKey: parsed.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "",
           openaiKey: parsed.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "",
+          hfKey: parsed.aiSettings?.hfKey || localStorage.getItem("hb_hf_key") || "",
+          groqKey: parsed.aiSettings?.groqKey || localStorage.getItem("hb_groq_key") || "",
           provider: parsed.aiSettings?.provider || localStorage.getItem("hb_ai_provider") || "gemini",
-          model: parsed.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash",
+          model: parsed.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash-lite",
           tone: parsed.aiSettings?.tone || localStorage.getItem("hb_ai_tone") || "balanced"
         },
         bnplPlatforms: parsed.bnplPlatforms && parsed.bnplPlatforms.length ? parsed.bnplPlatforms : defaultState.bnplPlatforms,
@@ -1910,6 +1912,110 @@ function updateMathSandbox() {
   }
 }
 
+// ── Dynamic Provider Models Configuration ──────────────────────────────
+const AI_PROVIDER_MODELS = {
+  gemini: [
+    { value: "gemini-2.0-flash-lite", label: "gemini-2.0-flash-lite — Fastest ⚡ (Recommended)" },
+    { value: "gemini-flash-latest", label: "gemini-flash-latest — Latest Stable" },
+    { value: "gemini-2.0-flash", label: "gemini-2.0-flash — Flagship Quality" },
+    { value: "gemini-1.5-pro", label: "gemini-1.5-pro — Deep Reasoning" }
+  ],
+  groq: [
+    { value: "llama-3.3-70b-versatile", label: "llama-3.3-70b-versatile — Best Chat Quality 🌟 (Recommended)" },
+    { value: "llama-3.1-8b-instant", label: "llama-3.1-8b-instant — Ultra Fast ⚡ (50ms)" },
+    { value: "openai/gpt-oss-120b", label: "openai/gpt-oss-120b — High Reasoning 🧠 (100ms Fast)" },
+    { value: "openai/gpt-oss-20b", label: "openai/gpt-oss-20b — Fast Reasoning" },
+    { value: "qwen/qwen3.6-27b", label: "qwen3.6-27b — Alibaba Cloud" },
+    { value: "groq/compound-mini", label: "compound-mini — Groq Native" }
+  ],
+  huggingface: [
+    { value: "meta-llama/Llama-3.1-8B-Instruct", label: "Llama-3.1-8B-Instruct — Fast & Free 🌟 (Recommended)" },
+    { value: "Qwen/Qwen2.5-72B-Instruct", label: "Qwen-2.5-72B-Instruct — Flagship Quality" },
+    { value: "deepseek-ai/DeepSeek-R1", label: "DeepSeek-R1 — Advanced Reasoning" },
+    { value: "google/gemma-3-27b-it", label: "Gemma-3-27B-it — Google Open Model" },
+    { value: "meta-llama/Llama-3.3-70B-Instruct", label: "Llama-3.3-70B-Instruct — Heavy Reasoning" },
+    { value: "openai/gpt-oss-120b", label: "gpt-oss-120b — Open Source 120B" }
+  ],
+  openai: [
+    { value: "gpt-4o-mini", label: "gpt-4o-mini — Best Value 🌟 (Recommended)" },
+    { value: "gpt-4o", label: "gpt-4o — Flagship Capable" }
+  ],
+  none: [
+    { value: "none", label: "Local Financial Math (Instant — No API Required)" }
+  ]
+};
+
+function populateAiModelDropdown(provider, targetModel) {
+  const modelEl = document.getElementById("ai-model-select");
+  const badgeEl = document.getElementById("ai-model-provider-badge");
+  const customWrap = document.getElementById("ai-custom-model-wrap");
+  const customInput = document.getElementById("ai-custom-model-input");
+  if (!modelEl) return;
+
+  const models = AI_PROVIDER_MODELS[provider] || AI_PROVIDER_MODELS.gemini;
+  modelEl.innerHTML = "";
+
+  const providerNames = {
+    gemini: "Google Gemini Models",
+    groq: "Groq Models (100ms Ultra Fast)",
+    huggingface: "HuggingFace Open-Source Models",
+    openai: "OpenAI ChatGPT Models",
+    none: "Instant Local Math"
+  };
+
+  if (badgeEl) {
+    badgeEl.textContent = provider === "none" ? "• Local Math Engine" : `• ${providerNames[provider] || provider}`;
+  }
+
+  if (provider === "none") {
+    const opt = document.createElement("option");
+    opt.value = "none";
+    opt.textContent = "💡 Instant Local Math Only (No API calls)";
+    modelEl.appendChild(opt);
+    if (customWrap) customWrap.style.display = "none";
+    return;
+  }
+
+  const group = document.createElement("optgroup");
+  group.label = providerNames[provider] || "Available Models";
+
+  models.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.value;
+    opt.textContent = m.label;
+    group.appendChild(opt);
+  });
+  modelEl.appendChild(group);
+
+  const customOpt = document.createElement("option");
+  customOpt.value = "custom";
+  customOpt.textContent = "✏️ Custom model name...";
+  modelEl.appendChild(customOpt);
+
+  // Self-heal: check if targetModel belongs to this provider
+  const isDirectMatch = models.some(m => m.value === targetModel);
+  if (isDirectMatch) {
+    modelEl.value = targetModel;
+    if (customWrap) customWrap.style.display = "none";
+  } else if (targetModel && targetModel !== "custom" && targetModel !== "none") {
+    // Check if it's a known model from another provider (e.g. switched provider)
+    const isOtherProvider = Object.values(AI_PROVIDER_MODELS).flat().some(m => m.value === targetModel);
+    if (isOtherProvider) {
+      // Clean switch: pick the 1st recommended model for this new provider
+      modelEl.value = models[0].value;
+      if (customWrap) customWrap.style.display = "none";
+    } else {
+      // User entered a custom model
+      modelEl.value = "custom";
+      if (customWrap) customWrap.style.display = "block";
+      if (customInput) customInput.value = targetModel;
+    }
+  } else {
+    modelEl.value = models[0].value;
+    if (customWrap) customWrap.style.display = "none";
+  }
+}
+
 function handleAiModelSelectChange() {
   const modelEl = document.getElementById("ai-model-select");
   const customWrap = document.getElementById("ai-custom-model-wrap");
@@ -1924,181 +2030,293 @@ function handleAiModelSelectChange() {
   }
 }
 
+// Switching provider dynamically updates model list and shows correct key field
+function handleAiProviderChange() {
+  const provEl = document.getElementById("ai-provider-select");
+  const provider = provEl ? provEl.value : "gemini";
+  populateAiModelDropdown(provider);
+  updateKeyFieldVisibility();
+  saveAiSettings();
+}
+
+function updateKeyFieldVisibility() {
+  const provider = document.getElementById("ai-provider-select")?.value || "gemini";
+  const gemWrap  = document.getElementById("ai-key-gemini-wrap");
+  const hfWrap   = document.getElementById("ai-key-hf-wrap");
+  const groqWrap = document.getElementById("ai-key-groq-wrap");
+  const oaiWrap  = document.getElementById("ai-key-openai-wrap");
+  if (gemWrap)  gemWrap.style.display  = provider === "gemini"      ? "" : "none";
+  if (hfWrap)   hfWrap.style.display   = provider === "huggingface" ? "" : "none";
+  if (groqWrap) groqWrap.style.display = provider === "groq"        ? "" : "none";
+  if (oaiWrap)  oaiWrap.style.display  = provider === "openai"      ? "" : "none";
+}
+
 function saveAiSettings() {
   const provider = document.getElementById("ai-provider-select")?.value || state.aiSettings?.provider || "gemini";
   let geminiKey = document.getElementById("ai-gemini-key")?.value.trim() || "";
   let openaiKey = document.getElementById("ai-openai-key")?.value.trim() || "";
-  
-  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-3.8-flash";
+  let hfKey     = document.getElementById("ai-hf-key")?.value.trim() || "";
+  let groqKey   = document.getElementById("ai-groq-key")?.value.trim() || "";
+
+  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "";
   if (model === "custom") {
     const customVal = document.getElementById("ai-custom-model-input")?.value.trim();
     if (customVal) model = customVal;
   }
+
+  // Model self-healing validation per provider
+  const defaults = {
+    gemini: "gemini-2.0-flash-lite",
+    groq: "llama-3.3-70b-versatile",
+    huggingface: "meta-llama/Llama-3.1-8B-Instruct",
+    openai: "gpt-4o-mini",
+    none: "none"
+  };
+
+  if (!model || model === "custom") {
+    model = defaults[provider] || "gemini-2.0-flash-lite";
+  }
+
+  if (provider === "groq") {
+    if (model.startsWith("gemini") || model.startsWith("mistral") || model.startsWith("gpt-4")) {
+      model = "llama-3.3-70b-versatile";
+    }
+  } else if (provider === "gemini") {
+    if (model.startsWith("openai/") || model.startsWith("mistral") || model.startsWith("groq/") || model.includes("gpt")) {
+      model = "gemini-2.0-flash-lite";
+    }
+  } else if (provider === "huggingface") {
+    if (model.startsWith("gemini") || model.startsWith("openai/") || model.startsWith("groq/") || model.includes("mistralai/Mistral-7B") || model.includes("zephyr") || model.includes("Phi-3")) {
+      model = "meta-llama/Llama-3.1-8B-Instruct";
+    }
+  } else if (provider === "openai") {
+    if (model.startsWith("gemini") || model.startsWith("mistral")) {
+      model = "gpt-4o-mini";
+    }
+  }
+
   const tone = document.getElementById("ai-tone-select")?.value || state.aiSettings?.tone || "balanced";
 
-  // Preserve existing key if input was left blank (e.g. password field was not retouched)
+  // Preserve existing keys if input left blank
   if (!geminiKey && (state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key"))) {
     geminiKey = state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "";
   }
   if (!openaiKey && (state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key"))) {
     openaiKey = state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "";
   }
+  if (!hfKey && (state.aiSettings?.hfKey || localStorage.getItem("hb_hf_key"))) {
+    hfKey = state.aiSettings?.hfKey || localStorage.getItem("hb_hf_key") || "";
+  }
+  if (!groqKey && (state.aiSettings?.groqKey || localStorage.getItem("hb_groq_key"))) {
+    groqKey = state.aiSettings?.groqKey || localStorage.getItem("hb_groq_key") || "";
+  }
 
-  state.aiSettings = { provider, geminiKey, openaiKey, model, tone };
+  state.aiSettings = { provider, geminiKey, openaiKey, hfKey, groqKey, model, tone };
 
-  // Always write to dedicated localStorage keys as an immutable local cache
   if (geminiKey) localStorage.setItem("hb_gemini_key", geminiKey);
   if (openaiKey) localStorage.setItem("hb_openai_key", openaiKey);
+  if (hfKey)     localStorage.setItem("hb_hf_key", hfKey);
+  if (groqKey)   localStorage.setItem("hb_groq_key", groqKey);
   localStorage.setItem("hb_ai_provider", provider);
   localStorage.setItem("hb_ai_model", model);
   localStorage.setItem("hb_ai_tone", tone);
 
   persistState();
 
-  const activeKey = provider === "openai" ? openaiKey : geminiKey;
+  const activeKey = provider === "openai" ? openaiKey : provider === "huggingface" ? hfKey : provider === "groq" ? groqKey : geminiKey;
+  const providerLabel = { gemini: "Gemini", openai: "OpenAI", huggingface: "HuggingFace", groq: "Groq ⚡", none: "Local Math" }[provider] || provider;
   if (activeKey) {
-    showToast(`${provider === "openai" ? "OpenAI" : "Gemini"} AI connected! Model: ${model}`, "success");
+    showToast(`✅ ${providerLabel} AI connected! Model: ${model}`, "success");
+  } else if (provider === "none") {
+    showToast("⚡ Local Math mode — instant answers, no API.", "info");
   } else {
     showToast("AI settings saved.", "info");
   }
 
-  // Update floating chat widget status
   updateAiChatStatusUi();
+  updateKeyFieldVisibility();
 }
 
-// Populates AI Studio form fields with stored values when tab is opened
 function renderAiStudioFields() {
   const s = state.aiSettings || {};
   const savedGemKey = s.geminiKey || localStorage.getItem("hb_gemini_key") || "";
   const savedOaiKey = s.openaiKey || localStorage.getItem("hb_openai_key") || "";
-  const provEl = document.getElementById("ai-provider-select");
-  const modelEl = document.getElementById("ai-model-select");
-  const customWrap = document.getElementById("ai-custom-model-wrap");
-  const customInput = document.getElementById("ai-custom-model-input");
-  const gemKeyEl = document.getElementById("ai-gemini-key");
-  const oaiKeyEl = document.getElementById("ai-openai-key");
-  const toneEl = document.getElementById("ai-tone-select");
+  const savedHfKey   = s.hfKey   || localStorage.getItem("hb_hf_key")   || "";
+  const savedGroqKey = s.groqKey || localStorage.getItem("hb_groq_key") || "";
+  const provEl      = document.getElementById("ai-provider-select");
+  const gemKeyEl    = document.getElementById("ai-gemini-key");
+  const oaiKeyEl    = document.getElementById("ai-openai-key");
+  const hfKeyEl     = document.getElementById("ai-hf-key");
+  const groqKeyEl   = document.getElementById("ai-groq-key");
+  const toneEl      = document.getElementById("ai-tone-select");
 
-  if (provEl) provEl.value = s.provider || localStorage.getItem("hb_ai_provider") || "gemini";
-  
-  const currentModel = s.model || localStorage.getItem("hb_ai_model") || "gemini-3.8-flash";
-  if (modelEl) {
-    const exists = Array.from(modelEl.options).some(o => o.value === currentModel);
-    if (exists) {
-      modelEl.value = currentModel;
-      if (customWrap) customWrap.style.display = "none";
-    } else {
-      modelEl.value = "custom";
-      if (customWrap) customWrap.style.display = "block";
-      if (customInput) customInput.value = currentModel;
-    }
-  }
+  const currentProvider = s.provider || localStorage.getItem("hb_ai_provider") || "gemini";
+  if (provEl) provEl.value = currentProvider;
 
-  if (gemKeyEl && savedGemKey) {
-    gemKeyEl.value = savedGemKey;
-    gemKeyEl.placeholder = `AIzaSy...`;
-  }
-  if (oaiKeyEl && savedOaiKey) {
-    oaiKeyEl.value = savedOaiKey;
-    oaiKeyEl.placeholder = `sk-proj-...`;
-  }
+  const currentModel = s.model || localStorage.getItem("hb_ai_model") || (currentProvider === "groq" ? "openai/gpt-oss-120b" : "gemini-2.0-flash-lite");
+
+  // Populate models specifically for current provider
+  populateAiModelDropdown(currentProvider, currentModel);
+
+  if (gemKeyEl  && savedGemKey)  { gemKeyEl.value  = savedGemKey;  }
+  if (oaiKeyEl  && savedOaiKey)  { oaiKeyEl.value  = savedOaiKey;  }
+  if (hfKeyEl   && savedHfKey)   { hfKeyEl.value   = savedHfKey;   }
+  if (groqKeyEl && savedGroqKey) { groqKeyEl.value = savedGroqKey; }
   if (toneEl) toneEl.value = s.tone || localStorage.getItem("hb_ai_tone") || "balanced";
+
+  updateKeyFieldVisibility();
 }
+
 
 async function testAiConnection() {
   const outputEl = document.getElementById("ai-test-output");
   if (outputEl) outputEl.innerHTML = "<em>⏳ Connecting to AI API...</em>";
 
-  // Read directly from form inputs first, falling back to state
   const provider = document.getElementById("ai-provider-select")?.value || state.aiSettings?.provider || "gemini";
-  const inputGemKey = document.getElementById("ai-gemini-key")?.value.trim();
-  const inputOaiKey = document.getElementById("ai-openai-key")?.value.trim();
-  const geminiKey = inputGemKey || state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "";
-  const openaiKey = inputOaiKey || state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "";
-  
-  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-3.8-flash";
+  let model = document.getElementById("ai-model-select")?.value || state.aiSettings?.model || "gemini-2.0-flash-lite";
   if (model === "custom") {
-    model = document.getElementById("ai-custom-model-input")?.value.trim() || "gemini-3.8-flash";
+    model = document.getElementById("ai-custom-model-input")?.value.trim() || "gemini-2.0-flash-lite";
   }
-  const activeKey = provider === "openai" ? openaiKey : geminiKey;
 
-  // Auto-save the key if user just typed it
-  if (inputGemKey || inputOaiKey) {
-    saveAiSettings();
+  // Read each key from the form or state
+  const geminiKey = document.getElementById("ai-gemini-key")?.value.trim() || state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "";
+  const openaiKey = document.getElementById("ai-openai-key")?.value.trim() || state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "";
+  const hfKey     = document.getElementById("ai-hf-key")?.value.trim()     || state.aiSettings?.hfKey     || localStorage.getItem("hb_hf_key")   || "";
+  const groqKey   = document.getElementById("ai-groq-key")?.value.trim()   || state.aiSettings?.groqKey   || localStorage.getItem("hb_groq_key") || "";
+
+  // Pick the correct key for the selected provider
+  const activeKey = { gemini: geminiKey, openai: openaiKey, huggingface: hfKey, groq: groqKey }[provider] || "";
+
+  if (!activeKey && provider !== "none") {
+    const labels = { gemini: "Google Gemini API key (AIzaSy...)", openai: "OpenAI key (sk-proj-...)", huggingface: "HuggingFace token (hf_...)", groq: "Groq key (gsk_...)" };
+    if (outputEl) outputEl.innerHTML = `<span style="color: var(--warning);">⚠️ No key found. Please enter your ${labels[provider] || "API key"} above and click Save first.</span>`;
+    return;
   }
 
   const metrics = calculateMetrics();
-  const prompt = `You are HomeBudget AI financial advisor. Here is the real household brief: Income: ${fmt(metrics.totalIncome)}, Committed Fixed Bills: ${fmt(metrics.totalCommitted)}, Spendable Balance Remaining: ${fmt(metrics.remainingBalance)}, Safe Daily Limit: ${fmt(Math.round(metrics.remainingBalance / Math.max(1, state.activeCycle?.daysRemaining || 26)))}. Give 2 sentences of sharp, intelligent advice to the user.`;
+  const daysLeft = Math.max(1, state.activeCycle?.daysRemaining || 26);
+  const prompt = `You are HomeBudget AI financial advisor. Household data: Income ${fmt(metrics.totalIncome)}, Fixed Bills ${fmt(metrics.totalFixedBills)}, Spendable Balance ${fmt(metrics.remainingBalance)}, Safe Daily Limit ${fmt(Math.round(metrics.remainingBalance / daysLeft))}. Give 2 sentences of sharp advice.`;
 
-  if (!activeKey) {
-    if (outputEl) outputEl.innerHTML = `<span style="color: var(--warning);">⚠️ No key entered. Please paste your Google Gemini API key above and click Save.</span>`;
-    return;
+  // Auto-sanitize model against wrong provider leftovers
+  if (provider === "groq") {
+    if (!model || model.startsWith("gemini") || model.startsWith("mistral") || model.startsWith("gpt-4")) {
+      model = "llama-3.3-70b-versatile";
+    }
+  } else if (provider === "gemini") {
+    if (!model || model.startsWith("openai/") || model.startsWith("mistral") || model.startsWith("groq/") || model.includes("gpt")) {
+      model = "gemini-2.0-flash-lite";
+    }
+  } else if (provider === "huggingface") {
+    if (!model || model.startsWith("gemini") || model.startsWith("openai/") || model.startsWith("groq/") || model.includes("mistralai/Mistral-7B") || model.includes("zephyr") || model.includes("Phi-3")) {
+      model = "meta-llama/Llama-3.1-8B-Instruct";
+    }
+  } else if (provider === "openai") {
+    if (!model || model.startsWith("gemini") || model.startsWith("mistral")) {
+      model = "gpt-4o-mini";
+    }
   }
 
   try {
     const startTime = Date.now();
     let responseText = "";
-    if (provider === "openai") {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
-        body: JSON.stringify({ model: model || "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || `OpenAI HTTP ${res.status}`);
-      responseText = data.choices?.[0]?.message?.content || "Connected!";
-    } else {
-      let effectiveModel = model || "gemini-flash-latest";
-      if (effectiveModel === 'gemini-3.5-flash-lite' || effectiveModel === 'gemini-2.0-flash') {
-        effectiveModel = 'gemini-flash-latest';
+
+    // ── Google Gemini ─────────────────────────────────────────────────────
+    if (provider === "gemini") {
+      let effectiveModel = model || "gemini-2.0-flash-lite";
+      // These are fake/deprecated model names — remap to real ones
+      if (["gemini-3.5-flash-lite","gemini-3.8-flash","gemini-3.1-pro"].includes(effectiveModel)) {
+        effectiveModel = "gemini-2.0-flash-lite";
       }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`;
       let res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": activeKey
-        },
+        headers: { "Content-Type": "application/json", "X-goog-api-key": geminiKey },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
+      // Fallback if model not found
       if (!res.ok && (res.status === 404 || res.status === 400)) {
         res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-goog-api-key": activeKey
-          },
+          headers: { "Content-Type": "application/json", "X-goog-api-key": geminiKey },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
+        model = "gemini-flash-latest (fallback)";
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || `Gemini API error (HTTP ${res.status})`);
+      if (!res.ok) throw new Error(data.error?.message || `Gemini HTTP ${res.status}`);
       const parts = data.candidates?.[0]?.content?.parts || [];
-      responseText = parts.map(p => p.text || "").filter(Boolean).join("\n\n").trim();
-      if (!responseText) throw new Error("API returned an empty response. Check model availability.");
+      responseText = parts.map(p => p.text || "").filter(Boolean).join(" ").trim();
+      if (!responseText) throw new Error("Gemini returned an empty response.");
+
+    // ── Groq ─────────────────────────────────────────────────────────────
+    } else if (provider === "groq") {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
+        body: JSON.stringify({
+          model: model || "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.5,
+          max_completion_tokens: 500
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `Groq HTTP ${res.status}`);
+      const choice = data.choices?.[0];
+      responseText = choice?.message?.content?.trim() || choice?.message?.reasoning?.trim() || "";
+      if (responseText.includes("<think>")) {
+        responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      }
+
+    // ── HuggingFace (OpenAI-compatible router endpoint) ──────────────────
+    } else if (provider === "huggingface") {
+      const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${hfKey}` },
+        body: JSON.stringify({ model: model || "meta-llama/Llama-3.1-8B-Instruct", messages: [{ role: "user", content: prompt }], max_tokens: 200, stream: false })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errMsg = typeof data.error === "string" ? data.error : (data.error?.message || data.message || `HuggingFace HTTP ${res.status}`);
+        throw new Error(errMsg);
+      }
+      responseText = data.choices?.[0]?.message?.content?.trim() || "";
+
+    // ── OpenAI ───────────────────────────────────────────────────────────
+    } else if (provider === "openai") {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+        body: JSON.stringify({ model: model || "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `OpenAI HTTP ${res.status}`);
+      responseText = data.choices?.[0]?.message?.content?.trim() || "";
     }
+
     const elapsed = Date.now() - startTime;
     if (outputEl) outputEl.innerHTML = `
       <div style="color: #34D399; font-weight: 700; margin-bottom: 0.5rem;">
-        ✅ Live Connection Successful! (${provider.toUpperCase()} — ${model} in ${elapsed}ms)
+        ✅ Connected! (${provider.toUpperCase()} — ${model} — ${elapsed}ms)
       </div>
-      <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10B981; padding: 0.75rem; border-radius: 6px; line-height: 1.5; color: #E5E7EB;">
+      <div style="background: rgba(16,185,129,0.08); border-left: 3px solid #10B981; padding: 0.75rem; border-radius: 6px; line-height: 1.5; color: #E5E7EB;">
         ${responseText}
       </div>
     `;
-    showToast(`✅ Connected to ${model} successfully!`, "success");
+    showToast(`✅ ${provider} connected in ${elapsed}ms!`, "success");
   } catch (err) {
     if (outputEl) outputEl.innerHTML = `
       <div style="color: #EF4444; font-weight: 700; margin-bottom: 0.5rem;">
-        ❌ Connection Failed (${model}):
+        ❌ Connection Failed (${provider} / ${model}):
       </div>
-      <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #EF4444; padding: 0.75rem; border-radius: 6px; color: #FCA5A5; font-size: 0.85rem;">
+      <div style="background: rgba(239,68,68,0.08); border-left: 3px solid #EF4444; padding: 0.75rem; border-radius: 6px; color: #FCA5A5; font-size: 0.85rem;">
         ${err.message}
       </div>
     `;
-    showToast(`❌ Connection error: ${err.message}`, "danger");
+    showToast(`❌ ${err.message}`, "danger");
   }
 }
+
 
 function exportDatabaseJson() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
@@ -3623,27 +3841,39 @@ let aiChatOpen = false;
 let aiChatHistory = []; // Holds { role: 'user'|'model', text: string }
 
 function getActiveAiKey() {
-  return (
-    state.aiSettings?.geminiKey ||
-    localStorage.getItem("hb_gemini_key") ||
-    state.aiSettings?.openaiKey ||
-    localStorage.getItem("hb_openai_key") ||
-    ""
-  );
+  const provider = getActiveAiProvider();
+  if (provider === "huggingface") return localStorage.getItem("hb_hf_key")   || state.aiSettings?.hfKey   || "";
+  if (provider === "openai")      return localStorage.getItem("hb_openai_key") || state.aiSettings?.openaiKey || "";
+  if (provider === "groq")        return localStorage.getItem("hb_groq_key")  || state.aiSettings?.groqKey  || "";
+  // Gemini (default)
+  return localStorage.getItem("hb_gemini_key") || state.aiSettings?.geminiKey || "";
 }
 
 function getActiveAiProvider() {
-  const gemKey = state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key");
-  const oaiKey = state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key");
-  if (state.aiSettings?.provider === "openai" && oaiKey) return "openai";
-  if (gemKey) return "gemini";
-  if (oaiKey) return "openai";
-  return state.aiSettings?.provider || "gemini";
+  return localStorage.getItem("hb_ai_provider") || state.aiSettings?.provider || "gemini";
 }
 
 function getActiveAiModel() {
-  const model = state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-flash-latest";
-  return model;
+  const provider = getActiveAiProvider();
+  let model = localStorage.getItem("hb_ai_model") || state.aiSettings?.model || "";
+  if (provider === "groq") {
+    if (!model || model.startsWith("gemini") || model.startsWith("mistral") || model.startsWith("gpt-4")) {
+      model = "llama-3.3-70b-versatile";
+    }
+  } else if (provider === "gemini") {
+    if (!model || model.startsWith("openai/") || model.startsWith("mistral") || model.startsWith("groq/") || model.includes("gpt")) {
+      model = "gemini-2.0-flash-lite";
+    }
+  } else if (provider === "huggingface") {
+    if (!model || model.startsWith("gemini") || model.startsWith("openai/") || model.startsWith("groq/") || model.includes("mistralai/Mistral-7B") || model.includes("zephyr") || model.includes("Phi-3")) {
+      model = "meta-llama/Llama-3.1-8B-Instruct";
+    }
+  } else if (provider === "openai") {
+    if (!model || model.startsWith("gemini") || model.startsWith("mistral")) {
+      model = "gpt-4o-mini";
+    }
+  }
+  return model || "gemini-2.0-flash-lite";
 }
 
 function updateAiChatStatusUi() {
@@ -3758,169 +3988,307 @@ async function processChatQuestion(question) {
   const model = getActiveAiModel();
   let responseText = "";
 
-  // Append question to conversation history
-  aiChatHistory.push({ role: "user", text: question });
-  if (aiChatHistory.length > 10) aiChatHistory.shift();
-
   const daysLeft = Math.max(1, state.activeCycle?.daysRemaining || 26);
   const dailyBudget = Math.round(metrics.remainingBalance / daysLeft);
+  const sym = state.household?.currencySymbol || "Rs.";
 
-  // Clean, data-driven financial responses without developer jargon
+  // ── Local instant responses (used ONLY in offline mode) ────────────────────
   function getLocalFinancialResponse(q) {
-    const lower = (q || "").toLowerCase();
+    const lower = (q || "").toLowerCase().trim();
+
+    // Greetings
+    const isGreeting = /^(hi|hello|hey|yo|sup|good\s*(morning|evening|afternoon|day)|howdy|hiya)[\s!?.]*$/.test(lower);
+    if (isGreeting) {
+      const hh = state.household?.name || "your household";
+      return `👋 Hi! I'm your **Budget AI Advisor** for ${hh}.\n\nI have live access to your cycle data. Try asking:\n• *"How much can I spend today?"*\n• *"What are my top expenses?"*\n• *"Can I afford to buy X?"*\n• *"What's my BNPL total?"*\n• *"Am I on track this cycle?"*`;
+    }
+
+    // Meta / Capabilities / "what can you do"
+    const isMeta = /what\s+(you\s+can|can\s+you|do\s+you|is\s+this)|who\s+are\s+you|what\s+are\s+you|help|capabilities|features|about/i.test(lower) ||
+                   lower.includes("what can you") || lower.includes("what you can") || lower.includes("what do you") ||
+                   lower.includes("who are you") || lower.includes("what are you") || lower.includes("help") || lower.includes("this app");
+    if (isMeta) {
+      return `I'm the **HomeBudget AI Advisor** — your real-time household financial assistant.\n\nI track your 25th-to-25th salary cycle and can help you with:\n• **Safe Daily Spend:** How much you can spend per day without running short (**${fmt(dailyBudget)}/day** right now).\n• **Affordability Analysis:** Whether a planned purchase or installment fits your remaining cash (**${fmt(metrics.remainingBalance)}**).\n• **Bills & BNPL Tracking:** Monitor all fixed commitments and Koko/Mintpay installments.\n• **Cycle Forecast & Health:** Real-time survival forecast and savings projections.\n\n💬 *Try asking:* *"Today's budget?"*, *"Can I afford 5000?"*, or *"Top expenses?"*`;
+    }
+
+    // Financial calculations
     if (lower.includes("today") || lower.includes("spend today") || lower.includes("daily")) {
       const today = new Date().toISOString().split("T")[0];
       const todaySpend = (state.dailySpends || []).filter(s => s.date === today).reduce((sum, s) => sum + s.amount, 0);
       const remainingToday = Math.max(0, dailyBudget - todaySpend);
       const isOver = todaySpend > dailyBudget;
-      return `**Today's Safe Spend Analysis:**\n- Daily budget limit: **${fmt(dailyBudget)}**\n- Spent so far today: **${fmt(todaySpend)}**\n- Remaining today: **${fmt(remainingToday)}**\n- Status: ${isOver ? "⚠️ You have exceeded today's safe spending limit. Consider pausing discretionary purchases today to stay on track." : "✅ Spending is well within today's safe limit. Great discipline!"}`;
+      return `**Today's Safe Spend:**\n- Daily Limit: **${fmt(dailyBudget)}** | Spent Today: **${fmt(todaySpend)}** | Left for Today: **${fmt(remainingToday)}**\n- ${isOver ? "⚠️ Over limit — hold off on discretionary spending today." : "✅ Within safe daily limit."}`;
     } else if (lower.includes("balance") || lower.includes("remaining") || lower.includes("money left")) {
-      return `**Spendable Balance Overview:**\n- Remaining spendable balance: **${fmt(metrics.remainingBalance)}**\n- Cycle days remaining: **${daysLeft} days**\n- Safe daily allocation: **${fmt(dailyBudget)}/day**\n- Projected cycle savings: **${fmt(metrics.projectedSavings)}**\n- Safety reserve: **${fmt(metrics.safetyReserveAmount)}**`;
+      return `**Spendable Balance:**\n- Total Left: **${fmt(metrics.remainingBalance)}**\n- Days remaining in cycle: **${daysLeft} days** (Safe spend: **${fmt(dailyBudget)}/day**)\n- Projected Savings: **${fmt(metrics.projectedSavings)}**`;
     } else if (lower.includes("expense") || lower.includes("biggest") || lower.includes("top") || lower.includes("spending")) {
       const catMap = {};
-      (state.dailySpends || []).forEach(s => {
-        const catName = s.cat || s.category || "General";
-        catMap[catName] = (catMap[catName] || 0) + s.amount;
-      });
-      const sorted = Object.entries(catMap).sort((a,b) => b[1] - a[1]);
-      const top3 = sorted.slice(0, 3).map(([cat, amt]) => `• **${cat}**: ${fmt(amt)}`).join("\n");
-      return `**Top Spending Categories This Cycle:**\n${top3 || "• No itemized daily expenses logged yet."}\n\n- Fixed bills committed: **${fmt(metrics.totalFixedBills)}**\n- BNPL installments: **${fmt(metrics.totalBnpl)}**`;
+      (state.dailySpends || []).forEach(s => { const c = s.cat||s.category||"General"; catMap[c]=(catMap[c]||0)+s.amount; });
+      const top3 = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,a])=>`• **${c}**: ${fmt(a)}`).join("\n");
+      return `**Top Spending Categories:**\n${top3 || "• No daily expenses recorded yet."}\n\nCommitted Bills: **${fmt(metrics.totalFixedBills)}** | Active BNPL: **${fmt(metrics.totalBnpl)}**`;
     } else if (lower.includes("bnpl") || lower.includes("koko") || lower.includes("installment") || lower.includes("payzy") || lower.includes("mintpay")) {
-      const pending = (state.installments || []).filter(i => !i.isPaid);
-      return pending.length 
-        ? `**Active BNPL Installments (${pending.length}):**\n` + pending.map(i => `• ${i.title || i.item} (${i.platform || 'BNPL'}): **${fmt(i.monthly || i.amount)}**`).join("\n") + `\n\nTotal pending this cycle: **${fmt(pending.reduce((s,i)=>s+(i.monthly||i.amount),0))}**`
-        : `✅ **No pending BNPL installments!** All your BNPL plans are fully settled for this cycle.`;
-    } else if (lower.includes("buy") || lower.includes("purchase") || lower.includes("can i afford") || lower.includes("afford")) {
+      const pending = (state.installments||[]).filter(i=>!i.isPaid);
+      return pending.length
+        ? `**Active BNPL Installments (${pending.length}):**\n`+pending.map(i=>`• ${i.title||i.item} (${i.platform||'BNPL'}): **${fmt(i.monthly||i.amount)}**`).join("\n")+`\n\nTotal Due: **${fmt(pending.reduce((s,i)=>s+(i.monthly||i.amount),0))}**`
+        : `✅ No pending BNPL installments this cycle.`;
+    } else if (lower.includes("buy") || lower.includes("afford") || lower.includes("purchase")) {
       return metrics.remainingBalance > dailyBudget * 2
-        ? `Your current spendable balance is **${fmt(metrics.remainingBalance)}** with **${daysLeft} days** remaining in this cycle (${fmt(dailyBudget)}/day safe limit). If this expense fits comfortably within your daily allocation, you can proceed safely.`
-        : `⚠️ **Caution:** Your spendable balance is **${fmt(metrics.remainingBalance)}** with **${daysLeft} days** left (${fmt(dailyBudget)}/day safe limit). Prioritize essential household expenses before making discretionary purchases.`;
+        ? `Spendable balance is **${fmt(metrics.remainingBalance)}** with ${daysLeft} days left (**${fmt(dailyBudget)}/day**). A purchase is safe as long as it leaves enough for essentials!`
+        : `⚠️ Budget is tight at **${fmt(metrics.remainingBalance)}** with ${daysLeft} days remaining. We recommend holding off on non-essential purchases.`;
+    } else if (lower.includes("income") || lower.includes("salary")) {
+      return `**Cycle Income Breakdown:**\n• Total Income: **${fmt(metrics.totalIncome)}**\n• Fixed Bills: **${fmt(metrics.totalFixedBills)}**\n• BNPL: **${fmt(metrics.totalBnpl)}**\n• Daily Spend: **${fmt(metrics.totalDailySpend)}**\n• Remaining Spendable: **${fmt(metrics.remainingBalance)}**`;
+    } else if (lower.includes("forecast") || lower.includes("survive") || lower.includes("shortfall") || lower.includes("on track") || lower.includes("health")) {
+      return metrics.hasShortfall
+        ? `⚠️ **Shortfall Warning:** Outgoings exceed income by **${fmt(Math.abs(metrics.remainingBalance))}**. Review discretionary expenses and log any pending salary.`
+        : `✅ **Financial Health: On Track!** Spendable balance is **${fmt(metrics.remainingBalance)}** across ${daysLeft} days (**${fmt(dailyBudget)}/day**). Projected savings: **${fmt(metrics.projectedSavings)}**.`;
     } else {
-      return `**Financial Health Summary:**\n- Spendable balance: **${fmt(metrics.remainingBalance)}**\n- Days remaining: **${daysLeft} days**\n- Safe daily spend limit: **${fmt(dailyBudget)}/day**\n- Health outlook: ${metrics.hasShortfall ? "⚠️ Monitor variable expenses closely to maintain your reserve buffer." : "✅ Financially stable with a healthy savings buffer."}`;
+      return `I'm currently in **Local Math Mode**.\n\n📊 **Your Quick Cycle Snapshot:**\n• **Spendable Cash:** ${fmt(metrics.remainingBalance)}\n• **Safe Daily Limit:** ${fmt(dailyBudget)}/day (${daysLeft} days left)\n• **Committed Bills + BNPL:** ${fmt(metrics.totalFixedBills + metrics.totalBnpl)}\n\n💡 *For full conversational AI intelligence, configure Groq, Gemini, or Hugging Face in Admin CMS → AI Advisor Studio!*`;
     }
   }
 
-  try {
-    if (activeKey) {
-      if (provider === "openai") {
-        const systemPrompt = buildAiPrompt("", metrics);
+  // ── Context Prompt for Real AI Providers ──────────────────────────────────
+  function buildChatContext() {
+    const hh = state.household || {};
+    const cycle = state.activeCycle || {};
+    const tone = state.aiSettings?.tone || localStorage.getItem("hb_ai_tone") || "balanced";
+
+    let toneInstruction = "Be balanced, encouraging, and financially prudent.";
+    if (tone === "strict") toneInstruction = "Be strictly disciplined, prioritize urgent debt reduction, and advise firmly against non-essentials.";
+    if (tone === "optimistic") toneInstruction = "Be positive, growth-oriented, and celebrate good budgeting habits while encouraging savings.";
+    if (tone === "analytical") toneInstruction = "Be highly analytical, concise, precise with exact numbers and proportions.";
+
+    return `You are the intelligent Household Financial Advisor & AI Assistant for "${hh.name || 'this household'}".
+Tone: ${toneInstruction}
+
+Current Active Cycle: ${cycle.name || 'Current'} (${daysLeft} days remaining in the 25th-to-25th salary cycle).
+Real-Time Household Financial Metrics (${sym}):
+- Total Cycle Income: ${fmt(metrics.totalIncome)}
+- Fixed Committed Bills: ${fmt(metrics.totalFixedBills)}
+- Active BNPL Installments: ${fmt(metrics.totalBnpl)}
+- Daily Living Expenses Spent: ${fmt(metrics.totalDailySpend)}
+- Remaining Spendable Balance: ${fmt(metrics.remainingBalance)}
+- Safe Daily Spending Limit: ${fmt(dailyBudget)}/day (for ${daysLeft} remaining days)
+- Projected Cycle Savings: ${fmt(metrics.projectedSavings)}
+- Financial Deficit/Shortfall: ${metrics.hasShortfall ? `YES (Shortfall amount: ${fmt(Math.abs(metrics.remainingBalance))})` : "NO (Financially healthy)"}
+
+Role & Guidelines:
+1. You are a real conversational, smart financial advisor. Answer naturally and intelligently.
+2. If the user greets you or asks about your capabilities (e.g. "what you can do?", "who are you?", "how can you help?", "hi"):
+   - Introduce yourself warmly as their household financial assistant.
+   - Explain what you can do: safe daily spend calculation, evaluating purchase affordability, tracking bills & BNPL burden, and projecting savings.
+   - Mention their current spendable balance (${fmt(metrics.remainingBalance)}) and give 2 concrete example questions they can ask right now.
+3. If the user asks about affordability (e.g. "can I buy X?", "can I spend Y?"):
+   - Check if that amount fits comfortably within their remaining balance (${fmt(metrics.remainingBalance)}) and their safe daily limit (${fmt(dailyBudget)}/day).
+   - Give clear, helpful advice without lecturing.
+4. If the user asks about their budget, savings, or expenses:
+   - Use the live financial numbers above. Do not invent fictitious numbers.
+5. Format responses cleanly with bold numbers and bullet points where helpful. Keep responses concise (typically 2-4 sentences or short bullets).`;
+  }
+
+  // ── Execution Flow ────────────────────────────────────────────────────────
+  if (provider === "none") {
+    responseText = getLocalFinancialResponse(question);
+  } else if (!activeKey) {
+    const pNames = { gemini: "Google Gemini", groq: "Groq", huggingface: "HuggingFace", openai: "OpenAI" };
+    responseText = `⚠️ **No API Key Configured for ${pNames[provider] || provider}**\n\nPlease open **Admin CMS → AI Advisor Studio** to enter and save your ${pNames[provider] || provider} API key.\n\n*Or switch Provider to "None — Instant Local Math" if you prefer offline calculations.*`;
+  } else {
+    try {
+      // ── Groq (free, OpenAI-compatible, ultra fast) ──────────────────────
+      if (provider === "groq") {
         const messages = [
-          { role: "system", content: systemPrompt },
-          ...aiChatHistory.map(m => ({
-            role: m.role === "user" ? "user" : "assistant",
-            content: m.text
-          }))
+          { role: "system", content: buildChatContext() },
+          ...aiChatHistory.map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
+          { role: "user", content: question }
+        ];
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+          body: JSON.stringify({
+            model: model || "llama-3.3-70b-versatile",
+            messages,
+            temperature: 0.5,
+            max_completion_tokens: 1024
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || `Groq error (HTTP ${res.status})`);
+        const choice = data.choices?.[0];
+        let content = choice?.message?.content?.trim() || "";
+        if (!content && choice?.message?.reasoning) content = choice.message.reasoning.trim();
+        if (content.includes("<think>")) {
+          content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        }
+        responseText = content;
+
+      // ── HuggingFace (router endpoint — browser-compatible) ──────────────
+      } else if (provider === "huggingface") {
+        const hfModel = model || "meta-llama/Llama-3.1-8B-Instruct";
+        const messages = [
+          { role: "system", content: buildChatContext() },
+          ...aiChatHistory.map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
+          { role: "user", content: question }
+        ];
+
+        const HF_URL = "https://router.huggingface.co/v1/chat/completions";
+        let res = await fetch(HF_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+          body: JSON.stringify({
+            model: hfModel,
+            messages,
+            temperature: 0.5,
+            max_tokens: 1024,
+            stream: false
+          })
+        });
+
+        // Fallback to Qwen if primary model is unavailable
+        if (!res || !res.ok) {
+          console.warn("[HF] Primary model failed, trying Qwen-2.5-72B fallback...");
+          res = await fetch(HF_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
+            body: JSON.stringify({
+              model: "Qwen/Qwen2.5-72B-Instruct",
+              messages,
+              temperature: 0.5,
+              max_tokens: 1024,
+              stream: false
+            })
+          });
+        }
+
+        if (!res || !res.ok) {
+          const errData = res ? await res.json().catch(() => ({})) : {};
+          const errMsg = typeof errData.error === "string" ? errData.error : (errData.error?.message || errData.message || `HuggingFace HTTP ${res?.status}`);
+          throw new Error(errMsg);
+        }
+
+        const data = await res.json();
+        const choice = data.choices?.[0];
+        let content = choice?.message?.content?.trim() || "";
+        if (content.includes("<think>")) {
+          content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        }
+        responseText = content;
+
+      // ── OpenAI ──────────────────────────────────────────────────────────
+      } else if (provider === "openai") {
+        const messages = [
+          { role: "system", content: buildChatContext() },
+          ...aiChatHistory.map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
+          { role: "user", content: question }
         ];
         const res = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${activeKey}` },
-          body: JSON.stringify({ model: model || "gpt-4o-mini", messages })
+          body: JSON.stringify({
+            model: model || "gpt-4o-mini",
+            messages,
+            temperature: 0.5,
+            max_tokens: 1024
+          })
         });
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error?.message || `OpenAI error (HTTP ${res.status})`);
-        }
-        responseText = data.choices?.[0]?.message?.content;
-      } else {
-        // GOOGLE GEMINI
-        const systemContext = buildAiPrompt("", metrics);
-        const contents = [
-          {
-            role: "user",
-            parts: [{ text: `System Context & Real Household Financial Data:\n${systemContext}\n\nPlease acknowledge and act as the real-time financial advisor.` }]
-          },
-          {
-            role: "model",
-            parts: [{ text: `Understood! I have loaded your live household finances (Cycle: ${state.activeCycle?.name || "Current"}, Remaining Spendable Balance: ${fmt(metrics.remainingBalance)}, Daily Safe Spend: ${fmt(dailyBudget)}). I am ready to advise you intelligently.` }]
-          }
-        ];
+        if (!res.ok) throw new Error(data.error?.message || `OpenAI error (HTTP ${res.status})`);
+        responseText = data.choices?.[0]?.message?.content?.trim() || "";
 
-        // Append recent multi-turn conversation
+      // ── Google Gemini (default) ──────────────────────────────────────────
+      } else {
+        let effectiveModel = model || "gemini-2.0-flash-lite";
+        const slowModels = ["gemini-3.8-flash", "gemini-2.0-flash-exp", "gemini-3.5-flash-lite", "gemini-2.0-flash"];
+        if (slowModels.includes(effectiveModel)) effectiveModel = "gemini-2.0-flash-lite";
+
+        const systemInstruction = {
+          parts: [{ text: buildChatContext() }]
+        };
+
+        const contents = [];
         aiChatHistory.forEach(turn => {
           contents.push({
             role: turn.role === "user" ? "user" : "model",
             parts: [{ text: turn.text }]
           });
         });
+        contents.push({
+          role: "user",
+          parts: [{ text: question }]
+        });
 
-        let effectiveModel = model || 'gemini-flash-latest';
-        if (effectiveModel === 'gemini-3.5-flash-lite' || effectiveModel === 'gemini-2.0-flash') {
-          effectiveModel = 'gemini-flash-latest';
-        }
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
 
         let res;
         try {
-          res = await fetch(url, {
-            method: "POST",
-            signal: controller.signal,
-            headers: {
-              "Content-Type": "application/json",
-              "X-goog-api-key": activeKey
-            },
-            body: JSON.stringify({
-              contents,
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 800
-              }
-            })
-          });
-        } catch (fetchErr) {
-          console.warn("[Gemini] Fetch timeout or abort, retrying with gemini-flash-latest:", fetchErr);
+          res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent`,
+            {
+              method: "POST", signal: controller.signal,
+              headers: { "Content-Type": "application/json", "X-goog-api-key": activeKey },
+              body: JSON.stringify({
+                systemInstruction,
+                contents,
+                generationConfig: { temperature: 0.5, maxOutputTokens: 1024 }
+              })
+            }
+          );
         } finally {
           clearTimeout(timeoutId);
         }
 
-        // If fetch timed out or selected model returned an error, immediately fallback to gemini-flash-latest
+        // Fallback for models or endpoints that don't support systemInstruction
         if (!res || !res.ok) {
-          console.warn(`[Gemini] Model ${effectiveModel} did not return 200. Calling fast production gemini-flash-latest...`);
-          res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-goog-api-key": activeKey
-            },
-            body: JSON.stringify({
-              contents,
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 800
-              }
-            })
-          });
+          const fallbackContents = [];
+          if (contents.length > 0) {
+            fallbackContents.push({
+              role: "user",
+              parts: [{ text: buildChatContext() + "\n\nUser Question: " + contents[0].parts[0].text }]
+            });
+            for (let i = 1; i < contents.length; i++) {
+              fallbackContents.push(contents[i]);
+            }
+          }
+          res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-goog-api-key": activeKey },
+              body: JSON.stringify({
+                contents: fallbackContents,
+                generationConfig: { temperature: 0.5, maxOutputTokens: 1024 }
+              })
+            }
+          );
         }
 
         const data = await res.json();
-        if (!res.ok) {
-          const apiErr = data.error?.message || `Gemini HTTP ${res.status}`;
-          throw new Error(apiErr);
-        }
-
+        if (!res.ok) throw new Error(data.error?.message || `Gemini HTTP ${res.status}`);
         const parts = data.candidates?.[0]?.content?.parts || [];
         responseText = parts.map(p => p.text || "").filter(Boolean).join("\n\n").trim();
       }
 
-      if (!responseText) {
-        responseText = getLocalFinancialResponse(question);
-      } else {
-        // Record AI reply in history
+      // Record successful conversation turn in history (strictly alternating pairs)
+      if (responseText) {
+        aiChatHistory.push({ role: "user", text: question });
         aiChatHistory.push({ role: "model", text: responseText });
-        if (aiChatHistory.length > 10) aiChatHistory.shift();
+        while (aiChatHistory.length > 6) {
+          aiChatHistory.shift();
+        }
+      } else {
+        throw new Error("The AI model returned an empty response. Please try again or switch model.");
       }
-    } else {
-      responseText = getLocalFinancialResponse(question);
+
+    } catch (err) {
+      console.error("[AI Chat Error]:", err);
+      const providerNames = { gemini: "Gemini", groq: "Groq", huggingface: "HuggingFace", openai: "OpenAI" };
+      const pName = providerNames[provider] || provider;
+      responseText = `⚠️ **${pName} AI Error:** ${err.message}\n\n*Check your API key and selected model in Admin CMS → AI Advisor Studio.*`;
     }
-  } catch (err) {
-    console.warn("AI service call failed, seamlessly falling back to local calculation:", err);
-    responseText = getLocalFinancialResponse(question);
   }
 
   if (thinkingEl) thinkingEl.remove();
   appendChatMessage(responseText, "ai");
 }
+
 
 // ============================================================
 // 3D INTERACTIVE THREE.JS HERO ANIMATION
@@ -4209,8 +4577,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             ...(cloudState.aiSettings || {}),
             geminiKey: cloudState.aiSettings?.geminiKey || state.aiSettings?.geminiKey || localStorage.getItem("hb_gemini_key") || "",
             openaiKey: cloudState.aiSettings?.openaiKey || state.aiSettings?.openaiKey || localStorage.getItem("hb_openai_key") || "",
+            hfKey: cloudState.aiSettings?.hfKey || state.aiSettings?.hfKey || localStorage.getItem("hb_hf_key") || "",
+            groqKey: cloudState.aiSettings?.groqKey || state.aiSettings?.groqKey || localStorage.getItem("hb_groq_key") || "",
             provider: cloudState.aiSettings?.provider || state.aiSettings?.provider || localStorage.getItem("hb_ai_provider") || "gemini",
-            model: cloudState.aiSettings?.model || state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash",
+            model: cloudState.aiSettings?.model || state.aiSettings?.model || localStorage.getItem("hb_ai_model") || "gemini-2.0-flash-lite",
             tone: cloudState.aiSettings?.tone || state.aiSettings?.tone || localStorage.getItem("hb_ai_tone") || "balanced"
           },
           bnplPlatforms: (cloudState.bnplPlatforms && cloudState.bnplPlatforms.length) ? cloudState.bnplPlatforms : defaultState.bnplPlatforms,
