@@ -5,6 +5,6 @@
     { "source": "/admin/", "destination": "/web/admin.html" },
     { "source": "/admin.html", "destination": "/web/admin.html" },
     { "source": "/", "destination": "/web/index.html" },
-    { "source": "/(.*)", "destination": "/web/$1" }
+    { "source": "/((?!web/).*)", "destination": "/web/$1" }
   ]
 }
