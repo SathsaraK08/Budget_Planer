@@ -451,7 +451,7 @@ function customConfirm(message, onConfirm) {
   });
 }
 
-// Payment Ticking Action
+// Payment Ticking Action with Dual-Partner Attribution
 function togglePaymentStatus(type, id) {
   let item = null;
   let label = "Payment";
@@ -473,17 +473,78 @@ function togglePaymentStatus(type, id) {
     label = item ? item.item : "Wishlist item";
   }
 
-  if (item) {
-    item.isPaid = !item.isPaid;
-    item.paidDate = item.isPaid ? new Date().toISOString().split("T")[0] : null;
+  if (!item) return;
+
+  // If already paid, mark as unpaid immediately
+  if (item.isPaid) {
+    item.isPaid = false;
+    item.paidDate = null;
     persistState();
     renderApp();
-    if (item.isPaid) {
-      showToast(`✅ Marked as PAID: ${label}! Moved to Completed list.`, "success");
-    } else {
-      showToast(`↩️ Marked as UNPAID: ${label}`, "info");
-    }
+    showToast(`↩️ Marked as UNPAID: ${label}`, "info");
+    return;
   }
+
+  // Marking as PAID:
+  const members = (state.members && state.members.length > 1) ? state.members : [];
+  const activeMember = getActiveSessionMember();
+
+  if (members.length > 1) {
+    const defaultPayer = item.paidBy || (activeMember ? activeMember.name : members[0].name);
+    const amountVal = item.amount || item.monthly || item.amountLkr || item.due || 0;
+    const formattedAmt = typeof formatCurrency === 'function' ? formatCurrency(amountVal) : `Rs. ${amountVal}`;
+
+    const modalHtml = `
+      <div style="text-align:center; margin-bottom:1.25rem;">
+        <div style="font-size:2.4rem; margin-bottom:0.25rem;">💳</div>
+        <h3 style="font-size:1.15rem; color:#F3F4F6; font-weight:700;">Who made this payment?</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem;">Attributing <strong>${label}</strong> (${formattedAmt})</p>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.75rem; margin-bottom:1.25rem;">
+        ${members.map(m => {
+          const isSelected = m.name === defaultPayer;
+          return `
+            <button type="button" class="member-select-card ${isSelected ? 'active' : ''}" onclick="window._confirmBillPayer('${m.name}')" style="
+              background: ${isSelected ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};
+              border: 2px solid ${isSelected ? '#10B981' : 'rgba(255,255,255,0.1)'};
+              border-radius: 14px; padding: 1.1rem 0.75rem; cursor: pointer; text-align: center; color: #F3F4F6; transition: all 0.2s; width: 100%;
+              -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+            ">
+              <div style="width:48px; height:48px; border-radius:50%; background:${m.color || '#10B981'}33; border:2px solid ${m.color || '#10B981'}; color:${m.color || '#10B981'}; font-weight:700; font-size:1.25rem; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
+                ${(m.name || 'M')[0].toUpperCase()}
+              </div>
+              <strong style="display:block; font-size:0.98rem; margin-bottom:0.25rem; color:#FFFFFF;">${m.name}</strong>
+              <small style="color:${isSelected ? '#34D399' : 'var(--text-muted)'}; font-size:0.76rem; font-weight:600;">
+                ${(m.role === 'admin' || m.role === 'primary') ? '👑 Admin' : '👤 Partner'}
+                ${isSelected ? ' &bull; Active' : ''}
+              </small>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    window._confirmBillPayer = function(payerName) {
+      item.paidBy = payerName;
+      item.isPaid = true;
+      item.paidDate = new Date().toISOString().split("T")[0];
+      persistState();
+      renderApp();
+      closeModal();
+      showToast(`✅ ${payerName} settled: ${label}! Moved to Completed list.`, "success");
+    };
+
+    openModal("💳 Confirm Payment Attribution", modalHtml, null);
+    return;
+  }
+
+  // Single member fallback
+  item.isPaid = true;
+  item.paidDate = new Date().toISOString().split("T")[0];
+  if (activeMember && !item.paidBy) item.paidBy = activeMember.name;
+  persistState();
+  renderApp();
+  showToast(`✅ Marked as PAID: ${label}! Moved to Completed list.`, "success");
 }
 
 // --- LABELS & TEXT CMS MANAGEMENT ---
@@ -4549,9 +4610,111 @@ function initDraggableAiChat() {
   });
 }
 
-// Global DOM Bootstrap — loads from Supabase cloud on startup
+// ============================================================
+// PUBLIC LANDING VS. PRIVATE HOUSEHOLD VIEW ROUTER & DEMO MODE
+// ============================================================
 
+async function checkAuthAndRenderView() {
+  const landingEl = document.getElementById("public-landing-view");
+  const privateEl = document.getElementById("private-app-view");
+  const bannerEl = document.getElementById("demo-mode-banner");
+
+  // Admin CMS portal (admin.html) handles its own access
+  if (!landingEl) {
+    if (privateEl) privateEl.style.display = "block";
+    return true;
+  }
+
+  const isDemo = sessionStorage.getItem("demo_mode") === "true";
+  let hasSession = false;
+
+  if (typeof getCurrentSession === "function") {
+    try {
+      const s = await getCurrentSession();
+      if (s && s.user && s.user.id) {
+        hasSession = true;
+      }
+    } catch (e) {
+      console.warn("[App] Auth check error:", e);
+    }
+  }
+
+  if (hasSession || isDemo) {
+    landingEl.style.display = "none";
+    if (privateEl) privateEl.style.display = "block";
+    if (bannerEl) bannerEl.style.display = isDemo ? "block" : "none";
+
+    // In demo sandbox, ensure generic Alex & Sam mock state is ready
+    if (isDemo && (!state.members || state.members.length === 0)) {
+      if (typeof getDemoHouseholdState === "function") {
+        state = getDemoHouseholdState();
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+      }
+    }
+    return true;
+  } else {
+    // Unauthenticated public visitor: Strictly gate all private dashboards
+    landingEl.style.display = "block";
+    if (privateEl) privateEl.style.display = "none";
+    if (bannerEl) bannerEl.style.display = "none";
+    return false;
+  }
+}
+
+window.enterDemoMode = function() {
+  sessionStorage.setItem("demo_mode", "true");
+  sessionStorage.setItem("demo_auth", "true");
+  if (typeof getDemoHouseholdState === "function") {
+    state = getDemoHouseholdState();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+  const landingEl = document.getElementById("public-landing-view");
+  const privateEl = document.getElementById("private-app-view");
+  const bannerEl = document.getElementById("demo-mode-banner");
+  if (landingEl) landingEl.style.display = "none";
+  if (privateEl) privateEl.style.display = "block";
+  if (bannerEl) bannerEl.style.display = "block";
+
+  renderApp();
+  switchTab("dashboard");
+  updateSessionMemberUI();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("⚡ Switched to Interactive Demo (Alex & Sam)", "info");
+
+  if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
+    setTimeout(() => openSessionMemberModal(), 500);
+  }
+};
+
+window.exitDemoMode = function() {
+  sessionStorage.removeItem("demo_mode");
+  sessionStorage.removeItem("demo_auth");
+  sessionStorage.removeItem("activeSessionMemberId");
+  sessionStorage.removeItem("activeSessionMemberName");
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+  state = JSON.parse(JSON.stringify(defaultState));
+
+  const landingEl = document.getElementById("public-landing-view");
+  const privateEl = document.getElementById("private-app-view");
+  const bannerEl = document.getElementById("demo-mode-banner");
+  if (bannerEl) bannerEl.style.display = "none";
+  if (privateEl) privateEl.style.display = "none";
+  if (landingEl) landingEl.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("👋 Exited demo mode", "info");
+};
+
+// Global DOM Bootstrap — loads from Supabase cloud on startup
 document.addEventListener("DOMContentLoaded", async () => {
+  // First, verify view access (Landing vs. Private App)
+  const isAuthorized = await checkAuthAndRenderView();
+
+  if (!isAuthorized && document.getElementById("public-landing-view")) {
+    // Visitor is unauthenticated on the landing page.
+    // Zero personal data is rendered or exposed; do NOT trigger member identity modal!
+    return;
+  }
+
   // First render with local data for instant startup
   renderApp();
 
@@ -4603,7 +4766,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   switchTab(defaultTab);
   updateSessionMemberUI();
 
-  // Prompt member identity if 2+ members and none selected yet
+  // Prompt member identity if 2+ members and none selected yet (strictly for logged-in or demo users!)
   if ((state.members || []).length > 1 && !sessionStorage.getItem("activeSessionMemberId")) {
     setTimeout(() => openSessionMemberModal(), 700);
   }

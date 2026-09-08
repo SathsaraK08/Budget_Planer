@@ -19,9 +19,213 @@
 
 <body class="theme-emerald">
 
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+  <!-- ============================================================
+       PUBLIC PRODUCT LANDING PAGE (Default for unauthenticated visitors)
+       ============================================================ -->
+  <div id="public-landing-view" style="display:none;">
+    <div class="landing-glow-bg"></div>
 
-  <div class="app-shell">
+    <!-- Sticky Header / Navbar -->
+    <header class="landing-navbar">
+      <a href="#" class="landing-brand">
+        <div class="landing-brand-icon">💰</div>
+        <span class="landing-brand-title">HomeBudget</span>
+      </a>
+      <nav class="landing-nav-links">
+        <a href="#features" class="landing-nav-link">Features</a>
+        <a href="#how-it-works" class="landing-nav-link">How It Works</a>
+        <a href="#ai-coach" class="landing-nav-link">AI Advisor</a>
+        <button type="button" class="landing-btn-nav-demo" onclick="enterDemoMode()">⚡ Try Live Demo</button>
+      </nav>
+      <div class="landing-nav-actions">
+        <a href="auth.html" class="landing-btn-nav-login">Sign In</a>
+        <a href="auth.html#register" class="landing-btn-nav-register">Get Started Free</a>
+      </div>
+    </header>
+
+    <!-- Hero Showcase Section -->
+    <section class="landing-hero">
+      <div class="landing-pill">
+        <span class="landing-pill-dot"></span>
+        <span>Engineered for Couples &amp; Families on a 25th-to-25th Payday Cycle</span>
+      </div>
+      <h1 class="landing-headline">
+        Master Your Household Finances Together <br>
+        <span class="gradient-text">From Payday to Payday.</span>
+      </h1>
+      <p class="landing-sub">
+        No more guessing if you can afford that purchase. HomeBudget locks your committed rent, loans, and BNPL installments, calculates your real safe daily spend, and lets partners log expenses in 1 tap.
+      </p>
+
+      <div class="landing-cta-group">
+        <a href="auth.html#register" class="landing-btn-hero-primary">
+          <span>🚀 Create Household Account</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+        <button type="button" class="landing-btn-hero-demo" onclick="enterDemoMode()">
+          <span>⚡ Try Live Interactive Demo</span>
+        </button>
+        <a href="auth.html" class="landing-btn-hero-ghost">Have an account? Sign In &rarr;</a>
+      </div>
+    </section>
+
+    <!-- Interactive Live Preview Mockup Card -->
+    <div class="landing-mockup-wrapper">
+      <div class="landing-mockup-card">
+        <div class="landing-mockup-header">
+          <div class="landing-mockup-dots">
+            <div class="landing-mockup-dot" style="background:#EF4444;"></div>
+            <div class="landing-mockup-dot" style="background:#F59E0B;"></div>
+            <div class="landing-mockup-dot" style="background:#10B981;"></div>
+          </div>
+          <div class="landing-mockup-badge">✨ Live Dashboard Preview (25th Cycle)</div>
+        </div>
+
+        <div class="landing-mockup-grid">
+          <div class="landing-mockup-main">
+            <div style="font-size:0.8rem; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.05em; font-weight:700;">Remaining Spendable Balance</div>
+            <div class="landing-mockup-main-num">Rs. 142,500<span style="font-size:1.1rem; color:#34D399; font-weight:600; margin-left:8px;">(Safe)</span></div>
+            <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:#9CA3AF; margin-top:0.5rem;">
+              <span>🗓️ 17 Days Remaining until next 25th payday</span>
+            </div>
+            <div class="landing-mockup-members">
+              <div class="landing-mockup-chip">
+                <span>👑</span>
+                <span>Alex (Primary Admin)</span>
+              </div>
+              <div class="landing-mockup-chip">
+                <span>👤</span>
+                <span>Sam (Partner)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="landing-mockup-side">
+            <div class="landing-mockup-stat">
+              <div style="font-size:0.75rem; color:#9CA3AF; font-weight:600;">Safe Daily Allowance</div>
+              <div style="font-size:1.4rem; font-weight:800; color:#34D399; margin-top:0.25rem;">Rs. 8,380 / day</div>
+              <div style="font-size:0.75rem; color:#6B7280; margin-top:0.2rem;">Deterministic cashflow balance</div>
+            </div>
+            <div class="landing-mockup-stat">
+              <div style="font-size:0.75rem; color:#9CA3AF; font-weight:600;">Committed Fixed &amp; BNPL</div>
+              <div style="font-size:1.4rem; font-weight:800; color:#F59E0B; margin-top:0.25rem;">Rs. 185,000</div>
+              <div style="font-size:0.75rem; color:#6B7280; margin-top:0.2rem;">Rent, Utilities, Koko &amp; Loans</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="landing-mockup-ai" id="ai-coach">
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+            <span style="font-size:1.1rem;">🤖</span>
+            <strong style="color:#A5B4FC; font-size:0.85rem;">AI Advisor Live Insight</strong>
+          </div>
+          <div>&ldquo;You&apos;ve consumed 42% of your monthly grocery &amp; dining budget with 17 days left. At your current pace of Rs. 3,100/day, you will finish the cycle with an estimated Rs. 38,000 surplus on the 25th.&rdquo;</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Grid Section -->
+    <section class="landing-features" id="features">
+      <h2 class="landing-section-title">Engineered Specifically For Real Household Life</h2>
+      <p class="landing-section-sub">Most budget apps assume a 1st-of-month calendar. HomeBudget is built around how actual salaries work, how couples share costs, and how BNPL plans operate.</p>
+
+      <div class="landing-features-grid">
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon">📅</div>
+          <h3>25th-to-25th Cycle Engine</h3>
+          <p>Aligns with real-world corporate paydays. Automatically calculates active days remaining, daily burn rate, and real-time survival cashflow so you never overspend.</p>
+        </div>
+
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon">👥</div>
+          <h3>Dual-Partner Attribution</h3>
+          <p>Designed for couples. With 1 tap in the quick spend logger, specify who paid (Primary or Partner) or split items fairly with full transparency across both phones.</p>
+        </div>
+
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon">🛍️</div>
+          <h3>BNPL &amp; Installment Tracker</h3>
+          <p>Track Koko, Mintpay, PayZy, and credit card installments. Never get caught off-guard by split installment deductions hitting your bank account on salary week.</p>
+        </div>
+
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon">🤖</div>
+          <h3>Bring-Your-Own-AI Coach</h3>
+          <p>Connect Google Gemini, Groq, or Hugging Face with your own free API key. Ask questions like &ldquo;Can I afford dinner tonight?&rdquo; and get instant financial health assessments.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="landing-features" id="how-it-works" style="margin-bottom: 4rem;">
+      <h2 class="landing-section-title">How It Works in 3 Simple Steps</h2>
+      <p class="landing-section-sub">Get up and running in under two minutes with zero spreadsheet headaches.</p>
+
+      <div class="landing-features-grid">
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon" style="color:#34D399; font-weight:800;">1</div>
+          <h3>Register Your Household</h3>
+          <p>Create a secure account, pick your currency, and set names for yourself and your partner. Each household&apos;s data is 100% private and cloud-synced.</p>
+        </div>
+
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon" style="color:#60A5FA; font-weight:800;">2</div>
+          <h3>Plug In Salaries &amp; Fixed Outgoings</h3>
+          <p>Enter your monthly income, rent, utilities, and active BNPL installment plans. The deterministic math engine instantly locks your safe spendable balance.</p>
+        </div>
+
+        <div class="landing-feature-card">
+          <div class="landing-feature-icon" style="color:#FBBF24; font-weight:800;">3</div>
+          <h3>Log Daily Spends on the Go</h3>
+          <p>Tap Quick Log on mobile, type the amount, tap who paid, and done. Works like a native iOS/Android app with offline support and instant cloud sync.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom CTA Banner -->
+    <div class="landing-cta-banner">
+      <h2>Start Managing Your Household Budget Today</h2>
+      <p>Join couples and families who take control of their 25th-to-25th salary cycle with clear math, zero stress, and complete privacy.</p>
+      <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+        <a href="auth.html#register" class="landing-btn-hero-primary" style="font-size:1.05rem;">
+          <span>🚀 Get Started Free</span>
+        </a>
+        <button type="button" class="landing-btn-hero-demo" onclick="enterDemoMode()">
+          <span>⚡ Try Sandbox Demo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div style="margin-bottom:1rem; font-weight:700; color:#E5E7EB; font-size:1rem;">
+        💰 HomeBudget — 25th-to-25th Household Financial Engine
+      </div>
+      <div style="margin-bottom:1rem;">
+        <a href="auth.html">Sign In</a> &bull;
+        <a href="auth.html#register">Create Account</a> &bull;
+        <a href="#" onclick="enterDemoMode(); return false;">Interactive Demo</a> &bull;
+        <a href="#features">Features</a> &bull;
+        <a href="#how-it-works">How It Works</a>
+      </div>
+      <div>&copy; 2026 HomeBudget. All household records are end-to-end isolated with multi-tenant Supabase security.</div>
+    </footer>
+  </div>
+
+  <!-- ============================================================
+       PRIVATE HOUSEHOLD APPLICATION (Authenticated or Demo Mode)
+       ============================================================ -->
+  <div id="private-app-view" style="display:none;">
+    <!-- Interactive Demo Top Banner -->
+    <div id="demo-mode-banner" style="display:none; background:linear-gradient(90deg, #4F46E5, #059669); color:#fff; padding:0.65rem 1.25rem; font-size:0.85rem; text-align:center; font-weight:600; position:sticky; top:0; z-index:1000; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+      <span>⚡ You are exploring the <strong>Interactive Demo Sandbox</strong> with sample data (Alex &amp; Sam).</span>
+      <a href="auth.html#register" style="color:#FBBF24; text-decoration:underline; margin-left:0.75rem; font-weight:700;">Create Your Household Account</a>
+      <button type="button" onclick="exitDemoMode()" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:6px; padding:0.2rem 0.6rem; margin-left:0.75rem; font-size:0.75rem; cursor:pointer;">Exit Demo</button>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+    <div class="app-shell">
 
     <!-- Collapsible Modern Drawer / Sidebar -->
     <aside class="sidebar">
@@ -1171,6 +1375,7 @@
       <span class="mobile-nav-text">AI Coach</span>
     </button>
   </nav>
+  </div> <!-- /#private-app-view -->
 
   <!-- Chart.js CDN for Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>

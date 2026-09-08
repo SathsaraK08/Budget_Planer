@@ -32,7 +32,7 @@ async function getActiveHouseholdId() {
   if (session && session.user && session.user.id) {
     return session.user.id;
   }
-  return "default";
+  return null; // Strict privacy: never load shared 'default' row for unauthenticated visitors
 }
 
 async function sbHeaders(extra) {
@@ -51,10 +51,11 @@ async function logoutHousehold() {
   sessionStorage.removeItem("activeSessionMemberId");
   sessionStorage.removeItem("activeSessionMemberName");
   sessionStorage.removeItem("demo_auth");
+  localStorage.removeItem(STORAGE_KEY);
   if (_sb) {
-    await _sb.auth.signOut();
+    try { await _sb.auth.signOut(); } catch(e){}
   }
-  window.location.href = "auth.html";
+  window.location.href = "index.html";
 }
 
 async function updateAuthHeaderUi() {
@@ -115,10 +116,75 @@ if (typeof document !== "undefined") {
   });
 }
 
+function getDemoHouseholdState() {
+  return {
+    household: {
+      name: "Demo Family Budget",
+      tagline: "Interactive 25th-to-25th Sandbox",
+      logo: "💰",
+      currency: "Rs.",
+      currencyCode: "LKR",
+      cycleStartDay: 25,
+      themePreset: "theme-emerald"
+    },
+    members: [
+      { id: "m_demo_1", name: "Alex", role: "admin", color: "#10B981", salary: 250000 },
+      { id: "m_demo_2", name: "Sam", role: "partner", color: "#EC4899", salary: 180000 }
+    ],
+    incomes: [
+      { id: "inc_1", memberId: "m_demo_1", memberName: "Alex", source: "Primary Salary", amount: 250000, date: "2026-09-25", isFixed: true },
+      { id: "inc_2", memberId: "m_demo_2", memberName: "Sam", source: "Partner Salary", amount: 180000, date: "2026-09-25", isFixed: true }
+    ],
+    fixedBills: [
+      { id: "fb_1", title: "Apartment Rent", amount: 85000, dueDay: 26, isPaid: true, category: "Housing", member: "Alex" },
+      { id: "fb_2", title: "Electricity & Water", amount: 18500, dueDay: 28, isPaid: true, category: "Utilities", member: "Sam" },
+      { id: "fb_3", title: "Fiber Broadband", amount: 6500, dueDay: 30, isPaid: false, category: "Telecom", member: "Alex" }
+    ],
+    installments: [
+      { id: "inst_1", member: "Alex", platform: "Koko", item: "Work Desk & Ergonomic Chair", vendor: "OfficeMart", total: 45000, monthly: 15000, remaining: 15000, isPaid: false },
+      { id: "inst_2", member: "Sam", platform: "Mintpay", item: "Organic Grocery Pantry", vendor: "SuperKade", total: 18000, monthly: 6000, remaining: 0, isPaid: true }
+    ],
+    dailySpends: [
+      { id: "ds_1", date: new Date().toISOString().split("T")[0], amount: 4250, title: "Supermarket Vegetables & Meat", cat: "Groceries", method: "Debit Card", memberName: "Alex", isPaid: true },
+      { id: "ds_2", date: new Date().toISOString().split("T")[0], amount: 1800, title: "Fuel Station (Hybrid)", cat: "Transport", method: "Cash", memberName: "Sam", isPaid: true }
+    ],
+    subscriptions: [
+      { id: "sub_1", title: "Cloud Storage", amount: 1200, billingDay: 25, isPaid: true, member: "Alex" },
+      { id: "sub_2", title: "Family Music", amount: 1500, billingDay: 28, isPaid: true, member: "Sam" }
+    ],
+    wishlist: [
+      { id: "wl_1", title: "Air Purifier for Bedroom", amount: 28000, category: "Home Needs", priority: "high", isCompleted: false }
+    ],
+    categories: [
+      { id: "cat_1", name: "Groceries", color: "#10B981", monthlyBudget: 45000 },
+      { id: "cat_2", name: "Transport", color: "#F59E0B", monthlyBudget: 15000 },
+      { id: "cat_3", name: "Food & Dining", color: "#EC4899", monthlyBudget: 25000 },
+      { id: "cat_4", name: "Personal Care", color: "#8B5CF6", monthlyBudget: 8000 },
+      { id: "cat_5", name: "Health & Gym", color: "#06B6D4", monthlyBudget: 6000 },
+      { id: "cat_6", name: "Other", color: "#64748B", monthlyBudget: 30000 }
+    ],
+    paymentMethods: [
+      { id: "pm_1", name: "Cash", type: "cash" },
+      { id: "pm_2", name: "Debit Card", type: "card" },
+      { id: "pm_3", name: "Credit Card", type: "card" },
+      { id: "pm_4", name: "Bank Transfer", type: "bank" }
+    ]
+  };
+}
+
 async function loadFromSupabase() {
   try {
+    const session = await getCurrentSession();
+    if (!session) {
+      setSyncStatus("offline", "Sign In to Sync");
+      return null;
+    }
+    if (session.user.id === "demo_user") {
+      setSyncStatus("online", "Demo Sandbox");
+      return getDemoHouseholdState();
+    }
+    const householdId = session.user.id;
     setSyncStatus("syncing", "loading...");
-    const householdId = await getActiveHouseholdId();
     const headers = await sbHeaders({ "Prefer": "return=representation" });
     const res = await fetch(REST_BASE + "/household_state?household_id=eq." + householdId + "&select=state_json,updated_at&limit=1", { headers });
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -146,9 +212,14 @@ async function loadFromSupabase() {
 
 async function saveToSupabase(stateOverride) {
   try {
+    const session = await getCurrentSession();
+    if (!session || session.user.id === "demo_user") {
+      localStorage.setItem(STORAGE_KEY + "_timestamp", Date.now().toString());
+      return;
+    }
     const stateToSave = stateOverride || state;
     if (!stateToSave) return;
-    const householdId = await getActiveHouseholdId();
+    const householdId = session.user.id;
     const headers = await sbHeaders({ "Prefer": "resolution=merge-duplicates,return=minimal" });
     const res = await fetch(REST_BASE + "/household_state?on_conflict=household_id", {
       method: "POST",
